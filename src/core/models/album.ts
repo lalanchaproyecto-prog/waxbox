@@ -4,11 +4,12 @@ export type { PhysicalFormatId }
 
 /**
  * Lado o disco donde va la canción.
- * 'A' y 'B' para formatos de dos caras (vinilo, casete).
- * '1' y '2' para formatos numerados por disco (CD).
- * 'N/A' cuando no aplica.
+ * - Letras ('A', 'B', 'C', 'D'...) en formatos de dos caras como vinilo y casete.
+ *   Un álbum doble sigue con C y D, por eso no se limita a A y B.
+ * - Números ('1', '2'...) en formatos numerados por disco, como un CD doble.
+ * - 'N/A' cuando el dato no está disponible.
  */
-export type DiscSide = 'A' | 'B' | '1' | '2' | 'N/A'
+export type DiscSide = string
 
 export interface Track {
   id?: number

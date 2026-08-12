@@ -393,6 +393,264 @@ body {
   font-style: italic;
 }
 
+/* ---------- Carga y errores ---------- */
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: #888;
+}
+
+.spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #2a2a2a;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-box {
+  max-width: 30rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  background: #1f1414;
+  border: 1px solid #4a2626;
+  border-radius: 12px;
+  padding: 1.75rem;
+  text-align: center;
+}
+
+.error-message {
+  color: #f3b8b8;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* ---------- Elegir edición ---------- */
+
+.picker {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.picker-header h2 {
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.picker-header p {
+  color: #888;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.candidate-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.candidate {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.candidate:hover {
+  border-color: #6366f1;
+  background: #1f1f27;
+}
+
+.candidate-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.candidate-title {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.candidate-artist {
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.candidate-note {
+  color: #7a7a7a;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.candidate-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tag {
+  background: #262626;
+  color: #aaa;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.picker-footer {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* ---------- Vista previa del álbum ---------- */
+
+.preview {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.preview-header h2 {
+  font-size: 1.75rem;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.preview-artist {
+  color: #9a8cff;
+  font-size: 1.05rem;
+  margin-top: 0.2rem;
+}
+
+.preview-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1rem;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 1.1rem 1.25rem;
+}
+
+.preview-facts dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #777;
+  margin-bottom: 0.25rem;
+}
+
+.preview-facts dd {
+  color: #e0e0e0;
+  font-size: 0.95rem;
+}
+
+.fact-note {
+  color: #777;
+  font-size: 0.8rem;
+}
+
+.tracklist {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.side-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.side-heading {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #9a8cff;
+  letter-spacing: 0.05em;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #222;
+}
+
+.track-rows {
+  list-style: none;
+}
+
+.track-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.track-number {
+  color: #666;
+  font-size: 0.85rem;
+  min-width: 1.5rem;
+  text-align: right;
+}
+
+.track-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.track-title {
+  color: #e0e0e0;
+  font-size: 0.95rem;
+}
+
+.track-artist {
+  color: #8a8a8a;
+  font-size: 0.8rem;
+}
+
+.track-duration {
+  color: #777;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid #1f1f1f;
+  padding-top: 1.25rem;
+}
+
 /* ---------- Pie ---------- */
 
 .app-footer {

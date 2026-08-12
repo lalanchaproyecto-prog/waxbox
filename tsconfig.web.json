@@ -20,6 +20,7 @@
   },
   "include": [
     "src/renderer/**/*",
-    "src/core/**/*"
+    "src/core/**/*",
+    "src/preload/index.d.ts"
   ]
 }

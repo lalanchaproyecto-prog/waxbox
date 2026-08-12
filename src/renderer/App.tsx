@@ -1,18 +1,67 @@
 import { useState } from 'react'
-import { getFormat } from '@core/models/formats'
+import type { ReleaseCandidate, ReleaseDetails } from '@core/services/musicbrainz'
 import AddAlbumForm, { type AlbumDraft } from './components/AddAlbumForm'
+import ReleasePicker from './components/ReleasePicker'
+import AlbumPreview from './components/AlbumPreview'
 
-type View = 'home' | 'add' | 'captured'
+type View = 'home' | 'add' | 'results' | 'details'
 
 function App() {
   const [view, setView] = useState<View>('home')
   const [draft, setDraft] = useState<AlbumDraft | null>(null)
+  const [candidates, setCandidates] = useState<ReleaseCandidate[]>([])
+  const [details, setDetails] = useState<ReleaseDetails | null>(null)
+  const [loading, setLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  // Por ahora solo guardamos lo que la persona escribió y lo mostramos.
-  // El siguiente paso será enviar estos datos a MusicBrainz.
-  function handleSubmit(newDraft: AlbumDraft) {
+  /** Paso 1: con lo que escribió la persona, buscar ediciones en MusicBrainz. */
+  async function handleSearch(newDraft: AlbumDraft) {
     setDraft(newDraft)
-    setView('captured')
+    setError(null)
+    setLoading('Buscando en MusicBrainz...')
+
+    const result = await window.api.searchReleases(newDraft.artist, newDraft.title)
+    setLoading(null)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    if (result.data.length === 0) {
+      setError(
+        `No se encontró "${newDraft.title}" de ${newDraft.artist}. Revisa la escritura o prueba con el título original del álbum.`
+      )
+      return
+    }
+
+    setCandidates(result.data)
+    setView('results')
+  }
+
+  /** Paso 2: con la edición elegida, traer el tracklist y el resto de los datos. */
+  async function handlePick(candidate: ReleaseCandidate) {
+    if (!draft) return
+    setError(null)
+    setLoading('Trayendo el tracklist...')
+
+    const result = await window.api.getReleaseDetails(candidate.musicbrainzId, draft.format)
+    setLoading(null)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+
+    setDetails(result.data)
+    setView('details')
+  }
+
+  function startOver() {
+    setDraft(null)
+    setCandidates([])
+    setDetails(null)
+    setError(null)
+    setView('home')
   }
 
   return (
@@ -26,7 +75,23 @@ function App() {
       </header>
 
       <main className="app-main">
-        {view === 'home' && (
+        {loading && (
+          <div className="loading">
+            <span className="spinner" />
+            <p>{loading}</p>
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="error-box">
+            <p className="error-message">{error}</p>
+            <button className="btn btn-ghost" onClick={() => setError(null)}>
+              Entendido
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && view === 'home' && (
           <div className="home">
             <div className="stats-card">
               <span className="stat-number">0</span>
@@ -41,47 +106,29 @@ function App() {
           </div>
         )}
 
-        {view === 'add' && (
+        {!loading && !error && view === 'add' && (
           <AddAlbumForm
             initial={draft}
-            onSubmit={handleSubmit}
+            onSubmit={handleSearch}
             onCancel={() => setView('home')}
           />
         )}
 
-        {view === 'captured' && draft && (
-          <div className="captured">
-            <h2>Datos capturados</h2>
-            <dl className="captured-list">
-              <dt>Artista</dt>
-              <dd>{draft.artist}</dd>
-              <dt>Álbum</dt>
-              <dd>{draft.title}</dd>
-              <dt>Formato</dt>
-              <dd>{getFormat(draft.format)?.label ?? draft.format}</dd>
-              <dt>Portada</dt>
-              <dd>{draft.coverFront?.name ?? 'Sin foto'}</dd>
-              <dt>Contraportada</dt>
-              <dd>{draft.coverBack?.name ?? 'Sin foto'}</dd>
-            </dl>
-            <p className="hint">
-              Siguiente paso: buscar automáticamente estos datos en MusicBrainz.
-            </p>
-            <div className="captured-actions">
-              <button className="btn btn-ghost" onClick={() => setView('add')}>
-                Volver a editar
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  setDraft(null)
-                  setView('home')
-                }}
-              >
-                Empezar de nuevo
-              </button>
-            </div>
-          </div>
+        {!loading && !error && view === 'results' && (
+          <ReleasePicker
+            candidates={candidates}
+            onPick={handlePick}
+            onBack={() => setView('add')}
+          />
+        )}
+
+        {!loading && !error && view === 'details' && details && draft && (
+          <AlbumPreview
+            details={details}
+            physicalFormatId={draft.format}
+            onBack={() => setView('results')}
+            onStartOver={startOver}
+          />
         )}
       </main>
 
