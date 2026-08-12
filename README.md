@@ -68,10 +68,24 @@ la ficha del álbum leen esa lista y se adaptan solos.
 
 ## Fuentes de datos
 
-- [MusicBrainz](https://musicbrainz.org/doc/MusicBrainz_API) — metadatos del álbum y tracklist
+Ninguna de estas fuentes requiere que crees una cuenta ni consigas una clave,
+salvo YouTube, que es opcional.
+
+- [MusicBrainz](https://musicbrainz.org/doc/MusicBrainz_API) — datos del álbum, tracklist y enlaces oficiales del artista
 - [Cover Art Archive](https://coverartarchive.org/) — portada oficial del álbum
 - [Wikipedia / Wikidata](https://www.wikidata.org/) — reseña introductoria del álbum o artista
-- [YouTube Data API v3](https://developers.google.com/youtube/v3) — video de cada canción
+- [Deezer](https://developers.deezer.com/api) — adelanto de 30 segundos de cada canción
+- [YouTube Data API v3](https://developers.google.com/youtube/v3) — **opcional**, para ver el video completo
+
+## Escuchar las canciones
+
+Waxbox usa Deezer para que puedas escuchar 30 segundos de cada canción. Funciona
+de entrada, sin configurar nada.
+
+Si además quieres ver el video completo, puedes agregar tu propia clave gratuita de
+YouTube desde la pantalla de Configuración, que incluye una guía paso a paso. Es
+opcional: sin ella, todo lo demás funciona igual. La clave se guarda cifrada en tu
+computador y nunca se comparte.
 
 ## Licencia
 

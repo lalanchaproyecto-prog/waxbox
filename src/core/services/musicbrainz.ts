@@ -271,6 +271,86 @@ export async function searchReleases(
   }))
 }
 
+/** Un enlace oficial del artista, listo para mostrar en la ficha. */
+export interface ArtistLink {
+  url: string
+  /** Nombre de la plataforma, deducido del dominio. */
+  platform: string
+  /** Emoji que la representa. */
+  icon: string
+}
+
+/**
+ * Deduce a qué plataforma pertenece un enlace, mirando su dominio.
+ * Si no se reconoce, se muestra el dominio tal cual, que ya es informativo.
+ */
+function describeLink(url: string): { platform: string; icon: string } {
+  const host = (() => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '').toLowerCase()
+    } catch {
+      return ''
+    }
+  })()
+
+  const known: Array<[string, string, string]> = [
+    ['facebook.com', 'Facebook', '\u{1F465}'],
+    ['instagram.com', 'Instagram', '\u{1F4F7}'],
+    ['twitter.com', 'X (Twitter)', '\u{1F426}'],
+    ['x.com', 'X (Twitter)', '\u{1F426}'],
+    ['youtube.com', 'YouTube', '\u{1F4FA}'],
+    ['tiktok.com', 'TikTok', '\u{1F3B5}'],
+    ['bandcamp.com', 'Bandcamp', '\u{1F3B8}'],
+    ['soundcloud.com', 'SoundCloud', '\u{1F50A}'],
+    ['mastodon.social', 'Mastodon', '\u{1F418}'],
+    ['bsky.app', 'Bluesky', '\u{1F98B}']
+  ]
+
+  for (const [domain, platform, icon] of known) {
+    if (host === domain || host.endsWith(`.${domain}`)) return { platform, icon }
+  }
+
+  return { platform: host || 'Sitio web', icon: '\u{1F310}' }
+}
+
+/**
+ * Trae los enlaces oficiales del artista: su página web y sus redes sociales.
+ *
+ * MusicBrainz ya guarda estos enlaces como relaciones del artista, así que no
+ * hace falta consultar ninguna fuente nueva. Se filtran solo los que son
+ * oficiales del artista; se dejan fuera bases de datos, tiendas y servicios de
+ * streaming, que no son "del artista" sino sitios que hablan de él.
+ *
+ * Devuelve una lista vacía si no hay ninguno, lo cual es normal.
+ */
+export async function getArtistLinks(artistId: string): Promise<ArtistLink[]> {
+  const url = `${API_BASE}/artist/${artistId}?fmt=json&inc=url-rels`
+
+  let data: { relations?: RawRelation[] }
+  try {
+    data = await request<{ relations?: RawRelation[] }>(url)
+  } catch {
+    return []
+  }
+
+  const WANTED = new Set(['official homepage', 'social network', 'youtube'])
+
+  const links: ArtistLink[] = []
+  const seen = new Set<string>()
+
+  for (const relation of data.relations ?? []) {
+    if (!relation.type || !WANTED.has(relation.type)) continue
+
+    const resource = relation.url?.resource
+    if (!resource || seen.has(resource)) continue
+    seen.add(resource)
+
+    links.push({ url: resource, ...describeLink(resource) })
+  }
+
+  return links
+}
+
 /**
  * Busca el identificador de Wikidata asociado a un álbum o a un artista.
  *

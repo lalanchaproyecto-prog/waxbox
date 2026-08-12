@@ -3,6 +3,8 @@ import { electronAPI } from '@electron-toolkit/preload'
 import type { Result } from '../core/result'
 import type { ReleaseCandidate, ReleaseDetails } from '../core/services/musicbrainz'
 import type { AlbumSheet } from '../core/services/albumSheet'
+import type { YouTubeVideo } from '../core/services/youtube'
+import type { SettingsStatus } from '../core/models/settings'
 
 /**
  * Lo único que la ventana puede pedirle al proceso principal.
@@ -28,7 +30,32 @@ const api = {
     musicbrainzId: string,
     physicalFormatId: string
   ): Promise<Result<AlbumSheet>> =>
-    ipcRenderer.invoke('album:sheet', musicbrainzId, physicalFormatId)
+    ipcRenderer.invoke('album:sheet', musicbrainzId, physicalFormatId),
+
+  /**
+   * Pide una dirección de audio nueva para escuchar 30 segundos de una canción.
+   * Se llama justo antes de reproducir, porque estas direcciones caducan.
+   */
+  getPreviewUrl: (trackId: number): Promise<Result<string | null>> =>
+    ipcRenderer.invoke('deezer:previewUrl', trackId),
+
+  /** Dice si hay clave de YouTube configurada. Nunca devuelve la clave. */
+  getSettingsStatus: (): Promise<SettingsStatus> => ipcRenderer.invoke('settings:status'),
+
+  /** Comprueba la clave contra YouTube y, si sirve, la guarda cifrada. */
+  saveYoutubeKey: (apiKey: string): Promise<Result<SettingsStatus>> =>
+    ipcRenderer.invoke('settings:saveYoutubeKey', apiKey),
+
+  /** Borra la clave guardada. */
+  clearYoutubeKey: (): Promise<Result<SettingsStatus>> =>
+    ipcRenderer.invoke('settings:clearYoutubeKey'),
+
+  /** Busca el video de una canción. Usa el artista de esa canción. */
+  searchTrackVideo: (
+    artist: string,
+    trackTitle: string
+  ): Promise<Result<YouTubeVideo | null>> =>
+    ipcRenderer.invoke('youtube:searchTrack', artist, trackTitle)
 }
 
 export type WaxboxApi = typeof api

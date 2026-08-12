@@ -1,19 +1,31 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReleaseCandidate } from '@core/services/musicbrainz'
 import type { AlbumSheet } from '@core/services/albumSheet'
+import type { SettingsStatus } from '@core/models/settings'
 import AddAlbumForm, { type AlbumDraft } from './components/AddAlbumForm'
 import ReleasePicker from './components/ReleasePicker'
 import AlbumPreview from './components/AlbumPreview'
+import SettingsScreen from './components/SettingsScreen'
 
-type View = 'home' | 'add' | 'results' | 'details'
+type View = 'home' | 'add' | 'results' | 'details' | 'settings'
 
 function App() {
   const [view, setView] = useState<View>('home')
+  const [settings, setSettings] = useState<SettingsStatus>({
+    youtubeConfigured: false,
+    youtubeKeyEncrypted: true
+  })
   const [draft, setDraft] = useState<AlbumDraft | null>(null)
   const [candidates, setCandidates] = useState<ReleaseCandidate[]>([])
   const [sheet, setSheet] = useState<AlbumSheet | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Al abrir la app se consulta si ya hay clave de YouTube configurada.
+  // Nunca se pide la clave en sí, solo si existe.
+  useEffect(() => {
+    window.api.getSettingsStatus().then(setSettings)
+  }, [])
 
   /** Paso 1: con lo que escribió la persona, buscar ediciones en MusicBrainz. */
   async function handleSearch(newDraft: AlbumDraft) {
@@ -73,6 +85,11 @@ function App() {
           <h1>Waxbox</h1>
         </div>
         <p className="slogan">Tu música, tu historia.</p>
+        {view !== 'settings' && (
+          <button className="settings-link" onClick={() => setView('settings')}>
+            Configuración
+          </button>
+        )}
       </header>
 
       <main className="app-main">
@@ -104,7 +121,26 @@ function App() {
             <button className="btn btn-primary" onClick={() => setView('add')}>
               + Agregar disco
             </button>
+
+            {!settings.youtubeConfigured && (
+              <p className="optional-note">
+                Opcional: si quieres además escuchar las canciones de tus discos, puedes
+                configurar una clave gratuita de YouTube cuando quieras desde{' '}
+                <button className="btn-link" onClick={() => setView('settings')}>
+                  Configuración
+                </button>
+                . No hace falta para empezar a usar Waxbox.
+              </p>
+            )}
           </div>
+        )}
+
+        {!loading && !error && view === 'settings' && (
+          <SettingsScreen
+            status={settings}
+            onStatusChange={setSettings}
+            onBack={() => setView('home')}
+          />
         )}
 
         {!loading && !error && view === 'add' && (
@@ -127,6 +163,8 @@ function App() {
           <AlbumPreview
             sheet={sheet}
             physicalFormatId={draft.format}
+            youtubeConfigured={settings.youtubeConfigured}
+            onOpenSettings={() => setView('settings')}
             onBack={() => setView('results')}
             onStartOver={startOver}
           />

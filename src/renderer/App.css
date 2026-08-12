@@ -722,6 +722,286 @@ body {
   padding-top: 1.25rem;
 }
 
+/* ---------- Acceso a configuración ---------- */
+
+.app-header {
+  position: relative;
+}
+
+.settings-link {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: none;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #888;
+  font-size: 0.85rem;
+  font-family: inherit;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.settings-link:hover {
+  border-color: #6366f1;
+  color: #ddd;
+}
+
+.optional-note {
+  max-width: 26rem;
+  text-align: center;
+  color: #6d6d6d;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin-top: 0.5rem;
+}
+
+/* ---------- Pantalla de configuración ---------- */
+
+.settings {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.settings-header h2 {
+  font-size: 1.6rem;
+  color: #ffffff;
+  margin-bottom: 0.3rem;
+}
+
+.settings-header p {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.setting-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background: #16161a;
+  border: 1px solid #262626;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.setting-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.setting-title-row h3 {
+  font-size: 1.05rem;
+  color: #ffffff;
+}
+
+.badge {
+  font-size: 0.72rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: #2a2a2a;
+  color: #999;
+}
+
+.badge-on {
+  background: #1d3a2a;
+  color: #7fd8a0;
+}
+
+.setting-description {
+  color: #bbb;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.setting-note {
+  color: #7d7d7d;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.setting-warning {
+  color: #e0b877;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  background: #251f14;
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+}
+
+.key-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.key-form .field {
+  width: 100%;
+}
+
+.setting-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.feedback-ok {
+  color: #7fd8a0;
+  font-size: 0.88rem;
+}
+
+.feedback-error {
+  color: #f0a3a3;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.guide-toggle {
+  align-self: flex-start;
+  font-size: 0.85rem;
+}
+
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background: #101014;
+  border-radius: 8px;
+  padding: 1.15rem 1.25rem;
+}
+
+.guide-intro,
+.guide-note {
+  color: #8d8d8d;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-left: 1.2rem;
+  color: #bbb;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.guide-steps strong {
+  color: #e0e0e0;
+}
+
+.guide-steps code {
+  background: #222;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.settings-footer {
+  display: flex;
+}
+
+/* ---------- Botón de escuchar ---------- */
+
+.tracklist-note {
+  color: #7d7d7d;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.listen-btn {
+  background: #232330;
+  border: 1px solid #33334a;
+  border-radius: 50%;
+  width: 1.9rem;
+  height: 1.9rem;
+  color: #a5a5f5;
+  font-size: 0.7rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.listen-btn:hover:not(:disabled) {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #ffffff;
+}
+
+.listen-btn.playing {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #ffffff;
+}
+
+.youtube-btn {
+  background: transparent;
+  border: 1px solid #33334a;
+  border-radius: 6px;
+  color: #8a8a9e;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.25rem 0.45rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.youtube-btn:hover:not(:disabled) {
+  border-color: #e05252;
+  color: #e57373;
+}
+
+.youtube-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------- Enlaces oficiales del artista ---------- */
+
+.artist-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.artist-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #1d1d24;
+  border: 1px solid #2c2c38;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  color: #a5a5c0;
+  font-size: 0.76rem;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.artist-links a:hover {
+  border-color: #6366f1;
+  color: #ddd;
+}
+
+.listen-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.track-problem {
+  color: #c98b8b;
+  font-size: 0.78rem;
+}
+
 /* ---------- Pie ---------- */
 
 .app-footer {
