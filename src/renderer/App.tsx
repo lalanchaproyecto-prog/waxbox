@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import type { ReleaseCandidate, ReleaseDetails } from '@core/services/musicbrainz'
+import type { ReleaseCandidate } from '@core/services/musicbrainz'
+import type { AlbumSheet } from '@core/services/albumSheet'
 import AddAlbumForm, { type AlbumDraft } from './components/AddAlbumForm'
 import ReleasePicker from './components/ReleasePicker'
 import AlbumPreview from './components/AlbumPreview'
@@ -10,7 +11,7 @@ function App() {
   const [view, setView] = useState<View>('home')
   const [draft, setDraft] = useState<AlbumDraft | null>(null)
   const [candidates, setCandidates] = useState<ReleaseCandidate[]>([])
-  const [details, setDetails] = useState<ReleaseDetails | null>(null)
+  const [sheet, setSheet] = useState<AlbumSheet | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -38,13 +39,13 @@ function App() {
     setView('results')
   }
 
-  /** Paso 2: con la edición elegida, traer el tracklist y el resto de los datos. */
+  /** Paso 2: con la edición elegida, armar la ficha completa del álbum. */
   async function handlePick(candidate: ReleaseCandidate) {
     if (!draft) return
     setError(null)
-    setLoading('Trayendo el tracklist...')
+    setLoading('Trayendo el tracklist y la portada...')
 
-    const result = await window.api.getReleaseDetails(candidate.musicbrainzId, draft.format)
+    const result = await window.api.getAlbumSheet(candidate.musicbrainzId, draft.format)
     setLoading(null)
 
     if (!result.ok) {
@@ -52,14 +53,14 @@ function App() {
       return
     }
 
-    setDetails(result.data)
+    setSheet(result.data)
     setView('details')
   }
 
   function startOver() {
     setDraft(null)
     setCandidates([])
-    setDetails(null)
+    setSheet(null)
     setError(null)
     setView('home')
   }
@@ -122,9 +123,9 @@ function App() {
           />
         )}
 
-        {!loading && !error && view === 'details' && details && draft && (
+        {!loading && !error && view === 'details' && sheet && draft && (
           <AlbumPreview
-            details={details}
+            sheet={sheet}
             physicalFormatId={draft.format}
             onBack={() => setView('results')}
             onStartOver={startOver}

@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { Result } from '../core/result'
 import type { ReleaseCandidate, ReleaseDetails } from '../core/services/musicbrainz'
+import type { AlbumSheet } from '../core/services/albumSheet'
 
 /**
  * Lo único que la ventana puede pedirle al proceso principal.
@@ -20,7 +21,14 @@ const api = {
     musicbrainzId: string,
     physicalFormatId: string
   ): Promise<Result<ReleaseDetails>> =>
-    ipcRenderer.invoke('musicbrainz:details', musicbrainzId, physicalFormatId)
+    ipcRenderer.invoke('musicbrainz:details', musicbrainzId, physicalFormatId),
+
+  /** Arma la ficha completa del álbum: datos, tracklist y portada oficial. */
+  getAlbumSheet: (
+    musicbrainzId: string,
+    physicalFormatId: string
+  ): Promise<Result<AlbumSheet>> =>
+    ipcRenderer.invoke('album:sheet', musicbrainzId, physicalFormatId)
 }
 
 export type WaxboxApi = typeof api

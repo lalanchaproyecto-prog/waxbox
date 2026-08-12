@@ -60,6 +60,12 @@ export interface ReleaseTrack {
 
 export interface ReleaseDetails {
   musicbrainzId: string
+  /**
+   * Identificador del "grupo de lanzamiento": el álbum como obra, por encima de
+   * sus ediciones concretas. Sirve para buscar la portada del álbum cuando esta
+   * edición en particular no tiene una propia.
+   */
+  releaseGroupId: string | null
   title: string
   /** Artista principal del álbum. En un compilatorio suele ser "Various Artists". */
   artists: string
@@ -112,6 +118,7 @@ interface RawRelease {
   'artist-credit'?: RawArtistCredit[]
   'label-info'?: Array<{ label?: { name?: string } | null }>
   'release-group'?: {
+    id?: string
     'first-release-date'?: string
     genres?: RawGenre[]
   }
@@ -297,6 +304,7 @@ export async function getReleaseDetails(
 
   return {
     musicbrainzId: release.id,
+    releaseGroupId: release['release-group']?.id ?? null,
     title: release.title,
     artists: albumArtist,
     year: parseYear(release.date),

@@ -1,8 +1,9 @@
-import type { ReleaseDetails, ReleaseTrack } from '@core/services/musicbrainz'
+import type { ReleaseTrack } from '@core/services/musicbrainz'
+import type { AlbumSheet } from '@core/services/albumSheet'
 import { getFormat } from '@core/models/formats'
 
 interface AlbumPreviewProps {
-  details: ReleaseDetails
+  sheet: AlbumSheet
   physicalFormatId: string
   onBack: () => void
   onStartOver: () => void
@@ -25,7 +26,8 @@ function sideHeading(side: string, usesSides: boolean): string | null {
   return usesSides ? `Lado ${side}` : `Disco ${side}`
 }
 
-function AlbumPreview({ details, physicalFormatId, onBack, onStartOver }: AlbumPreviewProps) {
+function AlbumPreview({ sheet, physicalFormatId, onBack, onStartOver }: AlbumPreviewProps) {
+  const { release: details, cover } = sheet
   const format = getFormat(physicalFormatId)
   const usesSides = format?.usesSides ?? false
   const groups = groupBySide(details.tracks)
@@ -39,8 +41,30 @@ function AlbumPreview({ details, physicalFormatId, onBack, onStartOver }: AlbumP
   return (
     <div className="preview">
       <header className="preview-header">
-        <h2>{details.title}</h2>
-        <p className="preview-artist">{details.artists}</p>
+        <div className="cover-slot">
+          {cover ? (
+            <img
+              className="cover-image"
+              src={cover.thumbnailUrl ?? cover.imageUrl}
+              alt={`Portada de ${details.title}`}
+            />
+          ) : (
+            <div className="cover-missing">
+              <span>Sin portada</span>
+              <span>en el catálogo</span>
+            </div>
+          )}
+        </div>
+        <div className="preview-titles">
+          <h2>{details.title}</h2>
+          <p className="preview-artist">{details.artists}</p>
+          {cover && (
+            <p className="cover-source">
+              Portada oficial ·{' '}
+              {cover.source === 'edicion' ? 'de esta edición' : 'de otra edición del álbum'}
+            </p>
+          )}
+        </div>
       </header>
 
       <dl className="preview-facts">
@@ -97,8 +121,7 @@ function AlbumPreview({ details, physicalFormatId, onBack, onStartOver }: AlbumP
       </section>
 
       <p className="hint">
-        Siguiente paso: buscar la portada oficial en Cover Art Archive y los datos curiosos en
-        Wikipedia.
+        Siguiente paso: traer los datos curiosos desde Wikipedia y los videos de cada canción.
       </p>
 
       <footer className="preview-footer">
