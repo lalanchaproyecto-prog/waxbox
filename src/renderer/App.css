@@ -626,6 +626,31 @@ body {
   font-size: 0.8rem;
 }
 
+.excerpt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: #16161c;
+  border-left: 3px solid #6366f1;
+  border-radius: 0 8px 8px 0;
+  padding: 1.1rem 1.25rem;
+}
+
+.excerpt-text {
+  color: #c8c8c8;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.excerpt-source {
+  color: #6d6d6d;
+  font-size: 0.78rem;
+}
+
+.excerpt-source a {
+  color: #8b8bf5;
+}
+
 .tracklist {
   display: flex;
   flex-direction: column;

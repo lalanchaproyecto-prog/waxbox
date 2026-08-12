@@ -14,23 +14,32 @@
 
 import { getReleaseDetails, type ReleaseDetails } from './musicbrainz'
 import { fetchCoverArt, type CoverArt } from './coverart'
+import { fetchAlbumExcerpt, type WikipediaExcerpt } from './wikipedia'
 
 export interface AlbumSheet {
   /** Datos del álbum y su tracklist, desde MusicBrainz. */
   release: ReleaseDetails
   /** Portada oficial del catálogo. Null si el archivo no tiene ninguna. */
   cover: CoverArt | null
+  /** Reseña introductoria del álbum o del artista. Null si no hay artículo. */
+  excerpt: WikipediaExcerpt | null
 }
 
 export async function buildAlbumSheet(
   musicbrainzId: string,
   physicalFormatId: string
 ): Promise<AlbumSheet> {
-  // MusicBrainz primero: además de los datos del álbum, entrega el
-  // identificador que Cover Art Archive necesita para buscar la portada.
+  // MusicBrainz primero: además de los datos del álbum, entrega los
+  // identificadores que las demás fuentes necesitan para buscar lo suyo.
   const release = await getReleaseDetails(musicbrainzId, physicalFormatId)
 
-  const cover = await fetchCoverArt(release.musicbrainzId, release.releaseGroupId)
+  // La portada y la reseña van a servicios distintos, así que se piden a la vez
+  // en vez de una después de la otra. Ninguna puede tumbar la ficha: las dos
+  // devuelven null cuando no encuentran nada.
+  const [cover, excerpt] = await Promise.all([
+    fetchCoverArt(release.musicbrainzId, release.releaseGroupId),
+    fetchAlbumExcerpt(release.releaseGroupId, release.artistId)
+  ])
 
-  return { release, cover }
+  return { release, cover, excerpt }
 }

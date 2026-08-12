@@ -27,7 +27,7 @@ function sideHeading(side: string, usesSides: boolean): string | null {
 }
 
 function AlbumPreview({ sheet, physicalFormatId, onBack, onStartOver }: AlbumPreviewProps) {
-  const { release: details, cover } = sheet
+  const { release: details, cover, excerpt } = sheet
   const format = getFormat(physicalFormatId)
   const usesSides = format?.usesSides ?? false
   const groups = groupBySide(details.tracks)
@@ -91,6 +91,22 @@ function AlbumPreview({ sheet, physicalFormatId, onBack, onStartOver }: AlbumPre
         </div>
       </dl>
 
+      {excerpt && (
+        <section className="excerpt">
+          <h3 className="section-title">
+            {excerpt.about === 'album' ? 'Sobre el álbum' : 'Sobre el artista'}
+          </h3>
+          <p className="excerpt-text">{excerpt.text}</p>
+          <p className="excerpt-source">
+            Fuente: {excerpt.source} ·{' '}
+            {/* Electron abre este enlace en el navegador, no dentro de la app. */}
+            <a href={excerpt.url} target="_blank" rel="noreferrer">
+              Ver artículo completo
+            </a>
+          </p>
+        </section>
+      )}
+
       <section className="tracklist">
         <h3 className="section-title">Tracklist ({details.tracks.length})</h3>
 
@@ -120,9 +136,7 @@ function AlbumPreview({ sheet, physicalFormatId, onBack, onStartOver }: AlbumPre
         })}
       </section>
 
-      <p className="hint">
-        Siguiente paso: traer los datos curiosos desde Wikipedia y los videos de cada canción.
-      </p>
+      <p className="hint">Siguiente paso: buscar el video de cada canción en YouTube.</p>
 
       <footer className="preview-footer">
         <button className="btn btn-ghost" onClick={onBack}>

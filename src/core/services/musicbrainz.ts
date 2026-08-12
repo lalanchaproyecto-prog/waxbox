@@ -69,6 +69,8 @@ export interface ReleaseDetails {
   title: string
   /** Artista principal del álbum. En un compilatorio suele ser "Various Artists". */
   artists: string
+  /** Identificador del artista principal en MusicBrainz, para buscar su reseña. */
+  artistId: string | null
   /** Año de esta edición en particular. */
   year: number | null
   /** Año en que salió el álbum por primera vez. Difiere si esta copia es una reedición. */
@@ -85,6 +87,7 @@ export interface ReleaseDetails {
 interface RawArtistCredit {
   name: string
   joinphrase?: string
+  artist?: { id?: string }
 }
 
 interface RawTrack {
@@ -106,6 +109,11 @@ interface RawMedium {
 interface RawGenre {
   name: string
   count: number
+}
+
+interface RawRelation {
+  type?: string
+  url?: { resource?: string }
 }
 
 interface RawRelease {
@@ -264,6 +272,40 @@ export async function searchReleases(
 }
 
 /**
+ * Busca el identificador de Wikidata asociado a un álbum o a un artista.
+ *
+ * MusicBrainz guarda enlaces a otros sitios, entre ellos Wikidata. Seguir ese
+ * enlace es mucho más confiable que buscar el álbum por su nombre en Wikipedia:
+ * evita confundir discos que se llaman igual o artistas homónimos.
+ *
+ * Devuelve null si no hay enlace, que es un caso normal y no un error.
+ */
+export async function getWikidataId(
+  entity: 'release-group' | 'artist',
+  mbid: string
+): Promise<string | null> {
+  const url = `${API_BASE}/${entity}/${mbid}?fmt=json&inc=url-rels`
+
+  let data: { relations?: RawRelation[] }
+  try {
+    data = await request<{ relations?: RawRelation[] }>(url)
+  } catch {
+    // Que no exista la reseña no debe impedir registrar el disco.
+    return null
+  }
+
+  const wikidataUrl = (data.relations ?? []).find(
+    (relation) => relation.type === 'wikidata'
+  )?.url?.resource
+
+  if (!wikidataUrl) return null
+
+  // El enlace tiene la forma https://www.wikidata.org/wiki/Q5031525
+  const match = /\/(Q\d+)\s*$/.exec(wikidataUrl.trim())
+  return match ? match[1] : null
+}
+
+/**
  * Trae todos los datos de una edición concreta, incluido el tracklist completo.
  *
  * @param physicalFormatId Formato que marcó la persona (vinilo, cd, casete).
@@ -307,6 +349,7 @@ export async function getReleaseDetails(
     releaseGroupId: release['release-group']?.id ?? null,
     title: release.title,
     artists: albumArtist,
+    artistId: release['artist-credit']?.[0]?.artist?.id ?? null,
     year: parseYear(release.date),
     originalYear: parseYear(release['release-group']?.['first-release-date']),
     genres: extractGenres(release),
