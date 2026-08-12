@@ -1,0 +1,45 @@
+{
+  "name": "waxbox",
+  "version": "1.0.0",
+  "description": "Waxbox — tu música, tu historia. Cataloga tu colección de música en formatos físicos.",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu-usuario/waxbox"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/utils": "^4.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "electron": "^35.7.5",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^3.1.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "sql.js": "^1.11.0"
+  },
+  "build": {
+    "appId": "com.waxbox.app",
+    "productName": "Waxbox",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "resources/icon.png"
+    }
+  }
+}

@@ -1,0 +1,407 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  background-color: #0f0f0f;
+  color: #e0e0e0;
+  min-height: 100vh;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+/* ---------- Encabezado ---------- */
+
+.app-header {
+  text-align: center;
+  padding: 2rem 0 1.5rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.logo-icon {
+  font-size: 2.25rem;
+}
+
+.logo h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.slogan {
+  font-size: 1.05rem;
+  color: #9a8cff;
+  font-style: italic;
+}
+
+/* ---------- Zona central ---------- */
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+
+.home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.stats-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 2rem 3rem;
+}
+
+.stat-number {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.stat-label {
+  font-size: 0.95rem;
+  color: #888;
+}
+
+.empty-note {
+  color: #888;
+  font-size: 0.95rem;
+  max-width: 22rem;
+  text-align: center;
+}
+
+/* ---------- Botones ---------- */
+
+.btn {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #6366f1;
+  color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #5558e6;
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: #aaa;
+  border: 1px solid #333;
+}
+
+.btn-ghost:hover {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #8b8bf5;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* ---------- Formulario ---------- */
+
+.add-form {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.add-form-header h2 {
+  font-size: 1.6rem;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.add-form-header p {
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #777;
+}
+
+.section-note {
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: -0.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field-label {
+  font-size: 0.9rem;
+  color: #bbb;
+}
+
+.field input {
+  background: #1a1a1a;
+  border: 1px solid #2f2f2f;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  color: #e0e0e0;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.field input::placeholder {
+  color: #555;
+}
+
+/* ---------- Selector de fotos ---------- */
+
+.photo-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.photo-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.photo-picker-label {
+  font-size: 0.9rem;
+  color: #bbb;
+}
+
+.photo-drop {
+  aspect-ratio: 1;
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px dashed #3a3a3a;
+  border-radius: 10px;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  transition: border-color 0.2s;
+}
+
+.photo-drop:hover {
+  border-color: #6366f1;
+}
+
+.photo-drop.has-image {
+  border-style: solid;
+  border-color: #2f2f2f;
+}
+
+.photo-drop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-drop-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 100%;
+  padding: 1rem;
+}
+
+.photo-drop-icon {
+  font-size: 1.75rem;
+  opacity: 0.5;
+}
+
+.photo-drop-text {
+  font-size: 0.85rem;
+  color: #777;
+  text-align: center;
+}
+
+.photo-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.photo-filename {
+  font-size: 0.8rem;
+  color: #777;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Selector de formato ---------- */
+
+.format-options {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.format-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #1a1a1a;
+  border: 1px solid #2f2f2f;
+  border-radius: 999px;
+  padding: 0.6rem 1.2rem;
+  color: #bbb;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+}
+
+.format-chip:hover {
+  border-color: #4a4a4a;
+}
+
+.format-chip.selected {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.format-icon {
+  font-size: 1.1rem;
+}
+
+.add-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid #1f1f1f;
+  padding-top: 1.25rem;
+}
+
+/* ---------- Resumen de datos capturados ---------- */
+
+.captured {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 1.75rem;
+}
+
+.captured h2 {
+  font-size: 1.3rem;
+  color: #ffffff;
+}
+
+.captured-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem 1.25rem;
+  font-size: 0.95rem;
+}
+
+.captured-list dt {
+  color: #777;
+}
+
+.captured-list dd {
+  color: #e0e0e0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.captured-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* ---------- Pie ---------- */
+
+.app-footer {
+  text-align: center;
+  padding: 1.5rem 0 0.5rem;
+  border-top: 1px solid #1a1a1a;
+}
+
+.app-footer p {
+  font-size: 0.8rem;
+  color: #555;
+}

@@ -1,0 +1,3 @@
+# Normaliza los finales de línea: en el repositorio siempre se guardan como LF,
+# sin importar si quien contribuye trabaja en Windows, Mac o Linux.
+* text=auto eol=lf
