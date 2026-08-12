@@ -37,6 +37,9 @@
     "directories": {
       "output": "dist"
     },
+    "asarUnpack": [
+      "node_modules/sql.js/dist/sql-wasm.wasm"
+    ],
     "win": {
       "target": "nsis",
       "icon": "resources/icon.png"

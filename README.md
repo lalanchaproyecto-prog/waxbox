@@ -87,6 +87,15 @@ YouTube desde la pantalla de Configuración, que incluye una guía paso a paso. 
 opcional: sin ella, todo lo demás funciona igual. La clave se guarda cifrada en tu
 computador y nunca se comparte.
 
+## Créditos
+
+Waxbox es un proyecto de **Proyecto La Lancha**, creado por Fabian Cardenas Perez e
+Ivy Bonilla Guerrero.
+
+Waxbox existe gracias a proyectos de datos abiertos mantenidos por sus comunidades:
+[MusicBrainz](https://musicbrainz.org/), [Cover Art Archive](https://coverartarchive.org/),
+[Wikipedia y Wikidata](https://www.wikidata.org/), y [Deezer](https://developers.deezer.com/api).
+
 ## Licencia
 
 MIT — ver [LICENSE](LICENSE).

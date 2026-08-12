@@ -1305,3 +1305,322 @@ body {
   font-size: 0.8rem;
   color: #555;
 }
+
+.footer-link {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: #555;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: #9a8cff;
+}
+
+/* ---------- Colección ---------- */
+
+.collection {
+  width: 100%;
+  max-width: 900px;
+}
+
+.collection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.collection-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.collection-count {
+  font-size: 0.9rem;
+  color: #8d8a99;
+  margin-top: 0.15rem;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.25rem;
+}
+
+.album-card {
+  background: #16151b;
+  border: 1px solid #262430;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.album-card:hover {
+  border-color: #9a8cff;
+  transform: translateY(-2px);
+}
+
+.album-card-cover {
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #0f0f0f;
+}
+
+.album-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.album-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  opacity: 0.35;
+}
+
+.album-card-info {
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.album-card-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.album-card-artist {
+  font-size: 0.82rem;
+  color: #a09cad;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.album-card-meta {
+  font-size: 0.75rem;
+  color: #6e6a7c;
+  margin-top: 0.2rem;
+}
+
+/* ---------- Botón danger ---------- */
+
+.btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover {
+  background: #ef4444;
+}
+
+.confirm-delete {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: #e0e0e0;
+}
+
+/* ---------- Foto de contraportada ---------- */
+
+.user-photos {
+  text-align: center;
+}
+
+.user-photo-back {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 10px;
+  border: 1px solid #262430;
+}
+
+@media (max-width: 520px) {
+  .collection-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+/* ---------- Acerca de ---------- */
+
+.about {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.about-marca {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 2.5rem 1.5rem 2rem;
+  text-align: center;
+  overflow: hidden;
+  background: #16151b;
+  border: 1px solid #262430;
+  border-radius: 14px;
+}
+
+/* Halo cálido detrás del disco, para que la pantalla no se sienta fría */
+.about-marca::before {
+  content: '';
+  position: absolute;
+  top: -55%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26rem;
+  height: 20rem;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(99, 102, 241, 0.22) 0%,
+    rgba(232, 165, 92, 0.09) 45%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.about-marca > * {
+  position: relative;
+}
+
+.about-disco {
+  width: 4.5rem;
+  height: 4.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.about-marca h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+}
+
+.about-slogan {
+  color: #9a8cff;
+  font-style: italic;
+  font-size: 1.02rem;
+}
+
+.about-version {
+  color: #6e6a7c;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.about-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.about-autoria {
+  background: #16151b;
+  border: 1px solid #262430;
+  border-left: 3px solid #e8a55c;
+  border-radius: 0 12px 12px 0;
+  padding: 1.35rem 1.5rem;
+}
+
+.about-autoria p {
+  color: #c8c6d2;
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.about-autoria strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.about-intro {
+  color: #8d8a99;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.about-fuentes {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  width: 100%;
+}
+
+.about-fuentes li {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid #1e1e24;
+}
+
+.about-fuentes a {
+  color: #9a8cff;
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+
+.about-fuentes a:hover {
+  text-decoration: underline;
+}
+
+.about-fuentes span {
+  color: #8d8a99;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.about-bloque .btn {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.about-footer {
+  display: flex;
+  border-top: 1px solid #1f1f1f;
+  padding-top: 1.25rem;
+}
+
+@media (max-width: 520px) {
+  .about-fuentes li {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}

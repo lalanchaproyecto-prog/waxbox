@@ -1,7 +1,14 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, protocol, net, shell } from 'electron'
 import { join } from 'path'
+import { pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc'
+import { openDatabase, closeDatabase } from './database'
+import { getPhotosDir } from './photos'
+
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'waxbox-photo', privileges: { standard: true, secure: true } }
+])
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -33,10 +40,21 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.waxbox.app')
 
-  // Deja listas las consultas a MusicBrainz para cuando la interfaz las pida.
+  await openDatabase()
+
+  protocol.handle('waxbox-photo', (request) => {
+    const raw = request.url.slice('waxbox-photo://'.length)
+    const filename = decodeURIComponent(raw).replace(/^\/+/, '')
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return new Response('Forbidden', { status: 403 })
+    }
+    const filePath = join(getPhotosDir(), filename)
+    return net.fetch(pathToFileURL(filePath).href)
+  })
+
   registerIpcHandlers()
 
   app.on('browser-window-created', (_, window) => {
@@ -52,6 +70,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+    closeDatabase()
     app.quit()
   }
 })

@@ -4,6 +4,7 @@ import type { SettingsStatus } from '@core/models/settings'
 interface SettingsScreenProps {
   status: SettingsStatus
   onStatusChange: (status: SettingsStatus) => void
+  onOpenAbout: () => void
   onBack: () => void
 }
 
@@ -16,7 +17,12 @@ type Feedback = { kind: 'ok' | 'error'; message: string } | null
  * la prueba contra YouTube, para no dejar guardada una clave que no sirve.
  * La clave se guarda cifrada en este computador y nunca se envía a ningún lado.
  */
-function SettingsScreen({ status, onStatusChange, onBack }: SettingsScreenProps) {
+function SettingsScreen({
+  status,
+  onStatusChange,
+  onOpenAbout,
+  onBack
+}: SettingsScreenProps) {
   const [apiKey, setApiKey] = useState('')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<Feedback>(null)
@@ -185,6 +191,21 @@ function SettingsScreen({ status, onStatusChange, onBack }: SettingsScreenProps)
             </p>
           </div>
         )}
+      </section>
+
+      <section className="setting-block">
+        <div className="setting-title-row">
+          <h3>Acerca de Waxbox</h3>
+        </div>
+        <p className="setting-description">
+          Quién hizo Waxbox, qué versión tienes instalada y de dónde salen los datos de tus
+          discos.
+        </p>
+        <div className="setting-actions">
+          <button className="btn btn-ghost" onClick={onOpenAbout}>
+            Ver información del proyecto
+          </button>
+        </div>
       </section>
 
       <footer className="settings-footer">

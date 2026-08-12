@@ -2,14 +2,18 @@ import { useEffect, useState } from 'react'
 import type { ReleaseCandidate } from '@core/services/musicbrainz'
 import type { AlbumSheet } from '@core/services/albumSheet'
 import type { SettingsStatus } from '@core/models/settings'
+import type { AlbumSummary, SavedAlbum } from '@core/database/db'
+import { APP_VERSION } from '@core/config'
 import type { EditableAlbum } from '@core/albumDraft'
 import { draftFromSheet } from '@core/albumDraft'
 import AddAlbumForm, { type AlbumDraft } from './components/AddAlbumForm'
 import ReleasePicker from './components/ReleasePicker'
 import AlbumReview from './components/AlbumReview'
+import CollectionScreen from './components/CollectionScreen'
 import SettingsScreen from './components/SettingsScreen'
+import AboutScreen from './components/AboutScreen'
 
-type View = 'home' | 'add' | 'results' | 'details' | 'settings'
+type View = 'home' | 'add' | 'results' | 'details' | 'settings' | 'about' | 'saved'
 
 function App() {
   const [view, setView] = useState<View>('home')
@@ -19,18 +23,23 @@ function App() {
   })
   const [draft, setDraft] = useState<AlbumDraft | null>(null)
   const [candidates, setCandidates] = useState<ReleaseCandidate[]>([])
-  // La ficha editable: lo que trajeron las fuentes, más lo que la persona corrija.
   const [album, setAlbum] = useState<EditableAlbum | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Al abrir la app se consulta si ya hay clave de YouTube configurada.
-  // Nunca se pide la clave en sí, solo si existe.
+  const [collection, setCollection] = useState<AlbumSummary[]>([])
+  const [savedAlbum, setSavedAlbum] = useState<SavedAlbum | null>(null)
+
   useEffect(() => {
     window.api.getSettingsStatus().then(setSettings)
+    refreshCollection()
   }, [])
 
-  /** Paso 1: con lo que escribió la persona, buscar ediciones en MusicBrainz. */
+  async function refreshCollection(): Promise<void> {
+    const result = await window.api.listAlbums()
+    if (result.ok) setCollection(result.data)
+  }
+
   async function handleSearch(newDraft: AlbumDraft) {
     setDraft(newDraft)
     setError(null)
@@ -54,7 +63,6 @@ function App() {
     setView('results')
   }
 
-  /** Paso 2: con la edición elegida, armar la ficha completa del álbum. */
   async function handlePick(candidate: ReleaseCandidate) {
     if (!draft) return
     setError(null)
@@ -68,10 +76,67 @@ function App() {
       return
     }
 
-    // Lo que dijeron las fuentes se convierte en una ficha editable, para que
-    // la persona pueda corregir cualquier dato antes de guardar.
     setAlbum(draftFromSheet(result.data, draft.format))
     setView('details')
+  }
+
+  async function handleSave() {
+    if (!album) return
+    setError(null)
+    setLoading('Guardando en tu colección...')
+
+    const photoPaths = {
+      front: draft?.coverFront ? (draft.coverFront as unknown as { path: string }).path : null,
+      back: draft?.coverBack ? (draft.coverBack as unknown as { path: string }).path : null
+    }
+
+    const result = await window.api.saveAlbum(album, photoPaths)
+    setLoading(null)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+
+    await refreshCollection()
+    startOver()
+  }
+
+  async function handleOpenSaved(albumId: number) {
+    setError(null)
+    setLoading('Cargando disco...')
+
+    const result = await window.api.getAlbum(albumId)
+    setLoading(null)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+    if (!result.data) {
+      setError('No se encontró el disco.')
+      return
+    }
+
+    setSavedAlbum(result.data)
+    setView('saved')
+  }
+
+  async function handleDeleteSaved() {
+    if (!savedAlbum) return
+    setLoading('Borrando...')
+
+    const result = await window.api.deleteAlbum(savedAlbum.id)
+    setLoading(null)
+
+    if (!result.ok) {
+      setError(result.error)
+      return
+    }
+
+    setSavedAlbum(null)
+    await refreshCollection()
+    setView('home')
   }
 
   function startOver() {
@@ -81,6 +146,8 @@ function App() {
     setError(null)
     setView('home')
   }
+
+  const hasAlbums = collection.length > 0
 
   return (
     <div className="app">
@@ -114,7 +181,7 @@ function App() {
           </div>
         )}
 
-        {!loading && !error && view === 'home' && (
+        {!loading && !error && view === 'home' && !hasAlbums && (
           <div className="home">
             <div className="stats-card">
               <span className="stat-number">0</span>
@@ -140,12 +207,51 @@ function App() {
           </div>
         )}
 
+        {!loading && !error && view === 'home' && hasAlbums && (
+          <CollectionScreen
+            albums={collection}
+            onOpen={handleOpenSaved}
+            onAdd={() => setView('add')}
+          />
+        )}
+
+        {!loading && !error && view === 'saved' && savedAlbum && (
+          <AlbumReview
+            album={{
+              ...savedAlbum,
+              musicbrainzId: savedAlbum.musicbrainzId ?? '',
+              userCoverFront: savedAlbum.userCoverFront
+                ? `waxbox-photo://${savedAlbum.userCoverFront}`
+                : null,
+              userCoverBack: savedAlbum.userCoverBack
+                ? `waxbox-photo://${savedAlbum.userCoverBack}`
+                : null,
+              tracks: savedAlbum.tracks.map((t) => ({
+                ...t,
+                userEditedFields: t.userEditedFields
+              }))
+            }}
+            onChange={() => {}}
+            youtubeConfigured={settings.youtubeConfigured}
+            onOpenSettings={() => setView('settings')}
+            onBack={() => setView('home')}
+            onStartOver={startOver}
+            savedMode
+            onDelete={handleDeleteSaved}
+          />
+        )}
+
         {!loading && !error && view === 'settings' && (
           <SettingsScreen
             status={settings}
             onStatusChange={setSettings}
+            onOpenAbout={() => setView('about')}
             onBack={() => setView('home')}
           />
+        )}
+
+        {!loading && !error && view === 'about' && (
+          <AboutScreen onBack={() => setView('settings')} />
         )}
 
         {!loading && !error && view === 'add' && (
@@ -172,12 +278,15 @@ function App() {
             onOpenSettings={() => setView('settings')}
             onBack={() => setView('results')}
             onStartOver={startOver}
+            onSave={handleSave}
           />
         )}
       </main>
 
       <footer className="app-footer">
-        <p>Waxbox v1.0.0 — Open Source</p>
+        <button className="footer-link" onClick={() => setView('about')}>
+          Waxbox v{APP_VERSION} — un proyecto de Proyecto La Lancha
+        </button>
       </footer>
     </div>
   )

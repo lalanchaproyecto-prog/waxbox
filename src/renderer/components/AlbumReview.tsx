@@ -7,14 +7,15 @@ import TrackDetail from './TrackDetail'
 interface AlbumReviewProps {
   album: EditableAlbum
   onChange: (album: EditableAlbum) => void
-  /** Si hay clave de YouTube configurada. Es un extra, no lo esencial. */
   youtubeConfigured: boolean
   onOpenSettings: () => void
   onBack: () => void
   onStartOver: () => void
+  onSave?: () => void
+  savedMode?: boolean
+  onDelete?: () => void
 }
 
-/** Agrupa las canciones por lado o disco, conservando el orden. */
 function groupBySide(tracks: EditableTrack[]): Array<[string, EditableTrack[]]> {
   const groups = new Map<string, EditableTrack[]>()
   for (const track of tracks) {
@@ -25,26 +26,21 @@ function groupBySide(tracks: EditableTrack[]): Array<[string, EditableTrack[]]> 
   return [...groups.entries()]
 }
 
-/** Título del grupo: "Lado A" en vinilo y casete, "Disco 1" en CD. */
 function sideHeading(side: string, usesSides: boolean): string | null {
   if (side === 'N/A') return null
   return usesSides ? `Lado ${side}` : `Disco ${side}`
 }
 
-/**
- * Pantalla de revisión: lo último que ve la persona antes de guardar.
- *
- * Todo lo que trajeron las fuentes automáticas se puede corregir aquí, y lo
- * que ella escriba queda marcado como suyo. Corregir es opcional: si los datos
- * están bien, guarda y listo.
- */
 function AlbumReview({
   album,
   onChange,
   youtubeConfigured,
   onOpenSettings,
   onBack,
-  onStartOver
+  onStartOver,
+  onSave,
+  savedMode,
+  onDelete
 }: AlbumReviewProps) {
   const format = getFormat(album.format)
   const usesSides = format?.usesSides ?? false
@@ -53,9 +49,8 @@ function AlbumReview({
   const [editingAlbum, setEditingAlbum] = useState(false)
   const [form, setForm] = useState<EditableAlbum>(album)
   const [openTrack, setOpenTrack] = useState<number | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
-  // Un solo reproductor para todo el álbum: al darle play a una canción, la
-  // anterior se detiene sola.
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playingKey, setPlayingKey] = useState<string | null>(null)
   const [busyKey, setBusyKey] = useState<string | null>(null)
@@ -103,7 +98,6 @@ function AlbumReview({
       return next
     })
 
-    // La dirección del audio se pide ahora: las de Deezer caducan a las horas.
     const result = await window.api.getPreviewUrl(track.deezer.trackId)
     setBusyKey(null)
 
@@ -134,7 +128,6 @@ function AlbumReview({
   const withPreview = album.tracks.filter((track) => track.deezer).length
   const openTrackData = openTrack !== null ? album.tracks[openTrack] : null
 
-  /** Marca discreta para los datos que escribió la persona. */
   function editedMark(field: string) {
     if (!wasEditedByUser(album.userEditedFields, field)) return null
     return (
@@ -144,14 +137,16 @@ function AlbumReview({
     )
   }
 
+  const coverToShow = album.userCoverFront ?? album.canonicalCover
+
   return (
     <div className="preview">
       <header className="preview-header">
         <div className="cover-slot">
-          {album.canonicalCover ? (
+          {coverToShow ? (
             <img
               className="cover-image"
-              src={album.canonicalCover}
+              src={coverToShow}
               alt={`Portada de ${album.title}`}
             />
           ) : (
@@ -182,10 +177,21 @@ function AlbumReview({
         </div>
       </header>
 
+      {savedMode && album.userCoverBack && (
+        <section className="review-block user-photos">
+          <h3 className="section-title">Tu contraportada</h3>
+          <img
+            className="user-photo-back"
+            src={album.userCoverBack}
+            alt="Contraportada de tu copia"
+          />
+        </section>
+      )}
+
       <section className="review-block">
         <div className="review-block-head">
           <h3 className="section-title">Datos del álbum</h3>
-          {!editingAlbum && (
+          {!savedMode && !editingAlbum && (
             <button
               className="btn-link"
               onClick={() => {
@@ -321,8 +327,9 @@ function AlbumReview({
           {withPreview > 0
             ? `Puedes escuchar 30 segundos de ${withPreview} de las ${album.tracks.length} canciones, cortesía de Deezer.`
             : 'Deezer no tiene adelantos de las canciones de este álbum.'}{' '}
-          Haz clic en una canción para ver sus créditos y corregirlos.
-          {!youtubeConfigured && (
+          {!savedMode && 'Haz clic en una canción para ver sus créditos y corregirlos.'}
+          {savedMode && 'Haz clic en una canción para ver sus créditos.'}
+          {!youtubeConfigured && !savedMode && (
             <>
               {' '}
               Si quieres ver el video completo,{' '}
@@ -392,17 +399,47 @@ function AlbumReview({
         })}
       </section>
 
-      <p className="hint">
-        Siguiente paso: guardar el disco en tu colección. Esa parte llega con la base de datos.
-      </p>
-
       <footer className="preview-footer">
-        <button className="btn btn-ghost" onClick={onBack}>
-          Elegir otra edición
-        </button>
-        <button className="btn btn-primary" onClick={onStartOver}>
-          Empezar de nuevo
-        </button>
+        {savedMode ? (
+          <>
+            <button className="btn btn-ghost" onClick={onBack}>
+              Volver a la colección
+            </button>
+            {!confirmDelete ? (
+              <button
+                className="btn btn-danger"
+                onClick={() => setConfirmDelete(true)}
+              >
+                Borrar de mi colección
+              </button>
+            ) : (
+              <div className="confirm-delete">
+                <span>¿Seguro que quieres borrarlo?</span>
+                <button className="btn btn-ghost" onClick={() => setConfirmDelete(false)}>
+                  No
+                </button>
+                <button className="btn btn-danger" onClick={onDelete}>
+                  Sí, borrar
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <button className="btn btn-ghost" onClick={onBack}>
+              Elegir otra edición
+            </button>
+            {onSave ? (
+              <button className="btn btn-primary" onClick={onSave}>
+                Guardar en mi colección
+              </button>
+            ) : (
+              <button className="btn btn-primary" onClick={onStartOver}>
+                Empezar de nuevo
+              </button>
+            )}
+          </>
+        )}
       </footer>
 
       {openTrackData && openTrack !== null && (
@@ -418,11 +455,6 @@ function AlbumReview({
   )
 }
 
-/**
- * Botón extra para ver el video completo en YouTube.
- * Solo aparece si la persona configuró su clave; busca al pulsarlo, porque
- * cada búsqueda gasta cuota de su cuenta.
- */
 function YouTubeLink({ artist, title }: { artist: string; title: string }) {
   const [busy, setBusy] = useState(false)
 

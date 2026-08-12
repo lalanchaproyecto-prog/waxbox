@@ -1,14 +1,3 @@
-/**
- * Puente entre la interfaz y la lógica de negocio.
- *
- * La ventana (el "renderer") no puede consultar MusicBrainz directamente: los
- * navegadores prohíben fijar la cabecera User-Agent, que es justo lo que
- * MusicBrainz exige para identificar a la aplicación. Por eso las consultas
- * salen desde acá, del proceso principal, que es Node y sí puede fijarla.
- *
- * Este archivo solo traduce llamadas: toda la lógica real vive en src/core.
- */
-
 import { ipcMain } from 'electron'
 import {
   searchReleases,
@@ -28,10 +17,33 @@ import {
   isEncryptionAvailable
 } from './settings'
 import type { SettingsStatus } from '../core/models/settings'
+import { getDatabase, persist } from './database'
+import { copyPhoto, deletePhoto } from './photos'
+import {
+  saveAlbum,
+  listAlbums,
+  getAlbum,
+  deleteAlbum,
+  albumCount,
+  type AlbumSummary,
+  type SavedAlbum
+} from '../core/database/db'
+import type { EditableAlbum } from '../core/albumDraft'
 
 async function attempt<T>(operation: () => Promise<T>): Promise<Result<T>> {
   try {
     return { ok: true, data: await operation() }
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Ocurrió un error inesperado.'
+    console.error('[waxbox]', error)
+    return { ok: false, error: message }
+  }
+}
+
+function attemptSync<T>(operation: () => T): Result<T> {
+  try {
+    return { ok: true, data: operation() }
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Ocurrió un error inesperado.'
@@ -68,8 +80,6 @@ export function registerIpcHandlers(): void {
   )
 
   // --- Deezer ------------------------------------------------------------
-  // La dirección del audio caduca a las pocas horas, así que se pide una nueva
-  // justo cuando se va a reproducir, a partir del identificador guardado.
 
   ipcMain.handle(
     'deezer:previewUrl',
@@ -78,8 +88,6 @@ export function registerIpcHandlers(): void {
   )
 
   // --- Configuración -----------------------------------------------------
-  // La clave de YouTube nunca sale del proceso principal: a la ventana solo se
-  // le dice si hay una configurada o no.
 
   ipcMain.handle('settings:status', (): SettingsStatus => ({
     youtubeConfigured: hasYoutubeApiKey(),
@@ -89,8 +97,6 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(
     'settings:saveYoutubeKey',
     async (_event, apiKey: string): Promise<Result<SettingsStatus>> => {
-      // Se comprueba contra YouTube antes de guardar, para no dejar guardada
-      // una clave que no sirve.
       const check = await checkApiKey(apiKey)
       if (!check.ok) return { ok: false, error: check.reason }
 
@@ -128,5 +134,61 @@ export function registerIpcHandlers(): void {
         }
         return searchTrackVideo(apiKey, artist, trackTitle)
       })
+  )
+
+  // --- Colección ---------------------------------------------------------
+
+  ipcMain.handle(
+    'collection:save',
+    (
+      _event,
+      album: EditableAlbum,
+      photoPaths: { front: string | null; back: string | null }
+    ): Result<{ id: number }> =>
+      attemptSync(() => {
+        const db = getDatabase()
+
+        const photos = {
+          front: photoPaths.front ? copyPhoto(photoPaths.front) : null,
+          back: photoPaths.back ? copyPhoto(photoPaths.back) : null
+        }
+
+        const id = saveAlbum(db, album, photos)
+        persist()
+        return { id }
+      })
+  )
+
+  ipcMain.handle(
+    'collection:list',
+    (): Result<AlbumSummary[]> =>
+      attemptSync(() => listAlbums(getDatabase()))
+  )
+
+  ipcMain.handle(
+    'collection:get',
+    (_event, albumId: number): Result<SavedAlbum | null> =>
+      attemptSync(() => getAlbum(getDatabase(), albumId))
+  )
+
+  ipcMain.handle(
+    'collection:delete',
+    (_event, albumId: number): Result<void> =>
+      attemptSync(() => {
+        const db = getDatabase()
+        const album = getAlbum(db, albumId)
+        if (album) {
+          if (album.userCoverFront) deletePhoto(album.userCoverFront)
+          if (album.userCoverBack) deletePhoto(album.userCoverBack)
+          deleteAlbum(db, albumId)
+          persist()
+        }
+      })
+  )
+
+  ipcMain.handle(
+    'collection:count',
+    (): Result<number> =>
+      attemptSync(() => albumCount(getDatabase()))
   )
 }
