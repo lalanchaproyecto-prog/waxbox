@@ -15,6 +15,7 @@
 import { USER_AGENT, MUSICBRAINZ_MIN_INTERVAL_MS } from '../config'
 import { createRateLimiter } from './rateLimiter'
 import { formatUsesSides } from '../models/formats'
+import type { Credit } from '../models/credits'
 
 const API_BASE = 'https://musicbrainz.org/ws/2'
 
@@ -56,6 +57,15 @@ export interface ReleaseTrack {
   title: string
   /** Duración legible, por ejemplo "4:26". Null si MusicBrainz no la tiene. */
   duration: string | null
+  /**
+   * Quiénes participaron en la canción: compositor, letrista, productor,
+   * ingeniero, músicos.
+   *
+   * Puede venir vacío, y es lo normal en discos poco conocidos: estos datos los
+   * carga la comunidad de MusicBrainz a mano, así que la cobertura es despareja.
+   * No es un error.
+   */
+  credits: Credit[]
 }
 
 export interface ReleaseDetails {
@@ -90,6 +100,22 @@ interface RawArtistCredit {
   artist?: { id?: string }
 }
 
+/**
+ * Una relación de MusicBrainz. Sirve tanto para las de la grabación
+ * (productor, ingeniero, músicos) como para las de la obra (compositor, letrista).
+ */
+interface RawCreditRelation {
+  type?: string
+  'target-type'?: string
+  artist?: { name?: string }
+  /** Detalle: instrumentos tocados, tipo de voz, si fue asistente. */
+  attributes?: string[]
+  work?: {
+    title?: string
+    relations?: RawCreditRelation[]
+  }
+}
+
 interface RawTrack {
   position: number
   /** Numeración impresa en el disco: "1", "A1", "C4"... */
@@ -98,6 +124,9 @@ interface RawTrack {
   /** Duración en milisegundos. */
   length: number | null
   'artist-credit'?: RawArtistCredit[]
+  recording?: {
+    relations?: RawCreditRelation[]
+  }
 }
 
 interface RawMedium {
@@ -208,6 +237,69 @@ function parseTrackNumber(
     sideLabel: null,
     number: onlyDigits ? Number.parseInt(onlyDigits[1], 10) : position
   }
+}
+
+/**
+ * Extrae los créditos de una canción, de sus dos niveles.
+ *
+ * Las relaciones de la grabación dan productor, ingeniero y músicos. Dentro de
+ * ellas viene una relación hacia la "obra", y ahí están compositor y letrista.
+ *
+ * Se descartan las relaciones sin artista: MusicBrainz también usa relaciones
+ * para cosas como "revision of", que enlazan obras entre sí y no son créditos.
+ */
+function extractCredits(relations: RawCreditRelation[] | undefined): Credit[] {
+  const credits: Credit[] = []
+
+  function add(relation: RawCreditRelation): void {
+    const artist = relation.artist?.name?.trim()
+    if (!artist || !relation.type) return
+
+    const attributes = (relation.attributes ?? []).filter(Boolean)
+
+    credits.push({
+      role: relation.type,
+      artist,
+      detail: attributes.length > 0 ? attributes.join(', ') : null,
+      source: 'musicbrainz'
+    })
+  }
+
+  for (const relation of relations ?? []) {
+    if (relation['target-type'] === 'work') {
+      // Los créditos de composición cuelgan de la obra, no de la grabación.
+      for (const workRelation of relation.work?.relations ?? []) {
+        add(workRelation)
+      }
+      continue
+    }
+    add(relation)
+  }
+
+  // MusicBrainz repite a la misma persona cuando tocó varias cosas
+  // (por ejemplo Nick Mason en "percussion" y en "tape"). Se juntan en una
+  // sola línea para que la ficha se lea limpia.
+  const merged = new Map<string, Credit>()
+  for (const credit of credits) {
+    const key = `${credit.role}::${credit.artist}`
+    const existing = merged.get(key)
+
+    if (!existing) {
+      merged.set(key, { ...credit })
+      continue
+    }
+    if (credit.detail && existing.detail !== credit.detail) {
+      const parts = new Set([
+        ...(existing.detail?.split(', ') ?? []),
+        ...credit.detail.split(', ')
+      ])
+      existing.detail = [...parts].join(', ')
+    } else if (credit.detail && !existing.detail) {
+      existing.detail = credit.detail
+    }
+  }
+
+  return [...merged.values()]
 }
 
 /** Toma los géneros del álbum. MusicBrainz suele tenerlos en el "release-group". */
@@ -395,7 +487,22 @@ export async function getReleaseDetails(
   musicbrainzId: string,
   physicalFormatId: string
 ): Promise<ReleaseDetails> {
-  const inc = 'artist-credits+labels+recordings+release-groups+genres'
+  // Se pide todo de una vez, en una sola consulta:
+  //   recording-level-rels -> productor, ingeniero, músicos de cada grabación
+  //   work-rels            -> el enlace de la grabación hacia la obra
+  //   work-level-rels      -> compositor y letrista, que cuelgan de la obra
+  //   artist-rels          -> los nombres de quienes participaron
+  const inc = [
+    'artist-credits',
+    'labels',
+    'recordings',
+    'release-groups',
+    'genres',
+    'recording-level-rels',
+    'work-rels',
+    'work-level-rels',
+    'artist-rels'
+  ].join('+')
   const url = `${API_BASE}/release/${musicbrainzId}?fmt=json&inc=${inc}`
 
   const release = await request<RawRelease>(url)
@@ -419,7 +526,8 @@ export async function getReleaseDetails(
         side,
         number,
         title: track.title,
-        duration: formatDuration(track.length)
+        duration: formatDuration(track.length),
+        credits: extractCredits(track.recording?.relations)
       })
     }
   }

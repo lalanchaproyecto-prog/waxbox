@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import type { ReleaseCandidate } from '@core/services/musicbrainz'
 import type { AlbumSheet } from '@core/services/albumSheet'
 import type { SettingsStatus } from '@core/models/settings'
+import type { EditableAlbum } from '@core/albumDraft'
+import { draftFromSheet } from '@core/albumDraft'
 import AddAlbumForm, { type AlbumDraft } from './components/AddAlbumForm'
 import ReleasePicker from './components/ReleasePicker'
-import AlbumPreview from './components/AlbumPreview'
+import AlbumReview from './components/AlbumReview'
 import SettingsScreen from './components/SettingsScreen'
 
 type View = 'home' | 'add' | 'results' | 'details' | 'settings'
@@ -17,7 +19,8 @@ function App() {
   })
   const [draft, setDraft] = useState<AlbumDraft | null>(null)
   const [candidates, setCandidates] = useState<ReleaseCandidate[]>([])
-  const [sheet, setSheet] = useState<AlbumSheet | null>(null)
+  // La ficha editable: lo que trajeron las fuentes, más lo que la persona corrija.
+  const [album, setAlbum] = useState<EditableAlbum | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -65,14 +68,16 @@ function App() {
       return
     }
 
-    setSheet(result.data)
+    // Lo que dijeron las fuentes se convierte en una ficha editable, para que
+    // la persona pueda corregir cualquier dato antes de guardar.
+    setAlbum(draftFromSheet(result.data, draft.format))
     setView('details')
   }
 
   function startOver() {
     setDraft(null)
     setCandidates([])
-    setSheet(null)
+    setAlbum(null)
     setError(null)
     setView('home')
   }
@@ -159,10 +164,10 @@ function App() {
           />
         )}
 
-        {!loading && !error && view === 'details' && sheet && draft && (
-          <AlbumPreview
-            sheet={sheet}
-            physicalFormatId={draft.format}
+        {!loading && !error && view === 'details' && album && (
+          <AlbumReview
+            album={album}
+            onChange={setAlbum}
             youtubeConfigured={settings.youtubeConfigured}
             onOpenSettings={() => setView('settings')}
             onBack={() => setView('results')}

@@ -1002,6 +1002,297 @@ body {
   font-size: 0.78rem;
 }
 
+/* ---------- Edición de datos ---------- */
+
+.review-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.review-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+  background: #16161a;
+  border: 1px solid #262626;
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.edit-grid textarea {
+  background: #1a1a1a;
+  border: 1px solid #2f2f2f;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  color: #e0e0e0;
+  font-size: 0.92rem;
+  font-family: inherit;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.edit-grid textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/** Marca discreta de "esto lo escribiste tú". */
+.edited-mark {
+  color: #6366f1;
+  font-size: 0.7em;
+  margin-left: 0.35rem;
+  vertical-align: super;
+}
+
+/* ---------- Canción como botón ---------- */
+
+.track-open {
+  background: none;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.track-open:hover .track-title {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.track-credits-count {
+  color: #5f5f5f;
+  font-size: 0.75rem;
+}
+
+/* ---------- Ventana de detalle ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  z-index: 50;
+}
+
+.modal {
+  width: 100%;
+  max-width: 620px;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: #16161a;
+  border: 1px solid #2c2c2c;
+  border-radius: 14px;
+  padding: 1.75rem;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.modal-header h2 {
+  font-size: 1.35rem;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.modal-title-input {
+  background: #1a1a1a;
+  border: 1px solid #2f2f2f;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-family: inherit;
+  width: 100%;
+}
+
+.modal-subtitle {
+  color: #9a8cff;
+  font-size: 0.92rem;
+  margin-top: 0.25rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #777;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.modal-close:hover {
+  color: #ddd;
+  background: #232323;
+}
+
+.detail-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.9rem;
+  background: #101014;
+  border-radius: 8px;
+  padding: 1rem 1.15rem;
+}
+
+.detail-facts dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6f6f6f;
+  margin-bottom: 0.2rem;
+}
+
+.detail-facts dd {
+  color: #e0e0e0;
+  font-size: 0.92rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid #232323;
+  padding-top: 1.1rem;
+}
+
+/* ---------- Créditos ---------- */
+
+.credits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.credits-empty {
+  color: #6f6f6f;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.credit-group {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+.credit-role {
+  color: #8d8dc0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.credit-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.credit-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #ddd;
+  font-size: 0.9rem;
+}
+
+.credit-person:not(:last-child)::after {
+  content: '·';
+  color: #444;
+  margin-left: 0.3rem;
+}
+
+.credit-detail {
+  color: #7d7d7d;
+  font-size: 0.8rem;
+  font-style: normal;
+}
+
+.credit-mine {
+  color: #6366f1;
+  font-size: 0.7rem;
+}
+
+.credit-remove {
+  background: none;
+  border: none;
+  color: #7a4a4a;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0 0.15rem;
+}
+
+.credit-remove:hover {
+  color: #e07070;
+}
+
+.credit-add {
+  display: grid;
+  grid-template-columns: 9rem 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  background: #101014;
+  border-radius: 8px;
+  padding: 0.85rem;
+}
+
+.credit-add select,
+.credit-add input {
+  background: #1a1a1a;
+  border: 1px solid #2f2f2f;
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.credit-add select:focus,
+.credit-add input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.credit-add .btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
 /* ---------- Pie ---------- */
 
 .app-footer {
