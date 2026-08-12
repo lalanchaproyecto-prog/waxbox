@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { EditableAlbum, EditableTrack } from '@core/albumDraft'
 import { markEdited, wasEditedByUser } from '@core/albumDraft'
 import { getFormat } from '@core/models/formats'
+import { CONDITIONS, conditionLabel } from '@core/models/condition'
+import type { ConditionId } from '@core/models/condition'
 import TrackDetail from './TrackDetail'
 
 interface AlbumReviewProps {
@@ -398,6 +400,51 @@ function AlbumReview({
           )
         })}
       </section>
+
+      {!savedMode && onSave && (
+        <section className="review-block your-copy">
+          <h3 className="section-title">Tu copia</h3>
+          <p className="setting-description">
+            ¿En qué estado está tu disco, casete o CD? Es opcional — si no lo sabes
+            ahora, puedes dejarlo sin evaluar.
+          </p>
+          <div className="condition-options" role="radiogroup" aria-label="Estado de conservación">
+            {CONDITIONS.map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                role="radio"
+                aria-checked={album.condition === opt.id}
+                className={`condition-chip${album.condition === opt.id ? ' selected' : ''}`}
+                onClick={() => onChange({ ...album, condition: opt.id })}
+              >
+                {opt.label}
+              </button>
+            ))}
+            {album.condition && (
+              <button
+                type="button"
+                className="btn-link"
+                onClick={() => onChange({ ...album, condition: null })}
+              >
+                Sin evaluar
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
+      {savedMode && (
+        <section className="review-block">
+          <h3 className="section-title">Tu copia</h3>
+          <dl className="preview-facts">
+            <div>
+              <dt>Estado</dt>
+              <dd>{conditionLabel(album.condition)}</dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       <footer className="preview-footer">
         {savedMode ? (

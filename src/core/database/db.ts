@@ -1,10 +1,11 @@
 import type { Database, SqlValue } from 'sql.js'
 import type { EditableAlbum, EditableTrack } from '../albumDraft'
 import type { PhysicalFormatId } from '../models/formats'
+import type { ConditionId } from '../models/condition'
 import type { Credit } from '../models/credits'
 import type { ArtistLink } from '../services/musicbrainz'
 import type { DeezerTrackRef } from '../services/deezer'
-import { SCHEMA } from './schema'
+import { SCHEMA, MIGRATIONS } from './schema'
 
 export interface AlbumSummary {
   id: number
@@ -14,6 +15,7 @@ export interface AlbumSummary {
   year: number | null
   genres: string[]
   label: string | null
+  condition: ConditionId | null
   userCoverFront: string | null
   canonicalCover: string | null
   trackCount: number
@@ -39,6 +41,8 @@ export interface SavedAlbum {
   year: number | null
   genres: string[]
   label: string | null
+  condition: ConditionId | null
+  notes: string | null
   userCoverFront: string | null
   userCoverBack: string | null
   canonicalCover: string | null
@@ -55,6 +59,32 @@ export interface SavedAlbum {
 
 export function initSchema(db: Database): void {
   db.exec(SCHEMA)
+  runMigrations(db)
+}
+
+function getSchemaVersion(db: Database): number {
+  const rows = db.exec('PRAGMA user_version')
+  return (rows[0]?.values[0]?.[0] as number) ?? 0
+}
+
+function setSchemaVersion(db: Database, version: number): void {
+  db.run(`PRAGMA user_version = ${version}`)
+}
+
+function runMigrations(db: Database): void {
+  const current = getSchemaVersion(db)
+
+  for (const migration of MIGRATIONS) {
+    if (migration.version <= current) continue
+    for (const sql of migration.sql) {
+      try {
+        db.run(sql)
+      } catch {
+        // Column already exists — safe to ignore
+      }
+    }
+    setSchemaVersion(db, migration.version)
+  }
 }
 
 function lastId(db: Database): number {
@@ -88,8 +118,9 @@ export function saveAlbum(
         (format, artists, title, year, genres, label,
          user_cover_front, user_cover_back, canonical_cover,
          description, description_source, description_url,
-         musicbrainz_id, artist_links, user_edited_fields)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+         musicbrainz_id, artist_links, user_edited_fields,
+         condition, notes)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         album.format,
         album.artists,
@@ -105,7 +136,9 @@ export function saveAlbum(
         album.descriptionUrl,
         album.musicbrainzId,
         jsonOrEmpty(album.artistLinks),
-        jsonOrEmpty(album.userEditedFields)
+        jsonOrEmpty(album.userEditedFields),
+        album.condition,
+        album.notes
       ]
     )
 
@@ -159,7 +192,7 @@ function insertTrack(db: Database, albumId: number, track: EditableTrack): void 
 export function listAlbums(db: Database): AlbumSummary[] {
   const rows = db.exec(
     `SELECT a.id, a.format, a.artists, a.title, a.year, a.genres, a.label,
-            a.user_cover_front, a.canonical_cover, a.created_at,
+            a.condition, a.user_cover_front, a.canonical_cover, a.created_at,
             (SELECT COUNT(*) FROM tracks t WHERE t.album_id = a.id) AS track_count
      FROM albums a
      ORDER BY a.created_at DESC`
@@ -175,10 +208,11 @@ export function listAlbums(db: Database): AlbumSummary[] {
     year: row[4] as number | null,
     genres: parseJson<string[]>(row[5], []),
     label: row[6] as string | null,
-    userCoverFront: row[7] as string | null,
-    canonicalCover: row[8] as string | null,
-    createdAt: row[9] as string,
-    trackCount: row[10] as number
+    condition: (row[7] as ConditionId | null),
+    userCoverFront: row[8] as string | null,
+    canonicalCover: row[9] as string | null,
+    createdAt: row[10] as string,
+    trackCount: row[11] as number
   }))
 }
 
@@ -204,6 +238,8 @@ export function getAlbum(db: Database, albumId: number): SavedAlbum | null {
     year: row['year'] as number | null,
     genres: parseJson<string[]>(row['genres'], []),
     label: row['label'] as string | null,
+    condition: (row['condition'] as ConditionId | null) ?? null,
+    notes: (row['notes'] as string | null) ?? null,
     userCoverFront: row['user_cover_front'] as string | null,
     userCoverBack: row['user_cover_back'] as string | null,
     canonicalCover: row['canonical_cover'] as string | null,

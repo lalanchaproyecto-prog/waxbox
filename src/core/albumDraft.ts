@@ -14,6 +14,7 @@
  */
 
 import type { PhysicalFormatId } from './models/formats'
+import type { ConditionId } from './models/condition'
 import type { Credit } from './models/credits'
 import type { AlbumSheet } from './services/albumSheet'
 import type { ArtistLink } from './services/musicbrainz'
@@ -53,6 +54,10 @@ export interface EditableAlbum {
   tracks: EditableTrack[]
   /** Campos del álbum que la persona corrigió a mano. */
   userEditedFields: string[]
+  /** Estado de conservación de la copia física. Null si no se evaluó. */
+  condition: ConditionId | null
+  /** Notas personales sobre esta copia. */
+  notes: string | null
 }
 
 /** Arma el borrador editable a partir de lo que devolvieron las fuentes. */
@@ -85,7 +90,9 @@ export function draftFromSheet(
       deezer: track.deezer,
       userEditedFields: []
     })),
-    userEditedFields: []
+    userEditedFields: [],
+    condition: null,
+    notes: null
   }
 }
 

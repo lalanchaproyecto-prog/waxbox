@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS albums (
   musicbrainz_id TEXT,
   artist_links TEXT,
   user_edited_fields TEXT,
+  condition TEXT,
+  notes TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -49,3 +51,13 @@ CREATE TABLE IF NOT EXISTS track_credits (
   FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
 );
 `
+
+export const MIGRATIONS: Array<{ version: number; sql: string[] }> = [
+  {
+    version: 1,
+    sql: [
+      'ALTER TABLE albums ADD COLUMN condition TEXT',
+      'ALTER TABLE albums ADD COLUMN notes TEXT'
+    ]
+  }
+]

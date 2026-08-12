@@ -1326,7 +1326,7 @@ body {
 
 .collection {
   width: 100%;
-  max-width: 900px;
+  max-width: 1100px;
 }
 
 .collection-header {
@@ -1334,7 +1334,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .collection-header h2 {
@@ -1348,6 +1348,91 @@ body {
   color: #8d8a99;
   margin-top: 0.15rem;
 }
+
+/* --- Toolbar: buscador + toggle de vista --- */
+
+.collection-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.search-box {
+  flex: 1;
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  background: #16151b;
+  border: 1px solid #262430;
+  border-radius: 8px;
+  padding: 0.55rem 2rem 0.55rem 2.2rem;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: #9a8cff;
+}
+
+.search-input::placeholder {
+  color: #555;
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6e6a7c;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.view-toggle {
+  display: flex;
+  background: #16151b;
+  border: 1px solid #262430;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.view-btn {
+  background: none;
+  border: none;
+  color: #6e6a7c;
+  cursor: pointer;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: color 0.2s, background 0.2s;
+  letter-spacing: 0.05em;
+}
+
+.view-btn.active {
+  background: #262430;
+  color: #e0e0e0;
+}
+
+/* --- Cuadrícula de portadas --- */
 
 .collection-grid {
   display: grid;
@@ -1425,6 +1510,145 @@ body {
   margin-top: 0.2rem;
 }
 
+/* --- Tabla de datos --- */
+
+.collection-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #262430;
+  border-radius: 10px;
+  background: #16151b;
+}
+
+.collection-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.collection-table th {
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  color: #8d8a99;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #262430;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.collection-table th.sortable {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.collection-table th.sortable:hover,
+.collection-table th.sorted {
+  color: #e0e0e0;
+}
+
+.sort-arrow {
+  font-size: 0.65rem;
+  color: #9a8cff;
+}
+
+.collection-table td {
+  padding: 0.5rem 0.75rem;
+  color: #c8c6d2;
+  border-bottom: 1px solid #1e1e24;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.collection-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.collection-table tbody tr:hover {
+  background: #1e1d25;
+}
+
+.collection-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.col-cover {
+  width: 40px;
+  padding: 0.35rem 0.5rem !important;
+}
+
+.table-thumb {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
+.table-thumb-empty {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  opacity: 0.3;
+}
+
+.col-title {
+  font-weight: 600;
+  color: #ffffff !important;
+}
+
+.col-num {
+  text-align: right;
+}
+
+.col-short {
+  max-width: 120px;
+}
+
+/* --- Selector de condición --- */
+
+.condition-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.condition-chip {
+  background: #16151b;
+  border: 1px solid #262430;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  color: #a09cad;
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.condition-chip:hover {
+  border-color: #9a8cff;
+  color: #e0e0e0;
+}
+
+.condition-chip.selected {
+  background: #262430;
+  border-color: #9a8cff;
+  color: #ffffff;
+}
+
+.your-copy {
+  border-top: 1px solid #1f1f1f;
+  padding-top: 1.5rem;
+}
+
 /* ---------- Botón danger ---------- */
 
 .btn-danger {
@@ -1468,6 +1692,15 @@ body {
   .collection-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 0.75rem;
+  }
+
+  .collection-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .view-toggle {
+    align-self: flex-end;
   }
 }
 
