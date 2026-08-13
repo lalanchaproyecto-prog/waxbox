@@ -16,11 +16,18 @@
 import type { PhysicalFormatId } from './models/formats'
 import type { ConditionId } from './models/condition'
 import type { Credit } from './models/credits'
+import type { AlbumSource } from './models/albumSource'
 import type { AlbumSheet } from './services/albumSheet'
 import type { ArtistLink } from './services/musicbrainz'
 import type { DeezerTrackRef } from './services/deezer'
 
 export interface EditableTrack {
+  /**
+   * Identificador en la base de datos. Solo existe si el álbum ya está
+   * guardado; en un borrador recién traído de MusicBrainz todavía no hay id.
+   * Es lo que permite agregar la canción a un setlist.
+   */
+  id?: number
   artist: string
   side: string
   number: number
@@ -50,6 +57,11 @@ export interface EditableAlbum {
   userCoverFront: string | null
   userCoverBack: string | null
   musicbrainzId: string
+  /**
+   * Si el álbum vino de un catálogo o se cargó entero a mano.
+   * Ver src/core/models/albumSource.ts.
+   */
+  source: AlbumSource
   artistLinks: ArtistLink[]
   tracks: EditableTrack[]
   /** Campos del álbum que la persona corrigió a mano. */
@@ -79,6 +91,7 @@ export function draftFromSheet(
     userCoverFront: null,
     userCoverBack: null,
     musicbrainzId: sheet.release.musicbrainzId,
+    source: 'musicbrainz',
     artistLinks: sheet.artistLinks,
     tracks: sheet.tracks.map((track) => ({
       artist: track.artist,
@@ -94,6 +107,85 @@ export function draftFromSheet(
     condition: null,
     notes: null
   }
+}
+
+/**
+ * Ficha en blanco para cargar un disco entero a mano.
+ *
+ * Es lo que se usa cuando MusicBrainz no encontró nada: ediciones raras,
+ * autoproducidas o de sellos chicos que sencillamente no están en el catálogo.
+ *
+ * Todo lo que depende del identificador de MusicBrainz queda vacío a propósito y
+ * no se va a intentar consultar: portada oficial, reseña de Wikipedia y enlaces
+ * del artista se buscan con ese identificador, y aquí no hay ninguno. Las fotos
+ * de la persona y el adelanto de Deezer sí funcionan, porque no dependen de él.
+ */
+export function emptyManualDraft(
+  format: PhysicalFormatId,
+  artists: string,
+  title: string
+): EditableAlbum {
+  return {
+    format,
+    title,
+    artists,
+    year: null,
+    genres: [],
+    label: null,
+    description: null,
+    descriptionSource: null,
+    descriptionUrl: null,
+    canonicalCover: null,
+    userCoverFront: null,
+    userCoverBack: null,
+    musicbrainzId: '',
+    source: 'manual',
+    artistLinks: [],
+    tracks: [],
+    userEditedFields: [],
+    condition: null,
+    notes: null
+  }
+}
+
+/**
+ * Una canción vacía para el tracklist manual.
+ *
+ * Nace con todos sus campos marcados como escritos por la persona, porque eso es
+ * literalmente lo que son: no hay ninguna fuente detrás.
+ */
+export function emptyManualTrack(
+  number: number,
+  side: string,
+  artist: string
+): EditableTrack {
+  return {
+    artist,
+    side,
+    number,
+    title: '',
+    duration: null,
+    credits: [],
+    deezer: null,
+    userEditedFields: ['title', 'artist', 'duration', 'side', 'number']
+  }
+}
+
+/**
+ * Renumera las canciones dentro de cada lado, respetando el orden de la lista.
+ *
+ * El número no se escribe a mano en ninguna parte: el tracklist se muestra
+ * agrupado por lado y ordenado por número, así que un número fuera de secuencia
+ * haría que la canción apareciera donde nadie la espera. Se recalcula después de
+ * agregar, quitar, mover o cambiar de lado una canción.
+ */
+export function renumberTracks(tracks: EditableTrack[]): EditableTrack[] {
+  const counters = new Map<string, number>()
+  return tracks.map((track) => {
+    const next = (counters.get(track.side) ?? 0) + 1
+    counters.set(track.side, next)
+    return { ...track, number: next }
+  })
 }
 
 /** Agrega un campo a la lista de editados, sin repetirlo. */

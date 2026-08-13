@@ -42,11 +42,11 @@ function AboutScreen({ onBack }: AboutScreenProps) {
       <div className="about-marca">
         {/* Disco de vinilo dibujado, para no depender de ninguna imagen */}
         <svg className="about-disco" viewBox="0 0 100 100" aria-hidden="true">
-          <circle cx="50" cy="50" r="47" fill="#1a1920" stroke="#2f2d3a" strokeWidth="2" />
-          <circle cx="50" cy="50" r="36" fill="none" stroke="#2f2d3a" strokeWidth="1.5" />
-          <circle cx="50" cy="50" r="28" fill="none" stroke="#2f2d3a" strokeWidth="1.5" />
-          <circle cx="50" cy="50" r="18" fill="#6366f1" />
-          <circle cx="50" cy="50" r="4" fill="#0f0f0f" />
+          <circle cx="50" cy="50" r="47" fill="var(--bg-input)" stroke="var(--border)" strokeWidth="2" />
+          <circle cx="50" cy="50" r="36" fill="none" stroke="var(--border)" strokeWidth="1.5" />
+          <circle cx="50" cy="50" r="28" fill="none" stroke="var(--border)" strokeWidth="1.5" />
+          <circle cx="50" cy="50" r="18" fill="var(--accent)" />
+          <circle cx="50" cy="50" r="4" fill="var(--bg-body)" />
         </svg>
 
         <h2>{APP_NAME}</h2>
@@ -56,7 +56,7 @@ function AboutScreen({ onBack }: AboutScreenProps) {
 
       <section className="about-bloque about-autoria">
         <p>
-          Waxbox es un proyecto de <strong>Proyecto La Lancha</strong>, creado por{' '}
+          Waxbox es una iniciativa de <strong>Proyecto La Lancha</strong>, creada por{' '}
           <strong>Fabian Cardenas Perez</strong> e <strong>Ivy Bonilla Guerrero</strong>.
         </p>
       </section>

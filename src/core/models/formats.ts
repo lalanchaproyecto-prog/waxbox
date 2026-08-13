@@ -50,3 +50,24 @@ export function isValidFormatId(id: string): id is PhysicalFormatId {
 export function formatUsesSides(id: string): boolean {
   return getFormat(id)?.usesSides ?? false
 }
+
+/**
+ * Lados que se pueden elegir al escribir un tracklist a mano.
+ *
+ * En vinilo y casete son caras (A, B, C, D); en los formatos numerados por
+ * disco, como el CD, son discos (1, 2, 3). 'N/A' es la salida para cuando el
+ * dato no está impreso en ninguna parte, y es el mismo valor que usa el
+ * tracklist que llega de MusicBrainz cuando tampoco puede saberlo.
+ */
+export function sideOptionsFor(id: string): Array<{ value: string; label: string }> {
+  const options = formatUsesSides(id)
+    ? ['A', 'B', 'C', 'D'].map((letter) => ({ value: letter, label: `Lado ${letter}` }))
+    : ['1', '2', '3'].map((number) => ({ value: number, label: `Disco ${number}` }))
+
+  return [...options, { value: 'N/A', label: 'Sin especificar' }]
+}
+
+/** Lado por omisión al agregar una canción a mano. */
+export function defaultSideFor(id: string): string {
+  return formatUsesSides(id) ? 'A' : '1'
+}

@@ -1,12 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AlbumSummary } from '@core/database/db'
-import { getFormat } from '@core/models/formats'
+import { PHYSICAL_FORMATS, getFormat } from '@core/models/formats'
+import type { PhysicalFormatId } from '@core/models/formats'
 import { conditionShort } from '@core/models/condition'
+import ExportDialog from './ExportDialog'
 
 interface CollectionScreenProps {
   albums: AlbumSummary[]
+  collectionId: number
   onOpen: (albumId: number) => void
   onAdd: () => void
+  /** Sin definir cuando la función de setlists está apagada en Configuración. */
+  onOpenSetlists?: () => void
 }
 
 type ViewMode = 'grid' | 'table'
@@ -51,12 +56,29 @@ function matchesSearch(album: AlbumSummary, query: string): boolean {
   )
 }
 
-function CollectionScreen({ albums, onOpen, onAdd }: CollectionScreenProps) {
+function CollectionScreen({
+  albums,
+  collectionId,
+  onOpen,
+  onAdd,
+  onOpenSetlists
+}: CollectionScreenProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [sortKey, setSortKey] = useState<SortKey>('title')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [search, setSearch] = useState('')
+  const [formatFilter, setFormatFilter] = useState<PhysicalFormatId | null>(null)
+  const [genreFilter, setGenreFilter] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  const allGenres = useMemo(() => {
+    const set = new Set<string>()
+    for (const album of albums) {
+      for (const genre of album.genres) set.add(genre)
+    }
+    return [...set].sort((a, b) => a.localeCompare(b))
+  }, [albums])
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -78,9 +100,12 @@ function CollectionScreen({ albums, onOpen, onAdd }: CollectionScreenProps) {
     }
   }
 
-  const filtered = search.trim()
-    ? albums.filter((a) => matchesSearch(a, search.trim()))
-    : albums
+  const filtered = albums.filter((a) => {
+    if (search.trim() && !matchesSearch(a, search.trim())) return false
+    if (formatFilter && a.format !== formatFilter) return false
+    if (genreFilter && !a.genres.includes(genreFilter)) return false
+    return true
+  })
 
   const sorted = [...filtered].sort((a, b) => {
     const va = sortValue(a, sortKey)
@@ -89,6 +114,8 @@ function CollectionScreen({ albums, onOpen, onAdd }: CollectionScreenProps) {
     return sortDir === 'asc' ? cmp : -cmp
   })
 
+  const hasActiveFilters = formatFilter !== null || genreFilter !== null
+
   return (
     <div className="collection">
       <header className="collection-header">
@@ -96,14 +123,34 @@ function CollectionScreen({ albums, onOpen, onAdd }: CollectionScreenProps) {
           <h2>Tu colección</h2>
           <p className="collection-count">
             {albums.length === 1 ? '1 disco' : `${albums.length} discos`}
-            {search.trim() && filtered.length !== albums.length &&
+            {(search.trim() || hasActiveFilters) && filtered.length !== albums.length &&
               ` · ${filtered.length} encontrados`}
           </p>
         </div>
-        <button className="btn btn-primary" onClick={onAdd}>
-          + Agregar disco
-        </button>
+        <div className="collection-header-actions">
+          {/* Va aparte y en otro color: no es gestionar discos, es su propia sección. */}
+          {onOpenSetlists && (
+            <button className="btn btn-setlists" onClick={onOpenSetlists}>
+              Setlists
+            </button>
+          )}
+          <button className="btn btn-ghost" onClick={() => setExporting(true)}>
+            Exportar
+          </button>
+          <button className="btn btn-primary" onClick={onAdd}>
+            + Agregar disco
+          </button>
+        </div>
       </header>
+
+      {exporting && (
+        <ExportDialog
+          kind="collection"
+          collectionId={collectionId}
+          title="Exportar mi colección"
+          onClose={() => setExporting(false)}
+        />
+      )}
 
       <div className="collection-toolbar">
         <div className="search-box">
@@ -115,6 +162,7 @@ function CollectionScreen({ albums, onOpen, onAdd }: CollectionScreenProps) {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por artista, álbum, año, sello...  (Ctrl+K)"
             className="search-input"
+            spellCheck={false}
           />
           {search && (
             <button
@@ -149,9 +197,51 @@ function CollectionScreen({ albums, onOpen, onAdd }: CollectionScreenProps) {
         </div>
       </div>
 
-      {filtered.length === 0 && search.trim() && (
+      <div className="collection-filters">
+        <div className="filter-group">
+          <button
+            className={`filter-chip${formatFilter === null ? ' selected' : ''}`}
+            onClick={() => setFormatFilter(null)}
+          >
+            Todos
+          </button>
+          {PHYSICAL_FORMATS.map((fmt) => (
+            <button
+              key={fmt.id}
+              className={`filter-chip${formatFilter === fmt.id ? ' selected' : ''}`}
+              onClick={() => setFormatFilter(formatFilter === fmt.id ? null : fmt.id)}
+            >
+              {fmt.icon} {fmt.label}
+            </button>
+          ))}
+        </div>
+
+        {allGenres.length > 0 && (
+          <select
+            className="filter-select"
+            value={genreFilter ?? ''}
+            onChange={(e) => setGenreFilter(e.target.value || null)}
+          >
+            <option value="">Todos los géneros</option>
+            {allGenres.map((genre) => (
+              <option key={genre} value={genre}>{genre}</option>
+            ))}
+          </select>
+        )}
+
+        {hasActiveFilters && (
+          <button
+            className="btn-link"
+            onClick={() => { setFormatFilter(null); setGenreFilter(null) }}
+          >
+            Quitar filtros
+          </button>
+        )}
+      </div>
+
+      {filtered.length === 0 && (search.trim() || hasActiveFilters) && (
         <p className="empty-note">
-          No se encontró nada con "{search}". Prueba con otro término.
+          No se encontró nada con esos criterios. Prueba con otro término o quita algún filtro.
         </p>
       )}
 

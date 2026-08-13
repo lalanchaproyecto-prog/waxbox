@@ -89,7 +89,7 @@ computador y nunca se comparte.
 
 ## Créditos
 
-Waxbox es un proyecto de **Proyecto La Lancha**, creado por Fabian Cardenas Perez e
+Waxbox es una iniciativa de **Proyecto La Lancha**, creada por Fabian Cardenas Perez e
 Ivy Bonilla Guerrero.
 
 Waxbox existe gracias a proyectos de datos abiertos mantenidos por sus comunidades:

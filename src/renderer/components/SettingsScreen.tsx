@@ -1,12 +1,24 @@
 import { useState } from 'react'
 import type { SettingsStatus } from '@core/models/settings'
+import { FEATURES, type FeatureFlags } from '@core/models/features'
+import type { ThemePreference } from '../App'
 
 interface SettingsScreenProps {
   status: SettingsStatus
   onStatusChange: (status: SettingsStatus) => void
+  theme: ThemePreference
+  onThemeChange: (theme: ThemePreference) => void
+  features: FeatureFlags
+  onFeaturesChange: (features: FeatureFlags) => void
   onOpenAbout: () => void
   onBack: () => void
 }
+
+const THEME_OPTIONS: Array<{ id: ThemePreference; label: string }> = [
+  { id: 'auto', label: 'Automático' },
+  { id: 'dark', label: 'Oscuro' },
+  { id: 'light', label: 'Claro' }
+]
 
 type Feedback = { kind: 'ok' | 'error'; message: string } | null
 
@@ -20,6 +32,10 @@ type Feedback = { kind: 'ok' | 'error'; message: string } | null
 function SettingsScreen({
   status,
   onStatusChange,
+  theme,
+  onThemeChange,
+  features,
+  onFeaturesChange,
   onOpenAbout,
   onBack
 }: SettingsScreenProps) {
@@ -70,6 +86,66 @@ function SettingsScreen({
         <h2>Configuración</h2>
         <p>Ajustes que se guardan solo en este computador.</p>
       </header>
+
+      <section className="setting-block">
+        <div className="setting-title-row">
+          <h3>Apariencia</h3>
+        </div>
+        <p className="setting-description">
+          Elige cómo se ve Waxbox. En automático, sigue la configuración de tu sistema operativo.
+        </p>
+        <div className="theme-options" role="radiogroup" aria-label="Tema de la aplicación">
+          {THEME_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              role="radio"
+              aria-checked={theme === opt.id}
+              className={`theme-chip${theme === opt.id ? ' selected' : ''}`}
+              onClick={() => onThemeChange(opt.id)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="setting-block">
+        <div className="setting-title-row">
+          <h3>Funciones de la app</h3>
+        </div>
+        <p className="setting-description">
+          Enciende solo lo que uses. Apagar una función la esconde de la interfaz,{' '}
+          <strong>no borra nada</strong>: si la vuelves a encender, todo lo que habías
+          guardado sigue ahí.
+        </p>
+
+        <ul className="feature-list">
+          {FEATURES.map((feature) => {
+            const enabled = features[feature.id]
+            return (
+              <li className="feature-row" key={feature.id}>
+                <div className="feature-text">
+                  <span className="feature-label">{feature.label}</span>
+                  <span className="feature-description">{feature.description}</span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={enabled}
+                  aria-label={`${feature.label}: ${enabled ? 'encendido' : 'apagado'}`}
+                  className={`feature-switch${enabled ? ' on' : ''}`}
+                  onClick={() =>
+                    onFeaturesChange({ ...features, [feature.id]: !enabled })
+                  }
+                >
+                  <span className="feature-switch-knob" />
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      </section>
 
       <section className="setting-block">
         <div className="setting-title-row">

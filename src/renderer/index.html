@@ -6,6 +6,15 @@
     <title>Waxbox</title>
   </head>
   <body>
+    <script>
+      ;(function() {
+        var pref = localStorage.getItem('waxbox-theme') || 'auto'
+        if (pref === 'auto') {
+          pref = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        }
+        document.documentElement.dataset.theme = pref
+      })()
+    </script>
     <div id="root"></div>
     <script type="module" src="./main.tsx"></script>
   </body>

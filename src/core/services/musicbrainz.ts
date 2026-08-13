@@ -43,6 +43,7 @@ export interface ReleaseCandidate {
   /** Formato según MusicBrainz, por ejemplo: 12" Vinyl, CD, Cassette. */
   mediaFormat: string | null
   trackCount: number | null
+  label: string | null
   /** Aclaración de MusicBrainz para distinguir ediciones parecidas. */
   disambiguation: string | null
 }
@@ -359,8 +360,140 @@ export async function searchReleases(
     country: release.country ?? null,
     mediaFormat: release.media?.[0]?.format ?? null,
     trackCount: release['track-count'] ?? null,
+    label: extractLabel(release),
     disambiguation: release.disambiguation || null
   }))
+}
+
+// --------------------------------------------------------------------------
+// Sugerencias de autocompletado
+// --------------------------------------------------------------------------
+
+export interface ArtistSuggestion {
+  name: string
+  disambiguation: string | null
+}
+
+export interface AlbumSuggestion {
+  title: string
+  artist: string
+  year: number | null
+}
+
+export async function suggestArtists(query: string, limit = 5): Promise<ArtistSuggestion[]> {
+  if (query.trim().length < 2) return []
+
+  const escape = (v: string): string => v.replace(/["\\]/g, '\\$&')
+  const url = `${API_BASE}/artist?query=artist:"${escape(query.trim())}"&fmt=json&limit=${limit}`
+
+  let data: { artists?: Array<{ name?: string; disambiguation?: string }> }
+  try {
+    data = await request(url)
+  } catch {
+    return []
+  }
+
+  return (data.artists ?? [])
+    .filter((a) => a.name)
+    .map((a) => ({
+      name: a.name!,
+      disambiguation: a.disambiguation || null
+    }))
+}
+
+export async function suggestAlbums(
+  titleQuery: string,
+  artistHint: string,
+  limit = 5
+): Promise<AlbumSuggestion[]> {
+  if (titleQuery.trim().length < 2) return []
+
+  const escape = (v: string): string => v.replace(/["\\]/g, '\\$&')
+  let lucene = `releasegroup:"${escape(titleQuery.trim())}"`
+  if (artistHint.trim()) {
+    lucene += ` AND artist:"${escape(artistHint.trim())}"`
+  }
+  const url = `${API_BASE}/release-group?query=${encodeURIComponent(lucene)}&fmt=json&limit=${limit}`
+
+  let data: {
+    'release-groups'?: Array<{
+      title?: string
+      'artist-credit'?: RawArtistCredit[]
+      'first-release-date'?: string
+    }>
+  }
+  try {
+    data = await request(url)
+  } catch {
+    return []
+  }
+
+  return (data['release-groups'] ?? [])
+    .filter((rg) => rg.title)
+    .map((rg) => ({
+      title: rg.title!,
+      artist: creditToString(rg['artist-credit']),
+      year: parseYear(rg['first-release-date'])
+    }))
+}
+
+// --------------------------------------------------------------------------
+// Explorar discografía de un artista
+// --------------------------------------------------------------------------
+
+export interface ArtistAlbum {
+  releaseGroupId: string
+  title: string
+  year: number | null
+  type: string
+}
+
+export interface ArtistBrowseResult {
+  artistName: string
+  artistId: string
+  albums: ArtistAlbum[]
+}
+
+export async function browseArtistAlbums(artistName: string): Promise<ArtistBrowseResult> {
+  if (!artistName.trim()) {
+    throw new MusicBrainzError('Escribe el nombre del artista para buscar su discografía.')
+  }
+
+  const escape = (v: string): string => v.replace(/["\\]/g, '\\$&')
+  const searchUrl = `${API_BASE}/artist?query=artist:"${escape(artistName.trim())}"&fmt=json&limit=1`
+
+  const searchData = await request<{
+    artists?: Array<{ id: string; name: string; disambiguation?: string }>
+  }>(searchUrl)
+
+  const artist = searchData.artists?.[0]
+  if (!artist) {
+    throw new MusicBrainzError(
+      `No se encontró ningún artista con el nombre "${artistName}".`
+    )
+  }
+
+  const browseUrl = `${API_BASE}/release-group?artist=${artist.id}&fmt=json&limit=100`
+
+  const browseData = await request<{
+    'release-groups'?: Array<{
+      id: string
+      title: string
+      'primary-type'?: string
+      'first-release-date'?: string
+    }>
+  }>(browseUrl)
+
+  const albums = (browseData['release-groups'] ?? [])
+    .map((rg) => ({
+      releaseGroupId: rg.id,
+      title: rg.title,
+      year: parseYear(rg['first-release-date']),
+      type: rg['primary-type'] ?? 'Other'
+    }))
+    .sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999))
+
+  return { artistName: artist.name, artistId: artist.id, albums }
 }
 
 /** Un enlace oficial del artista, listo para mostrar en la ficha. */

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { ReleaseCandidate } from '@core/services/musicbrainz'
 
 interface ReleasePickerProps {
@@ -6,11 +7,33 @@ interface ReleasePickerProps {
   onBack: () => void
 }
 
-/**
- * Un mismo álbum suele tener muchas ediciones en MusicBrainz: distintos países,
- * años, sellos y formatos. Solo la persona sabe cuál tiene en la mano, así que
- * se las mostramos para que elija.
- */
+function countryFlag(code: string): string {
+  const upper = code.toUpperCase()
+  if (upper.length !== 2) return code
+  const a = upper.codePointAt(0)! - 65 + 0x1f1e6
+  const b = upper.codePointAt(1)! - 65 + 0x1f1e6
+  return String.fromCodePoint(a, b)
+}
+
+function CoverThumb({ musicbrainzId, title }: { musicbrainzId: string; title: string }) {
+  const [failed, setFailed] = useState(false)
+  const src = `https://coverartarchive.org/release/${musicbrainzId}/front-250`
+
+  if (failed) {
+    return <span className="candidate-cover-placeholder">🎵</span>
+  }
+
+  return (
+    <img
+      className="candidate-cover"
+      src={src}
+      alt={`Portada de ${title}`}
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
 function ReleasePicker({ candidates, onPick, onBack }: ReleasePickerProps) {
   return (
     <div className="picker">
@@ -27,21 +50,31 @@ function ReleasePicker({ candidates, onPick, onBack }: ReleasePickerProps) {
         {candidates.map((candidate) => (
           <li key={candidate.musicbrainzId}>
             <button className="candidate" onClick={() => onPick(candidate)}>
-              <span className="candidate-main">
-                <span className="candidate-title">{candidate.title}</span>
-                <span className="candidate-artist">{candidate.artist}</span>
-                {candidate.disambiguation && (
-                  <span className="candidate-note">{candidate.disambiguation}</span>
-                )}
-              </span>
-              <span className="candidate-meta">
-                {candidate.year && <span className="tag">{candidate.year}</span>}
-                {candidate.country && <span className="tag">{candidate.country}</span>}
-                {candidate.mediaFormat && <span className="tag">{candidate.mediaFormat}</span>}
-                {candidate.trackCount && (
-                  <span className="tag">{candidate.trackCount} canciones</span>
-                )}
-              </span>
+              <div className="candidate-cover-wrap">
+                <CoverThumb musicbrainzId={candidate.musicbrainzId} title={candidate.title} />
+              </div>
+              <div className="candidate-body">
+                <span className="candidate-main">
+                  <span className="candidate-title">{candidate.title}</span>
+                  <span className="candidate-artist">{candidate.artist}</span>
+                  {candidate.disambiguation && (
+                    <span className="candidate-note">{candidate.disambiguation}</span>
+                  )}
+                </span>
+                <span className="candidate-meta">
+                  {candidate.year && <span className="tag">{candidate.year}</span>}
+                  {candidate.country && (
+                    <span className="tag">
+                      {countryFlag(candidate.country)} {candidate.country}
+                    </span>
+                  )}
+                  {candidate.mediaFormat && <span className="tag">{candidate.mediaFormat}</span>}
+                  {candidate.label && <span className="tag">{candidate.label}</span>}
+                  {candidate.trackCount && (
+                    <span className="tag">{candidate.trackCount} canciones</span>
+                  )}
+                </span>
+              </div>
             </button>
           </li>
         ))}

@@ -1,0 +1,329 @@
+/*
+  TOKENS — el vocabulario visual de Waxbox.
+
+  Este archivo es la única fuente de la paleta, la tipografía, las sombras y las
+  texturas. Ningún componente escribe un color a mano: todos leen de aquí. Por
+  eso cambiar la identidad de la app entera es cambiar este archivo, y no salir
+  a cazar valores por 3.000 líneas de estilos.
+
+  LA DIRECCIÓN ESTÉTICA, EN UNA FRASE:
+  el pasado vive en las texturas y en el color; la tipografía y el espaciado son
+  de hoy. Cuero, latón y papel para las superficies; letra grande, limpia y con
+  aire para el texto. Nada de tipografías "antiguas".
+
+  De dónde sale cada cosa:
+  - Cuero, latón y volumen  → el iPhone de 2007-2012.
+  - Marco blanco y grano    → el primer Instagram.
+  - Vidrio esmerilado, tinte
+    sacado de la portada y
+    letra grande             → Apple Music de hoy.
+*/
+
+:root {
+  /* ---------- Superficies: cuero oscuro ---------- */
+  --bg-body: #141110;
+  --bg-card: #1c1815;
+  --bg-input: #211c19;
+  --bg-inset: #17130f;
+  --bg-hover: #272120;
+  --bg-active: #322a26;
+  --bg-subtle: #2b2421;
+
+  --border: #2e2724;
+  --border-input: #3a312c;
+  --border-strong: #453a33;
+  --border-subtle: #241e1b;
+  --border-separator: #262019;
+  --border-accent: #4a3a26;
+
+  /* ---------- Texto ---------- */
+  --text-heading: #f7f1e8;
+  --text-primary: #e8ded2;
+  --text-body: #d3c6b7;
+  --text-secondary: #bcae9e;
+  --text-muted: #9b8d7e;
+  --text-dimmed: #82756a;
+  --text-faint: #5c5249;
+
+  /*
+    ---------- Acento: latón ----------
+    Reemplaza al índigo que había antes. El índigo era un azul de interfaz
+    moderna; el latón es el metal de un tocadiscos, y es lo que amarra la
+    paleta con las texturas.
+  */
+  --accent: #c98b3f;
+  --accent-hover: #dda157;
+  --accent-soft: #e3b273;
+  --accent-link: #dda157;
+
+  /*
+    Texto que va ENCIMA del acento. Va oscuro y no blanco: el latón es un color
+    claro, y el blanco encima no llega al contraste mínimo legible.
+  */
+  --on-accent: #2a1c0c;
+
+  /* Ámbar cálido para detalles y halos, distinto del acento principal. */
+  --accent-warm: #e8a55c;
+
+  /*
+    Verde jade para los setlists. Antes ese papel lo cumplía el ámbar, que se
+    distinguía del índigo; ahora que el acento principal ES cálido, los setlists
+    necesitan un color frío para seguir leyéndose como "otra sección".
+  */
+  --accent-cool: #4aa892;
+  --on-accent-cool: #06231d;
+
+  /* ---------- Estados ---------- */
+  --error-bg: #241413;
+  --error-border: #4e2724;
+  --error-text: #f0b5ae;
+  --warning-bg: #261d10;
+  --warning-text: #e0b877;
+  --success-bg: #14291f;
+  --success-text: #7fd8a0;
+  --danger: #d4453a;
+  --danger-hover: #ea5b4f;
+
+  --overlay: rgba(12, 8, 6, 0.72);
+  --halo-accent: rgba(201, 139, 63, 0.22);
+  --halo-warm: rgba(232, 165, 92, 0.10);
+
+  /* ---------- Tinte dinámico ----------
+     Lo reescribe en vivo el extractor de color de la portada. Estos valores son
+     el respaldo para cuando no hay portada o todavía no se analizó. */
+  --tint: #c98b3f;
+  --tint-soft: rgba(201, 139, 63, 0.16);
+  --tint-text: #f7f1e8;
+
+  /* ---------- Tipografía ----------
+     Fuente del sistema, sin archivos que descargar: en Windows 11 se usa Segoe
+     UI Variable, en Windows 10 Segoe UI. Las dos son neutras y modernas, que es
+     justo lo que pide la dirección. */
+  --font-ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system,
+    BlinkMacSystemFont, Roboto, sans-serif;
+  --font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui,
+    -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  /* Para números que tienen que alinearse: duraciones, años, contadores. */
+  --font-mono: 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.85rem;
+  --text-base: 0.95rem;
+  --text-md: 1.05rem;
+  --text-lg: 1.35rem;
+  --text-xl: 1.85rem;
+  --text-2xl: 2.6rem;
+  --text-3xl: 3.6rem;
+
+  /* Los títulos grandes se aprietan; el texto chico se abre. Así se lee bien
+     en los dos extremos. */
+  --tracking-display: -0.035em;
+  --tracking-tight: -0.015em;
+  --tracking-wide: 0.08em;
+
+  --leading-tight: 1.1;
+  --leading-normal: 1.5;
+  --leading-loose: 1.65;
+
+  /* ---------- Bordes redondeados ----------
+     Generosos, como pide la referencia del iPhone clásico. */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+  --radius-pill: 999px;
+
+  /* ---------- Sombras y volumen ----------
+     La sombra da profundidad hacia abajo; el brillo interior de arriba simula
+     la luz cayendo sobre una superficie curva. Es la combinación que hace que
+     un botón plano parezca un objeto. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.4);
+  --shadow-3: 0 14px 40px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 0 1px var(--halo-accent);
+  --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --inset-bottom: inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+
+  /* ---------- Movimiento ----------
+     Una sola curva para toda la app: entra rápido y frena suave. */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+  --dur-slow: 420ms;
+
+  /* ---------- Texturas ----------
+     Todas se dibujan con CSS: ni una sola imagen que cargar, que pese en el
+     instalador o que se vea borrosa en una pantalla de alta densidad. */
+
+  /* Cuero: manchas suaves e irregulares, como el grano de la piel. */
+  --texture-leather:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.035), transparent 42%),
+    radial-gradient(circle at 78% 68%, rgba(255, 255, 255, 0.025), transparent 38%),
+    radial-gradient(circle at 45% 88%, rgba(0, 0, 0, 0.28), transparent 45%);
+
+  /* Metal cepillado: líneas finísimas en una sola dirección. */
+  --texture-metal:
+    repeating-linear-gradient(
+      92deg,
+      rgba(255, 255, 255, 0.05) 0px,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+
+  /* Papel: trama diagonal muy tenue. */
+  --texture-paper:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.014) 0px,
+      rgba(255, 255, 255, 0.014) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+
+  /* Surco de vinilo: anillos concéntricos. Se usa detrás de las portadas. */
+  --texture-grooves:
+    repeating-radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.05) 0px,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+
+  /*
+    Grano de película, el de las fotos del primer Instagram.
+    Es ruido generado por el propio navegador con un filtro SVG, así que no hay
+    ningún archivo de imagen detrás.
+  */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  --grain-opacity: 0.05;
+
+  /* ---------- Vidrio esmerilado ---------- */
+  --glass-bg: rgba(32, 26, 22, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-blur: 22px;
+
+  /* Marco de las fotos tipo Polaroid. */
+  --polaroid-frame: #f6f1e6;
+  --polaroid-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+
+/*
+  ---------- Tema claro: papel ----------
+  No es el tema oscuro invertido. Es papel de verdad: crema cálido en vez de
+  gris azulado, que es lo que hace que las mismas texturas sigan funcionando.
+*/
+:root[data-theme='light'] {
+  --bg-body: #efe7da;
+  --bg-card: #fbf6ec;
+  --bg-input: #f3ece0;
+  --bg-inset: #e7ddcd;
+  --bg-hover: #f0e7d8;
+  --bg-active: #e2d6c2;
+  --bg-subtle: #e8ddcb;
+
+  --border: #d8cbb6;
+  --border-input: #c9b99f;
+  --border-strong: #b8a58a;
+  --border-subtle: #e3d8c6;
+  --border-separator: #e0d4c0;
+  --border-accent: #cbb08a;
+
+  --text-heading: #241a12;
+  --text-primary: #35281d;
+  --text-body: #45362a;
+  --text-secondary: #5b4a3b;
+  --text-muted: #776553;
+  --text-dimmed: #8b7967;
+  --text-faint: #a89684;
+
+  /* En papel el latón claro no contrasta: se oscurece para poder leerlo. */
+  --accent: #b4762c;
+  --accent-hover: #9c631f;
+  --accent-soft: #8a5718;
+  --accent-link: #8f5a1e;
+  --on-accent: #fdf7ec;
+
+  --accent-warm: #b06f22;
+
+  --accent-cool: #1f7a67;
+  --on-accent-cool: #f0fbf7;
+
+  --error-bg: #fdf0ee;
+  --error-border: #e8c4bd;
+  --error-text: #a4322a;
+  --warning-bg: #fdf4e3;
+  --warning-text: #8a5a12;
+  --success-bg: #ecf7f1;
+  --success-text: #16624a;
+  --danger: #bf3b30;
+  --danger-hover: #a53129;
+
+  --overlay: rgba(60, 44, 30, 0.35);
+  --halo-accent: rgba(180, 118, 44, 0.16);
+  --halo-warm: rgba(176, 111, 34, 0.08);
+
+  --tint: #b4762c;
+  --tint-soft: rgba(180, 118, 44, 0.14);
+  --tint-text: #241a12;
+
+  --shadow-1: 0 1px 2px rgba(90, 66, 40, 0.14);
+  --shadow-2: 0 4px 14px rgba(90, 66, 40, 0.16);
+  --shadow-3: 0 14px 40px rgba(90, 66, 40, 0.2);
+  --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --inset-bottom: inset 0 -1px 0 rgba(120, 92, 60, 0.16);
+
+  --texture-leather:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.5), transparent 42%),
+    radial-gradient(circle at 78% 68%, rgba(255, 255, 255, 0.35), transparent 38%),
+    radial-gradient(circle at 45% 88%, rgba(150, 120, 80, 0.1), transparent 45%);
+
+  --texture-metal:
+    repeating-linear-gradient(
+      92deg,
+      rgba(255, 255, 255, 0.55) 0px,
+      rgba(255, 255, 255, 0.55) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+
+  --texture-paper:
+    repeating-linear-gradient(
+      45deg,
+      rgba(120, 92, 60, 0.03) 0px,
+      rgba(120, 92, 60, 0.03) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+
+  --texture-grooves:
+    repeating-radial-gradient(
+      circle at center,
+      rgba(120, 92, 60, 0.06) 0px,
+      rgba(120, 92, 60, 0.06) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+
+  --grain-opacity: 0.035;
+
+  --glass-bg: rgba(251, 246, 236, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.85);
+
+  --polaroid-frame: #ffffff;
+  --polaroid-shadow: 0 8px 22px rgba(90, 66, 40, 0.22);
+}
+
+/*
+  Quien pidió menos movimiento en su sistema operativo recibe la app sin
+  animaciones. Es una preferencia de accesibilidad, no un gusto: hay personas a
+  las que el movimiento les provoca mareo.
+*/
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+}

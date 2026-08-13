@@ -12,6 +12,18 @@ interface TrackDetailProps {
   sideLabel: string | null
   onChange: (track: EditableTrack) => void
   onClose: () => void
+  readOnly?: boolean
+  /**
+   * Si se muestra la sección de créditos. Apagarla es solo visual: los créditos
+   * que ya estaban guardados no se tocan.
+   */
+  showCredits?: boolean
+  /**
+   * Lados donde se puede poner la canción. Solo llega en los álbumes cargados a
+   * mano, que son los únicos donde el tracklist se puede rearmar; en uno de
+   * MusicBrainz el lado es el de la edición elegida y no se toca.
+   */
+  sideOptions?: Array<{ value: string; label: string }>
 }
 
 /**
@@ -21,8 +33,22 @@ interface TrackDetailProps {
  * no aparece una línea vacía de "Compositor: —": simplemente no está, y la
  * persona puede agregarlo si lo sabe.
  */
-function TrackDetail({ track, albumArtist, sideLabel, onChange, onClose }: TrackDetailProps) {
-  const [editing, setEditing] = useState(false)
+function TrackDetail({
+  track,
+  albumArtist,
+  sideLabel,
+  onChange,
+  onClose,
+  readOnly,
+  showCredits = true,
+  sideOptions
+}: TrackDetailProps) {
+  /*
+    Una canción recién agregada a mano llega sin título, así que se abre
+    directamente en modo edición: no tendría sentido mostrar una ficha vacía y
+    obligar a buscar el botón de editar.
+  */
+  const [editing, setEditing] = useState(!readOnly && track.title.trim().length === 0)
   const [draft, setDraft] = useState<EditableTrack>(track)
 
   // Campos del formulario para agregar un crédito nuevo.
@@ -88,6 +114,7 @@ function TrackDetail({ track, albumArtist, sideLabel, onChange, onClose }: Track
               <input
                 className="modal-title-input"
                 value={draft.title}
+                spellCheck={false}
                 onChange={(event) => update('title', event.target.value)}
               />
             ) : (
@@ -131,6 +158,7 @@ function TrackDetail({ track, albumArtist, sideLabel, onChange, onClose }: Track
               <span className="field-label">Artista de la canción</span>
               <input
                 value={draft.artist}
+                spellCheck={false}
                 onChange={(event) => update('artist', event.target.value)}
               />
             </label>
@@ -139,18 +167,37 @@ function TrackDetail({ track, albumArtist, sideLabel, onChange, onClose }: Track
               <input
                 value={draft.duration ?? ''}
                 placeholder="4:26"
+                spellCheck={false}
                 onChange={(event) => update('duration', event.target.value || null)}
               />
             </label>
+            {sideOptions && (
+              <label className="field">
+                <span className="field-label">Lado o disco</span>
+                <select
+                  value={draft.side}
+                  onChange={(event) => update('side', event.target.value)}
+                >
+                  {sideOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
         )}
 
+        {showCredits && (
         <section className="credits">
           <h3 className="section-title">Créditos</h3>
 
           {groups.length === 0 && !editing && (
             <p className="credits-empty">
-              MusicBrainz no tiene créditos de esta canción. Puedes agregarlos tú si los conoces.
+              {sideOptions
+                ? 'Esta canción todavía no tiene créditos. Puedes escribir aquí quién la compuso, produjo o tocó.'
+                : 'MusicBrainz no tiene créditos de esta canción. Puedes agregarlos tú si los conoces.'}
             </p>
           )}
 
@@ -194,11 +241,13 @@ function TrackDetail({ track, albumArtist, sideLabel, onChange, onClose }: Track
               <input
                 value={newArtist}
                 placeholder="Nombre"
+                spellCheck={false}
                 onChange={(event) => setNewArtist(event.target.value)}
               />
               <input
                 value={newDetail}
                 placeholder="Detalle (opcional)"
+                spellCheck={false}
                 onChange={(event) => setNewDetail(event.target.value)}
               />
               <button
@@ -211,6 +260,7 @@ function TrackDetail({ track, albumArtist, sideLabel, onChange, onClose }: Track
             </div>
           )}
         </section>
+        )}
 
         <footer className="modal-footer">
           {editing ? (
@@ -222,11 +272,11 @@ function TrackDetail({ track, albumArtist, sideLabel, onChange, onClose }: Track
                 Guardar cambios
               </button>
             </>
-          ) : (
+          ) : !readOnly ? (
             <button className="btn btn-ghost" onClick={() => setEditing(true)}>
               ✎ Editar esta canción
             </button>
-          )}
+          ) : null}
         </footer>
       </div>
     </div>

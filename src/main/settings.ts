@@ -14,9 +14,10 @@
  * sabe dónde vive la clave: la recibe como parámetro.
  */
 
-import { app, safeStorage } from 'electron'
+import { safeStorage } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'fs'
+import { activeProfileDir } from './profiles'
 
 interface StoredSettings {
   /** Clave cifrada, en base64. */
@@ -25,8 +26,15 @@ interface StoredSettings {
   youtubeApiKeyEncrypted?: boolean
 }
 
+/**
+ * Los ajustes son de cada perfil, no de la instalación.
+ *
+ * Eso incluye la clave de YouTube: cada persona pone la suya y usa su propia
+ * cuota diaria de Google, en vez de compartir una y quedarse sin búsquedas por
+ * culpa de otra.
+ */
 function settingsPath(): string {
-  return join(app.getPath('userData'), 'settings.json')
+  return join(activeProfileDir(), 'settings.json')
 }
 
 function read(): StoredSettings {

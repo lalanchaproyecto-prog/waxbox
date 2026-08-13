@@ -1,14 +1,22 @@
-import { ipcMain } from 'electron'
+import { ipcMain, BrowserWindow } from 'electron'
+import { runExport } from './export'
+import type { ExportRequest, ExportOutcome } from '../core/models/exportFields'
 import {
   searchReleases,
   getReleaseDetails,
+  suggestArtists,
+  suggestAlbums,
+  browseArtistAlbums,
   type ReleaseCandidate,
-  type ReleaseDetails
+  type ReleaseDetails,
+  type ArtistSuggestion,
+  type AlbumSuggestion,
+  type ArtistBrowseResult
 } from '../core/services/musicbrainz'
 import type { Result } from '../core/result'
 import { buildAlbumSheet, type AlbumSheet } from '../core/services/albumSheet'
 import { checkApiKey, searchTrackVideo, type YouTubeVideo } from '../core/services/youtube'
-import { getPreviewUrl } from '../core/services/deezer'
+import { getPreviewUrl, findTracks, type DeezerTrackRef } from '../core/services/deezer'
 import {
   getYoutubeApiKey,
   setYoutubeApiKey,
@@ -17,16 +25,54 @@ import {
   isEncryptionAvailable
 } from './settings'
 import type { SettingsStatus } from '../core/models/settings'
-import { getDatabase, persist } from './database'
+import { getDatabase, persist, openDatabase, closeDatabase } from './database'
+import {
+  listProfiles,
+  createProfile,
+  renameProfile,
+  deleteProfile,
+  setActiveProfile,
+  getLastActiveId,
+  profileDbPath,
+  type Profile
+} from './profiles'
 import { copyPhoto, deletePhoto } from './photos'
 import {
   saveAlbum,
+  updateAlbum,
   listAlbums,
   getAlbum,
   deleteAlbum,
   albumCount,
+  createSetlist,
+  listSetlists,
+  getSetlist,
+  renameSetlist,
+  deleteSetlist,
+  addTrackToSetlist,
+  removeTrackFromSetlist,
+  reorderSetlist,
+  setlistUsageForAlbum,
+  listAlbumTracks,
+  previewGenreSelection,
+  pickTracksByGenres,
+  createSetlistWithTracks,
+  findPossibleDuplicates,
+  listCollections,
+  createCollection,
+  renameCollection,
+  deleteCollection,
+  countCollections,
+  type GenrePreview,
+  type CollectionSummary,
   type AlbumSummary,
-  type SavedAlbum
+  type SavedAlbum,
+  type SetlistSummary,
+  type SetlistDetail,
+  type AddToSetlistResult,
+  type SetlistUsage,
+  type BrowsableTrack,
+  type DuplicateCandidate
 } from '../core/database/db'
 import type { EditableAlbum } from '../core/albumDraft'
 
@@ -60,6 +106,24 @@ export function registerIpcHandlers(): void {
   )
 
   ipcMain.handle(
+    'musicbrainz:suggestArtists',
+    (_event, query: string): Promise<Result<ArtistSuggestion[]>> =>
+      attempt(() => suggestArtists(query))
+  )
+
+  ipcMain.handle(
+    'musicbrainz:suggestAlbums',
+    (_event, titleQuery: string, artistHint: string): Promise<Result<AlbumSuggestion[]>> =>
+      attempt(() => suggestAlbums(titleQuery, artistHint))
+  )
+
+  ipcMain.handle(
+    'musicbrainz:browseArtist',
+    (_event, artistName: string): Promise<Result<ArtistBrowseResult>> =>
+      attempt(() => browseArtistAlbums(artistName))
+  )
+
+  ipcMain.handle(
     'musicbrainz:details',
     (
       _event,
@@ -85,6 +149,21 @@ export function registerIpcHandlers(): void {
     'deezer:previewUrl',
     (_event, trackId: number): Promise<Result<string | null>> =>
       attempt(() => getPreviewUrl(trackId))
+  )
+
+  /**
+   * Busca en Deezer los adelantos de una lista de canciones escrita a mano.
+   *
+   * Existe para los álbumes cargados manualmente: los que vienen de MusicBrainz
+   * ya reciben esto dentro de `album:sheet`. Deezer busca por texto (artista +
+   * título), así que no necesita ningún identificador de MusicBrainz.
+   */
+  ipcMain.handle(
+    'deezer:findTracks',
+    (
+      _event,
+      tracks: Array<{ artist: string; title: string }>
+    ): Promise<Result<Array<DeezerTrackRef | null>>> => attempt(() => findTracks(tracks))
   )
 
   // --- Configuración -----------------------------------------------------
@@ -143,7 +222,8 @@ export function registerIpcHandlers(): void {
     (
       _event,
       album: EditableAlbum,
-      photoPaths: { front: string | null; back: string | null }
+      photoPaths: { front: string | null; back: string | null },
+      collectionId: number
     ): Result<{ id: number }> =>
       attemptSync(() => {
         const db = getDatabase()
@@ -153,16 +233,29 @@ export function registerIpcHandlers(): void {
           back: photoPaths.back ? copyPhoto(photoPaths.back) : null
         }
 
-        const id = saveAlbum(db, album, photos)
+        const id = saveAlbum(db, collectionId, album, photos)
         persist()
         return { id }
       })
   )
 
   ipcMain.handle(
+    'collection:update',
+    (
+      _event,
+      albumId: number,
+      album: EditableAlbum
+    ): Result<void> =>
+      attemptSync(() => {
+        updateAlbum(getDatabase(), albumId, album)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
     'collection:list',
-    (): Result<AlbumSummary[]> =>
-      attemptSync(() => listAlbums(getDatabase()))
+    (_event, collectionId: number): Result<AlbumSummary[]> =>
+      attemptSync(() => listAlbums(getDatabase(), collectionId))
   )
 
   ipcMain.handle(
@@ -188,7 +281,257 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     'collection:count',
-    (): Result<number> =>
-      attemptSync(() => albumCount(getDatabase()))
+    (_event, collectionId: number): Result<number> =>
+      attemptSync(() => albumCount(getDatabase(), collectionId))
+  )
+
+  ipcMain.handle(
+    'collection:albumTracks',
+    (_event, albumId: number): Result<BrowsableTrack[]> =>
+      attemptSync(() => listAlbumTracks(getDatabase(), albumId))
+  )
+
+  ipcMain.handle(
+    'collection:setlistUsage',
+    (_event, albumId: number): Result<SetlistUsage> =>
+      attemptSync(() => setlistUsageForAlbum(getDatabase(), albumId))
+  )
+
+  ipcMain.handle(
+    'collection:findDuplicates',
+    (
+      _event,
+      collectionId: number,
+      artists: string,
+      title: string,
+      excludeAlbumId?: number
+    ): Result<DuplicateCandidate[]> =>
+      attemptSync(() =>
+        findPossibleDuplicates(getDatabase(), collectionId, artists, title, excludeAlbumId)
+      )
+  )
+
+  // --- Perfiles ----------------------------------------------------------
+
+  ipcMain.handle(
+    'profiles:list',
+    (): Result<{ profiles: Profile[]; lastActiveId: string | null }> =>
+      attemptSync(() => ({ profiles: listProfiles(), lastActiveId: getLastActiveId() }))
+  )
+
+  /**
+   * Abrir un perfil: cierra la base del anterior guardando lo pendiente y abre
+   * la suya. Después de esto la app puede consultar discos y setlists.
+   */
+  ipcMain.handle(
+    'profiles:activate',
+    (_event, profileId: string): Promise<Result<void>> =>
+      attempt(async () => {
+        setActiveProfile(profileId)
+        await openDatabase(profileDbPath(profileId))
+      })
+  )
+
+  ipcMain.handle(
+    'profiles:create',
+    (_event, name: string, emoji: string | null): Result<Profile> =>
+      attemptSync(() => {
+        const trimmed = name.trim()
+        if (!trimmed) throw new Error('El perfil necesita un nombre.')
+        return createProfile(trimmed, emoji ?? undefined)
+      })
+  )
+
+  ipcMain.handle(
+    'profiles:rename',
+    (_event, profileId: string, name: string, emoji: string | null): Result<void> =>
+      attemptSync(() => {
+        const trimmed = name.trim()
+        if (!trimmed) throw new Error('El perfil necesita un nombre.')
+        renameProfile(profileId, trimmed, emoji ?? undefined)
+      })
+  )
+
+  ipcMain.handle(
+    'profiles:delete',
+    (_event, profileId: string): Result<void> =>
+      attemptSync(() => deleteProfile(profileId))
+  )
+
+  /** Volver al selector: se guarda y se cierra la base del perfil abierto. */
+  ipcMain.handle(
+    'profiles:signOut',
+    (): Result<void> => attemptSync(() => closeDatabase())
+  )
+
+  // --- Colecciones -------------------------------------------------------
+
+  ipcMain.handle(
+    'collections:list',
+    (): Result<CollectionSummary[]> =>
+      attemptSync(() => listCollections(getDatabase()))
+  )
+
+  ipcMain.handle(
+    'collections:create',
+    (_event, name: string): Result<{ id: number }> =>
+      attemptSync(() => {
+        const trimmed = name.trim()
+        if (!trimmed) throw new Error('La colección necesita un nombre.')
+        const id = createCollection(getDatabase(), trimmed)
+        persist()
+        return { id }
+      })
+  )
+
+  ipcMain.handle(
+    'collections:rename',
+    (_event, collectionId: number, name: string): Result<void> =>
+      attemptSync(() => {
+        const trimmed = name.trim()
+        if (!trimmed) throw new Error('La colección necesita un nombre.')
+        renameCollection(getDatabase(), collectionId, trimmed)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'collections:delete',
+    (_event, collectionId: number): Result<void> =>
+      attemptSync(() => {
+        const db = getDatabase()
+
+        // Siempre tiene que quedar una: la app necesita una colección activa.
+        if (countCollections(db) <= 1) {
+          throw new Error(
+            'No puedes borrar tu única colección. Crea otra antes de borrar esta.'
+          )
+        }
+
+        const orphanPhotos = deleteCollection(db, collectionId)
+        for (const filename of orphanPhotos) deletePhoto(filename)
+        persist()
+      })
+  )
+
+  // --- Setlists ----------------------------------------------------------
+
+  ipcMain.handle(
+    'setlist:create',
+    (_event, collectionId: number, name: string): Result<{ id: number }> =>
+      attemptSync(() => {
+        const trimmed = name.trim()
+        if (!trimmed) throw new Error('El setlist necesita un nombre.')
+        const id = createSetlist(getDatabase(), collectionId, trimmed)
+        persist()
+        return { id }
+      })
+  )
+
+  ipcMain.handle(
+    'setlist:list',
+    (_event, collectionId: number): Result<SetlistSummary[]> =>
+      attemptSync(() => listSetlists(getDatabase(), collectionId))
+  )
+
+  ipcMain.handle(
+    'setlist:get',
+    (_event, setlistId: number): Result<SetlistDetail | null> =>
+      attemptSync(() => getSetlist(getDatabase(), setlistId))
+  )
+
+  ipcMain.handle(
+    'setlist:rename',
+    (_event, setlistId: number, name: string): Result<void> =>
+      attemptSync(() => {
+        const trimmed = name.trim()
+        if (!trimmed) throw new Error('El setlist necesita un nombre.')
+        renameSetlist(getDatabase(), setlistId, trimmed)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'setlist:delete',
+    (_event, setlistId: number): Result<void> =>
+      attemptSync(() => {
+        deleteSetlist(getDatabase(), setlistId)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'setlist:addTrack',
+    (_event, setlistId: number, trackId: number): Result<AddToSetlistResult> =>
+      attemptSync(() => {
+        const outcome = addTrackToSetlist(getDatabase(), setlistId, trackId)
+        if (outcome === 'added') persist()
+        return outcome
+      })
+  )
+
+  ipcMain.handle(
+    'setlist:removeTrack',
+    (_event, setlistId: number, trackId: number): Result<void> =>
+      attemptSync(() => {
+        removeTrackFromSetlist(getDatabase(), setlistId, trackId)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'setlist:genrePreview',
+    (_event, collectionId: number, genres: string[]): Result<GenrePreview> =>
+      attemptSync(() => previewGenreSelection(getDatabase(), collectionId, genres))
+  )
+
+  ipcMain.handle(
+    'setlist:generate',
+    (
+      _event,
+      collectionId: number,
+      name: string,
+      genres: string[],
+      limit: number | null
+    ): Result<{ id: number; trackCount: number }> =>
+      attemptSync(() => {
+        const trimmed = name.trim()
+        if (!trimmed) throw new Error('El setlist necesita un nombre.')
+
+        const db = getDatabase()
+        const trackIds = pickTracksByGenres(db, collectionId, genres, limit)
+        if (trackIds.length === 0) {
+          throw new Error('No hay canciones en esta colección con esos géneros.')
+        }
+
+        const id = createSetlistWithTracks(db, collectionId, trimmed, trackIds)
+        persist()
+        return { id, trackCount: trackIds.length }
+      })
+  )
+
+  // --- Exportar ----------------------------------------------------------
+
+  ipcMain.handle(
+    'export:run',
+    (event, request: ExportRequest): Promise<Result<ExportOutcome>> =>
+      attempt(() => {
+        const window = BrowserWindow.fromWebContents(event.sender)
+        return runExport(getDatabase(), window, request, (progress) => {
+          // El emisor puede haberse cerrado a mitad de una exportación larga.
+          if (!event.sender.isDestroyed()) {
+            event.sender.send('export:progress', progress)
+          }
+        })
+      })
+  )
+
+  ipcMain.handle(
+    'setlist:reorder',
+    (_event, setlistId: number, trackIdsInOrder: number[]): Result<void> =>
+      attemptSync(() => {
+        reorderSetlist(getDatabase(), setlistId, trackIdsInOrder)
+        persist()
+      })
   )
 }
