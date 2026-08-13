@@ -21,6 +21,7 @@ import type { TrackFile } from './models/audioFile'
 import type { AlbumSheet } from './services/albumSheet'
 import type { ArtistLink } from './services/musicbrainz'
 import type { DeezerTrackRef } from './services/deezer'
+import { EMPTY_PURCHASE, type Purchase } from './models/purchase'
 
 export interface EditableTrack {
   /**
@@ -84,6 +85,14 @@ export interface EditableAlbum {
    * No vienen de ninguna fuente; son suyas y solo suyas.
    */
   tags: string[]
+  /** Registro de compra: dónde, cuándo, cuánto. Todo opcional. */
+  purchase: Purchase
+  /**
+   * Grupo de edición en MusicBrainz. Lo comparten dos ediciones del mismo álbum,
+   * así que permite sugerir variantes automáticamente. Los discos manuales no lo
+   * tienen.
+   */
+  releaseGroupId: string | null
 }
 
 /** Arma el borrador editable a partir de lo que devolvieron las fuentes. */
@@ -120,7 +129,9 @@ export function draftFromSheet(
     userEditedFields: [],
     condition: null,
     notes: null,
-    tags: []
+    tags: [],
+    purchase: EMPTY_PURCHASE,
+    releaseGroupId: sheet.release.releaseGroupId
   }
 }
 
@@ -160,7 +171,9 @@ export function emptyManualDraft(
     userEditedFields: [],
     condition: null,
     notes: null,
-    tags: []
+    tags: [],
+    purchase: EMPTY_PURCHASE,
+    releaseGroupId: null
   }
 }
 

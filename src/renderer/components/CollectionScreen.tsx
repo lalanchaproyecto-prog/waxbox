@@ -11,8 +11,11 @@ interface CollectionScreenProps {
   collectionId: number
   onOpen: (albumId: number) => void
   onAdd: () => void
+  onBack: () => void
   /** Sin definir cuando la función de setlists está apagada en Configuración. */
   onOpenSetlists?: () => void
+  /** Abre la lista de deseos. */
+  onOpenWishlist?: () => void
 }
 
 type ViewMode = 'grid' | 'table'
@@ -108,7 +111,9 @@ function CollectionScreen({
   collectionId,
   onOpen,
   onAdd,
-  onOpenSetlists
+  onBack,
+  onOpenSetlists,
+  onOpenWishlist
 }: CollectionScreenProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [sortKey, setSortKey] = useState<SortKey>('title')
@@ -200,6 +205,7 @@ function CollectionScreen({
     <div className="collection">
       <header className="collection-header">
         <div>
+          <button className="btn-link" onClick={onBack}>&larr; Inicio</button>
           <h2>Tu colección</h2>
           <p className="collection-count">
             {albums.length === 1 ? '1 disco' : `${albums.length} discos`}
@@ -209,6 +215,11 @@ function CollectionScreen({
         </div>
         <div className="collection-header-actions">
           {/* Va aparte y en otro color: no es gestionar discos, es su propia sección. */}
+          {onOpenWishlist && (
+            <button className="btn btn-ghost" onClick={onOpenWishlist}>
+              Deseos
+            </button>
+          )}
           {onOpenSetlists && (
             <button className="btn btn-setlists" onClick={onOpenSetlists}>
               Setlists

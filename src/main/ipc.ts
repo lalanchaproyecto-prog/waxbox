@@ -84,6 +84,20 @@ import {
   renameCollection,
   deleteCollection,
   countCollections,
+  listWishlist,
+  addWishlistItem,
+  updateWishlistItem,
+  removeWishlistItem,
+  wishlistCount,
+  variantsOf,
+  linkVariants,
+  unlinkVariant,
+  suggestedVariants,
+  loansOf,
+  activeLoans,
+  lendAlbum,
+  returnLoan,
+  deleteLoan,
   type GenrePreview,
   type CollectionSummary,
   type AlbumSummary,
@@ -93,8 +107,15 @@ import {
   type AddToSetlistResult,
   type SetlistUsage,
   type BrowsableTrack,
-  type DuplicateCandidate
+  type DuplicateCandidate,
+  collectionStats,
+  type WishlistItem,
+  type WishlistDraft,
+  type VariantSibling,
+  type ActiveLoan,
+  type CollectionStats
 } from '../core/database/db'
+import type { Loan } from '../core/models/loan'
 import type { EditableAlbum } from '../core/albumDraft'
 
 async function attempt<T>(operation: () => Promise<T>): Promise<Result<T>> {
@@ -654,6 +675,12 @@ export function registerIpcHandlers(): void {
       })
   )
 
+  ipcMain.handle(
+    'collections:stats',
+    (_event, collectionId: number): Result<CollectionStats> =>
+      attemptSync(() => collectionStats(getDatabase(), collectionId))
+  )
+
   // --- Setlists ----------------------------------------------------------
 
   ipcMain.handle(
@@ -747,6 +774,129 @@ export function registerIpcHandlers(): void {
         const id = createSetlistWithTracks(db, collectionId, trimmed, trackIds)
         persist()
         return { id, trackCount: trackIds.length }
+      })
+  )
+
+  // --- Lista de deseos ---------------------------------------------------
+
+  ipcMain.handle(
+    'wishlist:list',
+    (_event, collectionId: number): Result<WishlistItem[]> =>
+      attemptSync(() => listWishlist(getDatabase(), collectionId))
+  )
+
+  ipcMain.handle(
+    'wishlist:add',
+    (_event, collectionId: number, draft: WishlistDraft): Result<{ id: number }> =>
+      attemptSync(() => {
+        const id = addWishlistItem(getDatabase(), collectionId, draft)
+        persist()
+        return { id }
+      })
+  )
+
+  ipcMain.handle(
+    'wishlist:update',
+    (_event, itemId: number, draft: WishlistDraft): Result<void> =>
+      attemptSync(() => {
+        updateWishlistItem(getDatabase(), itemId, draft)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'wishlist:remove',
+    (_event, itemId: number): Result<void> =>
+      attemptSync(() => {
+        removeWishlistItem(getDatabase(), itemId)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'wishlist:count',
+    (_event, collectionId: number): Result<number> =>
+      attemptSync(() => wishlistCount(getDatabase(), collectionId))
+  )
+
+  // --- Variantes --------------------------------------------------------
+
+  ipcMain.handle(
+    'variants:of',
+    (_event, albumId: number): Result<VariantSibling[]> =>
+      attemptSync(() => variantsOf(getDatabase(), albumId))
+  )
+
+  ipcMain.handle(
+    'variants:link',
+    (_event, albumId: number, otherAlbumId: number): Result<void> =>
+      attemptSync(() => {
+        linkVariants(getDatabase(), albumId, otherAlbumId)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'variants:unlink',
+    (_event, albumId: number): Result<void> =>
+      attemptSync(() => {
+        unlinkVariant(getDatabase(), albumId)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'variants:suggested',
+    (_event, collectionId: number, albumId: number): Result<VariantSibling[]> =>
+      attemptSync(() => suggestedVariants(getDatabase(), collectionId, albumId))
+  )
+
+  // --- Préstamos --------------------------------------------------------
+
+  ipcMain.handle(
+    'loans:of',
+    (_event, albumId: number): Result<Loan[]> =>
+      attemptSync(() => loansOf(getDatabase(), albumId))
+  )
+
+  ipcMain.handle(
+    'loans:active',
+    (_event, collectionId: number): Result<ActiveLoan[]> =>
+      attemptSync(() => activeLoans(getDatabase(), collectionId))
+  )
+
+  ipcMain.handle(
+    'loans:lend',
+    (
+      _event,
+      albumId: number,
+      person: string,
+      lentAt: string,
+      dueAt: string | null,
+      notes: string | null
+    ): Result<{ id: number }> =>
+      attemptSync(() => {
+        const id = lendAlbum(getDatabase(), albumId, person, lentAt, dueAt, notes)
+        persist()
+        return { id }
+      })
+  )
+
+  ipcMain.handle(
+    'loans:return',
+    (_event, loanId: number, returnedAt: string): Result<void> =>
+      attemptSync(() => {
+        returnLoan(getDatabase(), loanId, returnedAt)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'loans:delete',
+    (_event, loanId: number): Result<void> =>
+      attemptSync(() => {
+        deleteLoan(getDatabase(), loanId)
+        persist()
       })
   )
 

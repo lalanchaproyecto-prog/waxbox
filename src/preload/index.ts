@@ -28,8 +28,14 @@ import type {
   BrowsableTrack,
   GenrePreview,
   CollectionSummary,
-  DuplicateCandidate
+  DuplicateCandidate,
+  WishlistItem,
+  WishlistDraft,
+  VariantSibling,
+  ActiveLoan,
+  CollectionStats
 } from '../core/database/db'
+import type { Loan } from '../core/models/loan'
 import type { DeezerTrackRef } from '../core/services/deezer'
 import type { PlaybackSource } from '../core/player/queue'
 import type { CommonsImage } from '../core/services/wikimediaCommons'
@@ -173,6 +179,9 @@ const api = {
   deleteCollection: (collectionId: number): Promise<Result<void>> =>
     ipcRenderer.invoke('collections:delete', collectionId),
 
+  collectionStats: (collectionId: number): Promise<Result<CollectionStats>> =>
+    ipcRenderer.invoke('collections:stats', collectionId),
+
   listAlbumTracks: (albumId: number): Promise<Result<BrowsableTrack[]>> =>
     ipcRenderer.invoke('collection:albumTracks', albumId),
 
@@ -254,6 +263,60 @@ const api = {
     limit: number | null
   ): Promise<Result<{ id: number; trackCount: number }>> =>
     ipcRenderer.invoke('setlist:generate', collectionId, name, genres, limit),
+
+  // --- Lista de deseos ---------------------------------------------------
+
+  listWishlist: (collectionId: number): Promise<Result<WishlistItem[]>> =>
+    ipcRenderer.invoke('wishlist:list', collectionId),
+
+  addWishlistItem: (collectionId: number, draft: WishlistDraft): Promise<Result<{ id: number }>> =>
+    ipcRenderer.invoke('wishlist:add', collectionId, draft),
+
+  updateWishlistItem: (itemId: number, draft: WishlistDraft): Promise<Result<void>> =>
+    ipcRenderer.invoke('wishlist:update', itemId, draft),
+
+  removeWishlistItem: (itemId: number): Promise<Result<void>> =>
+    ipcRenderer.invoke('wishlist:remove', itemId),
+
+  wishlistCount: (collectionId: number): Promise<Result<number>> =>
+    ipcRenderer.invoke('wishlist:count', collectionId),
+
+  // --- Variantes --------------------------------------------------------
+
+  variantsOf: (albumId: number): Promise<Result<VariantSibling[]>> =>
+    ipcRenderer.invoke('variants:of', albumId),
+
+  linkVariants: (albumId: number, otherAlbumId: number): Promise<Result<void>> =>
+    ipcRenderer.invoke('variants:link', albumId, otherAlbumId),
+
+  unlinkVariant: (albumId: number): Promise<Result<void>> =>
+    ipcRenderer.invoke('variants:unlink', albumId),
+
+  suggestedVariants: (collectionId: number, albumId: number): Promise<Result<VariantSibling[]>> =>
+    ipcRenderer.invoke('variants:suggested', collectionId, albumId),
+
+  // --- Préstamos --------------------------------------------------------
+
+  loansOf: (albumId: number): Promise<Result<Loan[]>> =>
+    ipcRenderer.invoke('loans:of', albumId),
+
+  activeLoans: (collectionId: number): Promise<Result<ActiveLoan[]>> =>
+    ipcRenderer.invoke('loans:active', collectionId),
+
+  lendAlbum: (
+    albumId: number,
+    person: string,
+    lentAt: string,
+    dueAt: string | null,
+    notes: string | null
+  ): Promise<Result<{ id: number }>> =>
+    ipcRenderer.invoke('loans:lend', albumId, person, lentAt, dueAt, notes),
+
+  returnLoan: (loanId: number, returnedAt: string): Promise<Result<void>> =>
+    ipcRenderer.invoke('loans:return', loanId, returnedAt),
+
+  deleteLoan: (loanId: number): Promise<Result<void>> =>
+    ipcRenderer.invoke('loans:delete', loanId),
 
   // --- Exportar ----------------------------------------------------------
 

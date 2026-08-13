@@ -14,6 +14,8 @@ import {
 } from '../models/imageRef'
 import type { PlaybackSource } from '../player/queue'
 import type { DeezerTrackRef } from '../services/deezer'
+import type { Loan } from '../models/loan'
+import type { Purchase } from '../models/purchase'
 import {
   SCHEMA,
   INDEXES,
@@ -83,6 +85,9 @@ export interface SavedAlbum {
   source: AlbumSource
   artistLinks: ArtistLink[]
   userEditedFields: string[]
+  purchase: Purchase
+  /** Grupo de edición en MusicBrainz: lo comparten dos ediciones del mismo álbum. */
+  releaseGroupId: string | null
   tracks: SavedTrack[]
   createdAt: string
   updatedAt: string
@@ -354,8 +359,9 @@ export function saveAlbum(
          user_cover_front, user_cover_back, canonical_cover,
          description, description_source, description_url,
          musicbrainz_id, source, artist_links, user_edited_fields,
-         condition, notes, tags)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+         condition, notes, tags,
+         purchase_place, purchase_date, purchase_price, release_group_id)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         collectionId,
         album.format,
@@ -376,7 +382,11 @@ export function saveAlbum(
         jsonOrEmpty(album.userEditedFields),
         album.condition,
         album.notes,
-        jsonOrEmpty(album.tags)
+        jsonOrEmpty(album.tags),
+        album.purchase.place,
+        album.purchase.date,
+        album.purchase.price,
+        album.releaseGroupId
       ]
     )
 
@@ -500,6 +510,12 @@ export function getAlbum(db: Database, albumId: number): SavedAlbum | null {
     source: normalizeSource(row['source']),
     artistLinks: parseJson<ArtistLink[]>(row['artist_links'], []),
     userEditedFields: parseJson<string[]>(row['user_edited_fields'], []),
+    purchase: {
+      place: (row['purchase_place'] as string | null) ?? null,
+      date: (row['purchase_date'] as string | null) ?? null,
+      price: (row['purchase_price'] as string | null) ?? null
+    },
+    releaseGroupId: (row['release_group_id'] as string | null) ?? null,
     tracks,
     createdAt: row['created_at'] as string,
     updatedAt: row['updated_at'] as string
@@ -668,6 +684,8 @@ export function updateAlbum(
         description = ?, description_source = ?, description_url = ?,
         canonical_cover = ?, musicbrainz_id = ?, source = ?, artist_links = ?,
         user_edited_fields = ?, condition = ?, notes = ?, tags = ?,
+        purchase_place = ?, purchase_date = ?, purchase_price = ?,
+        release_group_id = ?,
         updated_at = datetime('now')
       WHERE id = ?`,
       [
@@ -688,6 +706,10 @@ export function updateAlbum(
         album.condition,
         album.notes,
         jsonOrEmpty(album.tags),
+        album.purchase.place,
+        album.purchase.date,
+        album.purchase.price,
+        album.releaseGroupId,
         albumId
       ]
     )
@@ -784,6 +806,416 @@ function updateTrackRow(db: Database, trackId: number, track: EditableTrack): vo
 
 export function deleteAlbum(db: Database, albumId: number): void {
   db.run('DELETE FROM albums WHERE id = ?', [albumId])
+}
+
+// --------------------------------------------------------------------------
+// Lista de deseos
+// --------------------------------------------------------------------------
+
+export interface WishlistItem {
+  id: number
+  artists: string
+  title: string
+  year: number | null
+  format: PhysicalFormatId | null
+  notes: string | null
+  /** 1 alta, 2 media, 3 baja. */
+  priority: number
+  seenAt: string | null
+  price: string | null
+  createdAt: string
+}
+
+/** Lo que se puede escribir de un deseo. Sin id: sirve para crear y editar. */
+export type WishlistDraft = Omit<WishlistItem, 'id' | 'createdAt'>
+
+export function listWishlist(db: Database, collectionId: number): WishlistItem[] {
+  const items: WishlistItem[] = []
+
+  const stmt = db.prepare(
+    `SELECT * FROM wishlist_items WHERE collection_id = ?
+     ORDER BY priority, artists COLLATE NOCASE, title COLLATE NOCASE`
+  )
+  stmt.bind([collectionId])
+
+  while (stmt.step()) {
+    const row = stmt.getAsObject()
+    items.push({
+      id: row['id'] as number,
+      artists: row['artists'] as string,
+      title: row['title'] as string,
+      year: row['year'] as number | null,
+      format: (row['format'] as PhysicalFormatId | null) ?? null,
+      notes: (row['notes'] as string | null) ?? null,
+      priority: (row['priority'] as number | null) ?? 2,
+      seenAt: (row['seen_at'] as string | null) ?? null,
+      price: (row['price'] as string | null) ?? null,
+      createdAt: row['created_at'] as string
+    })
+  }
+
+  stmt.free()
+  return items
+}
+
+export function addWishlistItem(
+  db: Database,
+  collectionId: number,
+  draft: WishlistDraft
+): number {
+  db.run(
+    `INSERT INTO wishlist_items
+      (collection_id, artists, title, year, format, notes, priority, seen_at, price)
+     VALUES (?,?,?,?,?,?,?,?,?)`,
+    [
+      collectionId,
+      draft.artists.trim(),
+      draft.title.trim(),
+      draft.year,
+      draft.format,
+      draft.notes,
+      draft.priority,
+      draft.seenAt,
+      draft.price
+    ]
+  )
+  return lastId(db)
+}
+
+export function updateWishlistItem(
+  db: Database,
+  itemId: number,
+  draft: WishlistDraft
+): void {
+  db.run(
+    `UPDATE wishlist_items SET
+       artists = ?, title = ?, year = ?, format = ?, notes = ?,
+       priority = ?, seen_at = ?, price = ?
+     WHERE id = ?`,
+    [
+      draft.artists.trim(),
+      draft.title.trim(),
+      draft.year,
+      draft.format,
+      draft.notes,
+      draft.priority,
+      draft.seenAt,
+      draft.price,
+      itemId
+    ]
+  )
+}
+
+export function removeWishlistItem(db: Database, itemId: number): void {
+  db.run('DELETE FROM wishlist_items WHERE id = ?', [itemId])
+}
+
+export function wishlistCount(db: Database, collectionId: number): number {
+  const stmt = db.prepare('SELECT COUNT(*) AS n FROM wishlist_items WHERE collection_id = ?')
+  stmt.bind([collectionId])
+  stmt.step()
+  const count = (stmt.getAsObject()['n'] as number) ?? 0
+  stmt.free()
+  return count
+}
+
+// --------------------------------------------------------------------------
+// Variantes: el mismo álbum, distinta copia
+// --------------------------------------------------------------------------
+
+/** Una copia hermana: mismo álbum, otro formato o edición. */
+export interface VariantSibling {
+  id: number
+  artists: string
+  title: string
+  year: number | null
+  format: PhysicalFormatId
+  condition: ConditionId | null
+  userCoverFront: string | null
+  canonicalCover: string | null
+}
+
+/** Las OTRAS copias del mismo álbum. Nunca se incluye a sí mismo. */
+export function variantsOf(db: Database, albumId: number): VariantSibling[] {
+  const grupo = variantGroupOf(db, albumId)
+  if (grupo === null) return []
+
+  const siblings: VariantSibling[] = []
+  const stmt = db.prepare(
+    `SELECT id, artists, title, year, format, condition, user_cover_front, canonical_cover
+     FROM albums WHERE variant_group_id = ? AND id != ?
+     ORDER BY year, format`
+  )
+  stmt.bind([grupo, albumId])
+
+  while (stmt.step()) {
+    const row = stmt.getAsObject()
+    siblings.push({
+      id: row['id'] as number,
+      artists: row['artists'] as string,
+      title: row['title'] as string,
+      year: row['year'] as number | null,
+      format: row['format'] as PhysicalFormatId,
+      condition: (row['condition'] as ConditionId | null) ?? null,
+      userCoverFront: row['user_cover_front'] as string | null,
+      canonicalCover: row['canonical_cover'] as string | null
+    })
+  }
+
+  stmt.free()
+  return siblings
+}
+
+function variantGroupOf(db: Database, albumId: number): number | null {
+  const stmt = db.prepare('SELECT variant_group_id FROM albums WHERE id = ?')
+  stmt.bind([albumId])
+  if (!stmt.step()) {
+    stmt.free()
+    return null
+  }
+  const value = stmt.getAsObject()['variant_group_id'] as number | null
+  stmt.free()
+  return value ?? null
+}
+
+function membersOfGroup(db: Database, groupId: number): number[] {
+  const ids: number[] = []
+  const stmt = db.prepare('SELECT id FROM albums WHERE variant_group_id = ?')
+  stmt.bind([groupId])
+  while (stmt.step()) ids.push(stmt.getAsObject()['id'] as number)
+  stmt.free()
+  return ids
+}
+
+/**
+ * Declara que dos discos son el mismo álbum en copias distintas.
+ *
+ * Los casos posibles se resuelven todos igual: si ninguno tiene grupo se crea
+ * uno; si uno lo tiene, el otro se suma; si los dos tienen grupos distintos, se
+ * funden en uno solo. Es la operación que la gente espera de "vincular": no
+ * importa en qué orden se vincularon las copias, terminan todas juntas.
+ */
+export function linkVariants(db: Database, albumId: number, otherAlbumId: number): void {
+  if (albumId === otherAlbumId) return
+
+  db.run('BEGIN TRANSACTION')
+
+  try {
+    const a = variantGroupOf(db, albumId)
+    const b = variantGroupOf(db, otherAlbumId)
+
+    if (a === null && b === null) {
+      db.run('INSERT INTO variant_groups DEFAULT VALUES')
+      const grupo = lastId(db)
+      db.run('UPDATE albums SET variant_group_id = ? WHERE id IN (?, ?)', [
+        grupo,
+        albumId,
+        otherAlbumId
+      ])
+    } else if (a !== null && b === null) {
+      db.run('UPDATE albums SET variant_group_id = ? WHERE id = ?', [a, otherAlbumId])
+    } else if (a === null && b !== null) {
+      db.run('UPDATE albums SET variant_group_id = ? WHERE id = ?', [b, albumId])
+    } else if (a !== b) {
+      // Dos grupos que se funden: todo lo del segundo pasa al primero.
+      db.run('UPDATE albums SET variant_group_id = ? WHERE variant_group_id = ?', [a, b])
+      db.run('DELETE FROM variant_groups WHERE id = ?', [b])
+    }
+
+    db.run('COMMIT')
+  } catch (error) {
+    db.run('ROLLBACK')
+    throw error
+  }
+}
+
+/**
+ * Saca un disco de su grupo de variantes.
+ *
+ * Si el grupo se queda con un solo disco, se disuelve: un grupo de uno no
+ * significa nada y dejarlo haría que ese disco apareciera como "vinculado" sin
+ * tener con qué.
+ */
+export function unlinkVariant(db: Database, albumId: number): void {
+  const grupo = variantGroupOf(db, albumId)
+  if (grupo === null) return
+
+  db.run('BEGIN TRANSACTION')
+
+  try {
+    db.run('UPDATE albums SET variant_group_id = NULL WHERE id = ?', [albumId])
+
+    const quedan = membersOfGroup(db, grupo)
+    if (quedan.length <= 1) {
+      db.run('UPDATE albums SET variant_group_id = NULL WHERE variant_group_id = ?', [grupo])
+      db.run('DELETE FROM variant_groups WHERE id = ?', [grupo])
+    }
+
+    db.run('COMMIT')
+  } catch (error) {
+    db.run('ROLLBACK')
+    throw error
+  }
+}
+
+/**
+ * Discos que probablemente sean el mismo álbum que este, sin vincular todavía.
+ *
+ * Se apoya en `release_group_id` de MusicBrainz, que dos ediciones del mismo
+ * álbum comparten. Es una pista fiable y gratis: no hay que comparar títulos ni
+ * adivinar nada. Los discos cargados a mano no lo tienen, así que no aparecen
+ * aquí y se vinculan a mano.
+ */
+export function suggestedVariants(
+  db: Database,
+  collectionId: number,
+  albumId: number
+): VariantSibling[] {
+  const stmt = db.prepare('SELECT release_group_id FROM albums WHERE id = ?')
+  stmt.bind([albumId])
+  const found = stmt.step()
+  const releaseGroup = found
+    ? (stmt.getAsObject()['release_group_id'] as string | null)
+    : null
+  stmt.free()
+
+  if (!releaseGroup) return []
+
+  const candidates: VariantSibling[] = []
+  const query = db.prepare(
+    `SELECT id, artists, title, year, format, condition, user_cover_front, canonical_cover
+     FROM albums
+     WHERE collection_id = ? AND release_group_id = ? AND id != ?
+       AND variant_group_id IS NULL
+     ORDER BY year, format`
+  )
+  query.bind([collectionId, releaseGroup, albumId])
+
+  while (query.step()) {
+    const row = query.getAsObject()
+    candidates.push({
+      id: row['id'] as number,
+      artists: row['artists'] as string,
+      title: row['title'] as string,
+      year: row['year'] as number | null,
+      format: row['format'] as PhysicalFormatId,
+      condition: (row['condition'] as ConditionId | null) ?? null,
+      userCoverFront: row['user_cover_front'] as string | null,
+      canonicalCover: row['canonical_cover'] as string | null
+    })
+  }
+
+  query.free()
+  return candidates
+}
+
+// --------------------------------------------------------------------------
+// Préstamos
+// --------------------------------------------------------------------------
+
+function rowToLoan(row: Record<string, SqlValue>): Loan {
+  return {
+    id: row['id'] as number,
+    albumId: row['album_id'] as number,
+    person: row['person'] as string,
+    lentAt: row['lent_at'] as string,
+    dueAt: (row['due_at'] as string | null) ?? null,
+    returnedAt: (row['returned_at'] as string | null) ?? null,
+    notes: (row['notes'] as string | null) ?? null
+  }
+}
+
+/** Todos los préstamos de un disco, el más reciente primero. */
+export function loansOf(db: Database, albumId: number): Loan[] {
+  const loans: Loan[] = []
+  const stmt = db.prepare('SELECT * FROM loans WHERE album_id = ? ORDER BY lent_at DESC, id DESC')
+  stmt.bind([albumId])
+  while (stmt.step()) loans.push(rowToLoan(stmt.getAsObject()))
+  stmt.free()
+  return loans
+}
+
+/** Un disco prestado ahora mismo, con el nombre del disco para poder listarlo. */
+export interface ActiveLoan extends Loan {
+  albumTitle: string
+  albumArtists: string
+  format: PhysicalFormatId
+  userCoverFront: string | null
+  canonicalCover: string | null
+}
+
+/** Lo que está fuera de casa en este momento, en toda la colección. */
+export function activeLoans(db: Database, collectionId: number): ActiveLoan[] {
+  const loans: ActiveLoan[] = []
+
+  const stmt = db.prepare(
+    `SELECT l.*, a.title AS album_title, a.artists AS album_artists, a.format,
+            a.user_cover_front, a.canonical_cover
+     FROM loans l
+     JOIN albums a ON a.id = l.album_id
+     WHERE l.returned_at IS NULL AND a.collection_id = ?
+     ORDER BY l.due_at IS NULL, l.due_at, l.lent_at`
+  )
+  stmt.bind([collectionId])
+
+  while (stmt.step()) {
+    const row = stmt.getAsObject()
+    loans.push({
+      ...rowToLoan(row),
+      albumTitle: row['album_title'] as string,
+      albumArtists: row['album_artists'] as string,
+      format: row['format'] as PhysicalFormatId,
+      userCoverFront: row['user_cover_front'] as string | null,
+      canonicalCover: row['canonical_cover'] as string | null
+    })
+  }
+
+  stmt.free()
+  return loans
+}
+
+/**
+ * Anota que el disco salió prestado.
+ *
+ * Si ya estaba prestado y no había vuelto, ese préstamo se cierra con la fecha
+ * de hoy antes de abrir el nuevo: un disco no puede estar en dos casas a la vez,
+ * y dejar dos préstamos abiertos haría que la lista de "lo que está afuera"
+ * mostrara el mismo disco dos veces.
+ */
+export function lendAlbum(
+  db: Database,
+  albumId: number,
+  person: string,
+  lentAt: string,
+  dueAt: string | null,
+  notes: string | null
+): number {
+  db.run('BEGIN TRANSACTION')
+
+  try {
+    db.run(
+      'UPDATE loans SET returned_at = ? WHERE album_id = ? AND returned_at IS NULL',
+      [lentAt, albumId]
+    )
+    db.run(
+      'INSERT INTO loans (album_id, person, lent_at, due_at, notes) VALUES (?,?,?,?,?)',
+      [albumId, person.trim(), lentAt, dueAt, notes]
+    )
+    const id = lastId(db)
+    db.run('COMMIT')
+    return id
+  } catch (error) {
+    db.run('ROLLBACK')
+    throw error
+  }
+}
+
+export function returnLoan(db: Database, loanId: number, returnedAt: string): void {
+  db.run('UPDATE loans SET returned_at = ? WHERE id = ?', [returnedAt, loanId])
+}
+
+export function deleteLoan(db: Database, loanId: number): void {
+  db.run('DELETE FROM loans WHERE id = ?', [loanId])
 }
 
 // --------------------------------------------------------------------------
@@ -1387,4 +1819,107 @@ export function albumCount(db: Database, collectionId: number): number {
   const count = (stmt.getAsObject()['n'] as number) ?? 0
   stmt.free()
   return count
+}
+
+// --------------------------------------------------------------------------
+// Estadísticas del panel de inicio
+// --------------------------------------------------------------------------
+
+export interface CollectionStats {
+  totalAlbums: number
+  totalTracks: number
+  totalPlays: number
+  /** Álbumes por formato: [{ format, count }], del más frecuente al menos. */
+  byFormat: Array<{ format: PhysicalFormatId; count: number }>
+  /** Los 5 géneros más frecuentes. */
+  topGenres: Array<{ genre: string; count: number }>
+  /** Las 5 últimas incorporaciones. */
+  recentAlbums: AlbumSummary[]
+  /** Álbum al azar para la ruleta. Null si la colección está vacía. */
+  randomAlbum: AlbumSummary | null
+  /** Cuántos deseos pendientes. */
+  wishlistCount: number
+  /** Cuántos discos prestados ahora mismo. */
+  activeLoansCount: number
+}
+
+export function collectionStats(db: Database, collectionId: number): CollectionStats {
+  const albums = listAlbums(db, collectionId)
+  const totalAlbums = albums.length
+
+  // Total de canciones
+  const trackStmt = db.prepare(
+    `SELECT COUNT(*) AS n FROM tracks t
+     JOIN albums a ON a.id = t.album_id
+     WHERE a.collection_id = ?`
+  )
+  trackStmt.bind([collectionId])
+  trackStmt.step()
+  const totalTracks = (trackStmt.getAsObject()['n'] as number) ?? 0
+  trackStmt.free()
+
+  // Total de reproducciones
+  const playStmt = db.prepare(
+    `SELECT COUNT(*) AS n FROM plays p
+     JOIN tracks t ON t.id = p.track_id
+     JOIN albums a ON a.id = t.album_id
+     WHERE a.collection_id = ?`
+  )
+  playStmt.bind([collectionId])
+  playStmt.step()
+  const totalPlays = (playStmt.getAsObject()['n'] as number) ?? 0
+  playStmt.free()
+
+  // Por formato
+  const formatCounts = new Map<PhysicalFormatId, number>()
+  for (const album of albums) {
+    formatCounts.set(album.format, (formatCounts.get(album.format) ?? 0) + 1)
+  }
+  const byFormat = [...formatCounts.entries()]
+    .map(([format, count]) => ({ format, count }))
+    .sort((a, b) => b.count - a.count)
+
+  // Top géneros
+  const genreCounts = new Map<string, number>()
+  for (const album of albums) {
+    for (const genre of album.genres) {
+      genreCounts.set(genre, (genreCounts.get(genre) ?? 0) + 1)
+    }
+  }
+  const topGenres = [...genreCounts.entries()]
+    .map(([genre, count]) => ({ genre, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+
+  // Recientes
+  const recentAlbums = albums.slice(0, 5)
+
+  // Ruleta
+  const randomAlbum = totalAlbums > 0
+    ? albums[Math.floor(Math.random() * totalAlbums)]
+    : null
+
+  // Deseos y préstamos
+  const wCount = wishlistCount(db, collectionId)
+  const loanStmt = db.prepare(
+    `SELECT COUNT(*) AS n FROM loans l
+     JOIN albums a ON a.id = l.album_id
+     WHERE l.returned_at IS NULL AND a.collection_id = ?`
+  )
+  loanStmt.bind([collectionId])
+  loanStmt.step()
+  const activeLoansCount = (loanStmt.getAsObject()['n'] as number) ?? 0
+  loanStmt.free()
+
+  return {
+    totalAlbums,
+    totalTracks,
+    totalPlays,
+    byFormat,
+    topGenres,
+    recentAlbums,
+    randomAlbum,
+    wishlistCount: wCount,
+    activeLoansCount
+  }
 }

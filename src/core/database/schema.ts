@@ -109,6 +109,68 @@ CREATE TABLE IF NOT EXISTS plays (
   FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
 );
 
+/*
+  Lista de deseos: discos que la persona QUIERE, no que tiene.
+
+  Va en su propia tabla y no como una marca en 'albums' a propósito. Un deseo
+  no tiene tracklist, ni estado de conservación, ni fotos, ni archivos de audio;
+  meterlo en 'albums' obligaría a que cada consulta de la colección recordara
+  excluirlo, y el día que una se olvidara aparecerían discos que nadie tiene
+  mezclados con los de verdad.
+*/
+CREATE TABLE IF NOT EXISTS wishlist_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  collection_id INTEGER NOT NULL,
+  artists TEXT NOT NULL,
+  title TEXT NOT NULL,
+  year INTEGER,
+  /* Formato deseado. Puede ser null: a veces da igual en cuál venga. */
+  format TEXT,
+  notes TEXT,
+  /* Cuánto se quiere: 1 alta, 2 media, 3 baja. */
+  priority INTEGER DEFAULT 2,
+  /* Dónde se vio y a qué precio, si se anotó. */
+  seen_at TEXT,
+  price TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+/*
+  Grupos de variantes: el mismo álbum en distintas copias.
+
+  El grupo es una fila vacía a propósito — solo un identificador. Lo que une a
+  los discos es que comparten albums.variant_group_id. Modelarlo así permite
+  vincular y desvincular sin tocar los discos entre sí, y que el grupo
+  desaparezca solo cuando se queda con uno.
+*/
+CREATE TABLE IF NOT EXISTS variant_groups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+/*
+  Préstamos.
+
+  Es una tabla con historial y no un par de columnas en 'albums' porque un disco
+  se presta muchas veces a lo largo de los años. Con columnas, prestar de nuevo
+  borraría el registro anterior; así queda "a quién se lo presté y cuándo
+  volvió" para siempre.
+
+  El préstamo en curso es el que tiene returned_at en NULL.
+*/
+CREATE TABLE IF NOT EXISTS loans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  album_id INTEGER NOT NULL,
+  person TEXT NOT NULL,
+  lent_at TEXT NOT NULL,
+  /* Cuándo debería volver. Null si no se acordó fecha. */
+  due_at TEXT,
+  /* Null mientras siga prestado. */
+  returned_at TEXT,
+  notes TEXT,
+  FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS setlists (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   collection_id INTEGER,
@@ -153,6 +215,10 @@ CREATE INDEX IF NOT EXISTS idx_setlists_collection ON setlists(collection_id);
 CREATE INDEX IF NOT EXISTS idx_track_files_track ON track_files(track_id);
 CREATE INDEX IF NOT EXISTS idx_plays_track ON plays(track_id);
 CREATE INDEX IF NOT EXISTS idx_plays_when ON plays(played_at);
+CREATE INDEX IF NOT EXISTS idx_wishlist_collection ON wishlist_items(collection_id);
+CREATE INDEX IF NOT EXISTS idx_loans_album ON loans(album_id);
+CREATE INDEX IF NOT EXISTS idx_albums_variant ON albums(variant_group_id);
+CREATE INDEX IF NOT EXISTS idx_albums_release_group ON albums(release_group_id);
 `
 
 /** Nombre de la colección que se crea sola para quien nunca eligió una. */
@@ -229,6 +295,32 @@ export const MIGRATIONS: readonly Migration[] = [
         aparte con sus uniones sería complejidad sin ninguna ganancia.
       */
       { table: 'albums', column: 'tags', type: 'TEXT' }
+    ]
+  },
+  {
+    version: 5,
+    description: 'Registro de compra, variantes vinculadas y grupo de edición',
+    addColumns: [
+      /*
+        El registro de compra va en columnas sueltas y no en un JSON: la línea
+        de tiempo de gustos por año de compra que viene después necesita poder
+        ordenar y agrupar por fecha, y eso dentro de un JSON no se puede.
+      */
+      { table: 'albums', column: 'purchase_place', type: 'TEXT' },
+      { table: 'albums', column: 'purchase_date', type: 'TEXT' },
+      { table: 'albums', column: 'purchase_price', type: 'TEXT' },
+      /* Qué disco es "el mismo álbum, otra copia". Null si no está vinculado. */
+      { table: 'albums', column: 'variant_group_id', type: 'INTEGER' },
+      /*
+        Identificador del grupo de edición en MusicBrainz.
+
+        Dos ediciones del mismo álbum lo comparten, así que es lo que permite
+        SUGERIR una vinculación sola: al agregar el CD de un disco que ya se
+        tiene en vinilo, la app puede darse cuenta. Ya se traía en la ficha pero
+        se descartaba sin guardarlo. Los discos manuales no lo tienen y solo se
+        pueden vincular a mano.
+      */
+      { table: 'albums', column: 'release_group_id', type: 'TEXT' }
     ]
   }
 ]

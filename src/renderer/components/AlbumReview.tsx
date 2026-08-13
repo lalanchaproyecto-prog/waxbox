@@ -14,9 +14,12 @@ import {
 } from '@core/models/formats'
 import { CONDITIONS, conditionLabel } from '@core/models/condition'
 import type { ConditionId } from '@core/models/condition'
+import { hasPurchase, formatPurchaseDate, EMPTY_PURCHASE } from '@core/models/purchase'
 import TrackDetail from './TrackDetail'
 import AddToSetlistButton from './AddToSetlistButton'
-import type { SetlistUsage } from '@core/database/db'
+import VariantsSection from './VariantsSection'
+import LoansSection from './LoansSection'
+import type { SetlistUsage, DuplicateCandidate } from '@core/database/db'
 import { DEFAULT_FEATURES, type FeatureFlags } from '@core/models/features'
 import { useDominantColor, tintStyle } from '../theme/useDominantColor'
 import { usePlayer } from '../player/PlayerProvider'
@@ -51,6 +54,8 @@ interface AlbumReviewProps {
   onReload?: () => void
   /** Etiquetas que ya existen en la colección, para reusarlas escritas igual. */
   knownTags?: string[]
+  /** Navega a otro disco. Lo usan las variantes para ir a la copia hermana. */
+  onOpenAlbum?: (albumId: number) => void
 }
 
 function groupBySide(tracks: EditableTrack[]): Array<[string, EditableTrack[]]> {
@@ -84,7 +89,8 @@ function AlbumReview({
   collectionId,
   backLabel = 'Elegir otra edición',
   onReload,
-  knownTags = []
+  knownTags = [],
+  onOpenAlbum
 }: AlbumReviewProps) {
   const [editingSaved, setEditingSaved] = useState(false)
   const [workingCopy, setWorkingCopy] = useState<EditableAlbum>(album)
@@ -152,6 +158,16 @@ function AlbumReview({
   const player = usePlayer()
   const [audioBusy, setAudioBusy] = useState(false)
   const [audioNote, setAudioNote] = useState<string | null>(null)
+  const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([])
+
+  useEffect(() => {
+    if (savedMode || !collectionId) return
+    window.api
+      .findPossibleDuplicates(collectionId, active.artists, active.title)
+      .then((result) => {
+        if (result.ok) setDuplicates(result.data)
+      })
+  }, [active.artists, active.title, collectionId, savedMode])
 
   function updateForm(field: keyof EditableAlbum, value: unknown) {
     setForm((current) => ({
@@ -715,7 +731,7 @@ function AlbumReview({
         )}
       </section>
 
-      {/* Condition: editable pre-save or when editing saved */}
+      {/* Condition + purchase: editable pre-save or when editing saved */}
       {(editingSaved || (!savedMode && onSave)) && (
         <section className="review-block your-copy">
           <h3 className="section-title">Tu copia</h3>
@@ -746,10 +762,58 @@ function AlbumReview({
               </button>
             )}
           </div>
+
+          <h4 className="subsection-title">Registro de compra</h4>
+          <p className="setting-description">
+            Dónde la conseguiste, cuándo y cuánto pagaste. Todo es opcional.
+          </p>
+          <div className="edit-grid">
+            <label className="field">
+              <span className="field-label">Lugar</span>
+              <input
+                value={active.purchase.place ?? ''}
+                placeholder="Ej: Feria del Disco, Mercado Libre"
+                spellCheck={false}
+                onChange={(e) =>
+                  handleChange({
+                    ...active,
+                    purchase: { ...active.purchase, place: e.target.value || null }
+                  })
+                }
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">Fecha</span>
+              <input
+                type="date"
+                value={active.purchase.date ?? ''}
+                onChange={(e) =>
+                  handleChange({
+                    ...active,
+                    purchase: { ...active.purchase, date: e.target.value || null }
+                  })
+                }
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">Precio</span>
+              <input
+                value={active.purchase.price ?? ''}
+                placeholder="Ej: $12.000, me lo regalaron"
+                spellCheck={false}
+                onChange={(e) =>
+                  handleChange({
+                    ...active,
+                    purchase: { ...active.purchase, price: e.target.value || null }
+                  })
+                }
+              />
+            </label>
+          </div>
         </section>
       )}
 
-      {/* Condition: read-only when viewing saved */}
+      {/* Condition + purchase: read-only when viewing saved */}
       {savedMode && !editingSaved && (
         <section className="review-block">
           <h3 className="section-title">Tu copia</h3>
@@ -758,6 +822,28 @@ function AlbumReview({
               <dt>Estado</dt>
               <dd>{conditionLabel(active.condition)}</dd>
             </div>
+            {hasPurchase(active.purchase) && (
+              <>
+                {active.purchase.place && (
+                  <div>
+                    <dt>Comprada en</dt>
+                    <dd>{active.purchase.place}</dd>
+                  </div>
+                )}
+                {active.purchase.date && (
+                  <div>
+                    <dt>Fecha de compra</dt>
+                    <dd>{formatPurchaseDate(active.purchase.date) ?? active.purchase.date}</dd>
+                  </div>
+                )}
+                {active.purchase.price && (
+                  <div>
+                    <dt>Precio</dt>
+                    <dd>{active.purchase.price}</dd>
+                  </div>
+                )}
+              </>
+            )}
           </dl>
         </section>
       )}
@@ -823,6 +909,18 @@ function AlbumReview({
         </section>
       )}
 
+      {savedMode && albumId !== undefined && collectionId !== undefined && onOpenAlbum && (
+        <VariantsSection
+          albumId={albumId}
+          collectionId={collectionId}
+          onOpenAlbum={onOpenAlbum}
+        />
+      )}
+
+      {savedMode && albumId !== undefined && (
+        <LoansSection albumId={albumId} />
+      )}
+
       <footer className="preview-footer">
         {savedMode && editingSaved ? (
           <>
@@ -878,6 +976,16 @@ function AlbumReview({
           </>
         ) : (
           <>
+            {duplicates.length > 0 && (
+              <div className="duplicate-warning">
+                <p>
+                  Ya tienes {duplicates.length === 1 ? 'una copia' : `${duplicates.length} copias`} de
+                  este disco:{' '}
+                  {duplicates.map((d) => `${getFormat(d.format)?.label ?? d.format}${d.year ? ` (${d.year})` : ''}`).join(', ')}
+                  . Puedes guardarlo igual si es otra edición.
+                </p>
+              </div>
+            )}
             <button className="btn btn-ghost" onClick={onBack}>
               {backLabel}
             </button>

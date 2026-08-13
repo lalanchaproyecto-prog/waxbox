@@ -21,6 +21,8 @@ import CollectionBar from './components/CollectionBar'
 import ProfilePicker from './components/ProfilePicker'
 import type { Profile } from '@core/models/profile'
 import ExploreScreen from './components/ExploreScreen'
+import WishlistScreen from './components/WishlistScreen'
+import HomeScreen from './components/HomeScreen'
 import { Isotipo, LogoCompleto } from './components/Logo'
 import { PlayerProvider } from './player/PlayerProvider'
 import PlayerBar from './player/PlayerBar'
@@ -38,8 +40,10 @@ type View =
   | 'settings'
   | 'about'
   | 'saved'
+  | 'collection'
   | 'setlists'
   | 'explore'
+  | 'wishlist'
 
 export type ThemePreference = 'auto' | 'dark' | 'light'
 
@@ -636,12 +640,14 @@ function App() {
           </div>
         )}
 
-        {!loading && !error && view === 'home' && hasAlbums && (
-          <CollectionScreen
-            albums={collection}
-            collectionId={activeCollectionId ?? 0}
-            onOpen={handleOpenSaved}
-            onAdd={() => setView('add')}
+        {!loading && !error && view === 'home' && hasAlbums && activeCollectionId !== null && (
+          <HomeScreen
+            collectionId={activeCollectionId}
+            collectionName={
+              collections.find((c) => c.id === activeCollectionId)?.name ?? 'Mi colección'
+            }
+            onOpenAlbum={handleOpenSaved}
+            onOpenCollection={() => setView('collection')}
             onOpenSetlists={
               features.setlists
                 ? () => {
@@ -650,6 +656,27 @@ function App() {
                   }
                 : undefined
             }
+            onOpenWishlist={() => setView('wishlist')}
+            onAdd={() => setView('add')}
+          />
+        )}
+
+        {!loading && !error && view === 'collection' && activeCollectionId !== null && (
+          <CollectionScreen
+            albums={collection}
+            collectionId={activeCollectionId}
+            onOpen={handleOpenSaved}
+            onAdd={() => setView('add')}
+            onBack={() => setView('home')}
+            onOpenSetlists={
+              features.setlists
+                ? () => {
+                    setExploreTarget(null)
+                    setView('setlists')
+                  }
+                : undefined
+            }
+            onOpenWishlist={() => setView('wishlist')}
           />
         )}
 
@@ -682,6 +709,7 @@ function App() {
             onUpdate={handleUpdateSaved}
             onReload={() => handleOpenSaved(savedAlbum.id)}
             knownTags={knownTags}
+            onOpenAlbum={handleOpenSaved}
           />
         )}
 
@@ -704,6 +732,13 @@ function App() {
             collectionId={activeCollectionId}
             target={exploreTarget}
             onBack={() => setView('setlists')}
+          />
+        )}
+
+        {!loading && !error && view === 'wishlist' && activeCollectionId !== null && (
+          <WishlistScreen
+            collectionId={activeCollectionId}
+            onBack={() => setView('home')}
           />
         )}
 
