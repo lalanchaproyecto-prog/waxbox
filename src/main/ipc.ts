@@ -39,7 +39,13 @@ import {
   profileDbPath,
   type Profile
 } from './profiles'
-import { copyPhoto, deletePhoto, copyAvatar, deleteAvatar } from './photos'
+import {
+  copyPhoto,
+  deletePhoto,
+  copyAvatar,
+  deleteAvatar,
+  downloadImage
+} from './photos'
 import {
   pickAudioFiles,
   matchFilesToTracks,
@@ -466,6 +472,53 @@ export function registerIpcHandlers(): void {
           ? { kind: 'avatar' as const, value: copyAvatar(origen) }
           : { kind: 'archivo' as const, value: copyPhoto(origen) }
       })
+    }
+  )
+
+  /**
+   * Deja una imagen lista para guardar, descargándola si hace falta.
+   *
+   * Una imagen que la persona subió ya es un archivo suyo y pasa tal cual. Una
+   * de Wikimedia Commons se descarga aquí y pasa a ser un archivo local, para
+   * que la colección siga viéndose completa sin conexión.
+   *
+   * SI LA DESCARGA FALLA NO SE ABORTA NADA: se devuelve la imagen con su
+   * dirección de internet, que sigue sirviendo mientras haya conexión. Perder
+   * la imagen entera por un problema de red sería peor que guardarla como
+   * enlace.
+   */
+  ipcMain.handle(
+    'image:prepare',
+    async (
+      _event,
+      image: ImageRef | null,
+      destino: 'archivo' | 'avatar'
+    ): Promise<Result<{ image: ImageRef | null; offline: boolean }>> => {
+      if (!image || image.kind !== 'commons') {
+        return { ok: true, data: { image, offline: image !== null } }
+      }
+
+      const filename = await downloadImage(image.value, destino)
+
+      if (!filename) {
+        return { ok: true, data: { image, offline: false } }
+      }
+
+      // Cambia dónde vive, NO de quién es: la atribución viaja igual.
+      return {
+        ok: true,
+        data: {
+          image: {
+            kind: destino,
+            value: filename,
+            author: image.author ?? null,
+            license: image.license ?? null,
+            sourceUrl: image.sourceUrl ?? null,
+            title: image.title ?? null
+          },
+          offline: true
+        }
+      }
     }
   )
 

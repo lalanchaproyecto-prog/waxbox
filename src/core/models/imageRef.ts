@@ -14,33 +14,48 @@
  */
 
 /**
- * De dónde sale la imagen, que además decide dónde está guardada.
+ * DÓNDE está guardada la imagen. Ojo: no es de dónde vino.
  *
- * 'avatar' existe aparte de 'archivo' por una razón concreta: las fotos
- * normales viven en la carpeta del perfil abierto, pero la imagen de un perfil
- * hay que poder dibujarla en el SELECTOR de perfiles, cuando todavía no hay
- * ninguno abierto. Por eso los avatares van a una carpeta compartida y se
- * sirven por su propio camino.
+ * Las dos cosas son independientes a propósito. Una imagen de Wikimedia
+ * Commons, una vez descargada, es un archivo local como cualquier otro — pero
+ * sigue necesitando su crédito. Por eso el origen no vive aquí sino en los
+ * campos de atribución, que pueden acompañar a cualquier tipo.
+ *
+ * - 'archivo': carpeta de fotos del perfil abierto.
+ * - 'avatar' : carpeta compartida de perfiles. Existe aparte porque el selector
+ *   de perfiles se dibuja ANTES de abrir ninguno, y en ese momento no hay
+ *   "carpeta del perfil abierto" de la que leer.
+ * - 'commons': la imagen sigue en internet, sin descargar. Es el respaldo para
+ *   cuando la descarga falla, y lo que tienen las imágenes elegidas antes de
+ *   que la app supiera descargarlas.
  */
 export type ImageKind = 'archivo' | 'avatar' | 'commons'
 
 export interface ImageRef {
   kind: ImageKind
   /**
-   * Cómo llegar a la imagen.
-   * - 'archivo': nombre del archivo en la carpeta de fotos del perfil abierto.
-   * - 'avatar': nombre del archivo en la carpeta compartida de perfiles.
-   * - 'commons': la dirección completa de la imagen en Wikimedia.
+   * Cómo llegar a la imagen: el nombre del archivo local, o la dirección
+   * completa cuando el tipo es 'commons'.
    */
   value: string
-  /** Solo en 'commons'. Quién hizo la imagen. */
+  /** Quién hizo la imagen. Solo cuando vino de Commons. */
   author?: string | null
-  /** Solo en 'commons'. Nombre corto de la licencia. */
+  /** Nombre corto de la licencia. Solo cuando vino de Commons. */
   license?: string | null
-  /** Solo en 'commons'. Página del archivo, con la información completa. */
+  /** Página del archivo en Commons, con la información completa. */
   sourceUrl?: string | null
-  /** Solo en 'commons'. Título del archivo, para poder nombrarlo. */
+  /** Título del archivo en Commons. */
   title?: string | null
+}
+
+/**
+ * Si esta imagen vino de Wikimedia Commons, esté descargada o no.
+ *
+ * Se mira la atribución y NO el tipo: una imagen de Commons ya descargada tiene
+ * tipo 'archivo', y seguiría necesitando su crédito igual.
+ */
+export function isFromCommons(image: ImageRef | null): boolean {
+  return Boolean(image && (image.sourceUrl || image.author || image.license))
 }
 
 /**
@@ -92,12 +107,14 @@ export function imageSrc(image: ImageRef | null): string | null {
 /**
  * El crédito que hay que mostrar junto a la imagen, o null si no hace falta.
  *
- * Un archivo propio no lleva crédito: es de quien usa la app.
+ * Una foto propia no lleva crédito: es de quien usa la app. Una de Commons sí,
+ * y lo sigue llevando después de descargarla — tenerla en el disco duro no
+ * cambia de quién es.
  */
 export function imageCredit(image: ImageRef | null): string | null {
-  if (!image || image.kind !== 'commons') return null
+  if (!isFromCommons(image)) return null
 
-  const partes = [image.author, image.license].filter(Boolean)
+  const partes = [image!.author, image!.license].filter(Boolean)
   if (partes.length === 0) return 'Wikimedia Commons'
 
   return `${partes.join(' · ')} — Wikimedia Commons`

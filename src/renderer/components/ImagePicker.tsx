@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { CommonsImage } from '@core/services/wikimediaCommons'
 import { suggestedQuery } from '@core/services/wikimediaCommons'
-import { imageSrc, imageCredit, type ImageRef } from '@core/models/imageRef'
+import { imageSrc, imageCredit, isFromCommons, type ImageRef } from '@core/models/imageRef'
 
 interface ImagePickerProps {
   /** Qué se le está poniendo imagen, para el título del diálogo. */
@@ -54,6 +54,9 @@ function ImagePicker({
   const [buscando, setBuscando] = useState(false)
   const [buscado, setBuscado] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [guardando, setGuardando] = useState(false)
+  /** La descarga fallo y hay que decidir si se guarda igual como enlace. */
+  const [falloDescarga, setFalloDescarga] = useState(false)
   const [elegida, setElegida] = useState<ImageRef | null>(current)
 
   // Primera búsqueda automática con la sugerencia, para que el diálogo no se
@@ -114,7 +117,42 @@ function ImagePicker({
     })
   }
 
-  function aplicar() {
+  /**
+   * Guarda lo elegido, descargando antes la imagen si vino de Commons.
+   *
+   * La descarga ocurre AQUÍ y no al hacer clic en cada resultado: mirar diez
+   * imágenes descargaría diez archivos de los que se usaría uno solo.
+   */
+  async function aplicar() {
+    setGuardando(true)
+    setError(null)
+    setFalloDescarga(false)
+
+    const preparada = await window.api.prepareImage(elegida, destino)
+    setGuardando(false)
+
+    if (!preparada.ok) {
+      setError(preparada.error)
+      return
+    }
+
+    /*
+      Si la imagen venía de Commons y no se pudo descargar, NO se cierra el
+      diálogo: se avisa y se deja decidir. Cerrarlo guardando el enlace en
+      silencio dejaría a la persona con una imagen que desaparece al quedarse
+      sin internet, sin haberle dicho nunca por qué.
+    */
+    if (elegida?.kind === 'commons' && !preparada.data.offline) {
+      setFalloDescarga(true)
+      return
+    }
+
+    onChange(preparada.data.image)
+    onClose()
+  }
+
+  /** Guardar de todas formas, aceptando que solo se verá con conexión. */
+  function guardarComoEnlace() {
     onChange(elegida)
     onClose()
   }
@@ -155,7 +193,11 @@ function ImagePicker({
             {elegida ? (
               <>
                 <span className="image-picker-kind">
-                  {elegida.kind === 'commons' ? 'De Wikimedia Commons' : 'Archivo tuyo'}
+                  {isFromCommons(elegida)
+                    ? elegida.kind === 'commons'
+                      ? 'De Wikimedia Commons — sin descargar'
+                      : 'De Wikimedia Commons — guardada en tu computador'
+                    : 'Archivo tuyo'}
                 </span>
                 {credito && <span className="image-picker-credit">{credito}</span>}
                 <button className="btn-link" onClick={() => setElegida(null)}>
@@ -247,8 +289,9 @@ function ImagePicker({
 
             {resultados.length > 0 && (
               <p className="section-note">
-                Imágenes de Wikimedia Commons. Se guarda el crédito del autor y la
-                licencia junto a la imagen, como exigen sus términos de uso.
+                Imágenes de Wikimedia Commons. Al guardar se descargan a tu computador,
+                así que se ven aunque estés sin conexión, y se conserva el crédito del
+                autor y la licencia como exigen sus términos de uso.
               </p>
             )}
           </section>
@@ -267,13 +310,31 @@ function ImagePicker({
           </section>
         )}
 
+        {falloDescarga && (
+          <p className="feedback-error">
+            No se pudo descargar la imagen a tu computador. Si la guardas igual, quedará
+            como enlace y solo se verá cuando tengas conexión.
+          </p>
+        )}
+
         <footer className="modal-footer">
-          <button className="btn btn-ghost" onClick={onClose}>
+          <button className="btn btn-ghost" onClick={onClose} disabled={guardando}>
             Cancelar
           </button>
-          <button className="btn btn-primary" onClick={aplicar}>
-            Guardar
-          </button>
+          {falloDescarga ? (
+            <>
+              <button className="btn btn-ghost" onClick={aplicar}>
+                Reintentar la descarga
+              </button>
+              <button className="btn btn-primary" onClick={guardarComoEnlace}>
+                Guardar igual
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-primary" onClick={aplicar} disabled={guardando}>
+              {guardando ? 'Guardando...' : 'Guardar'}
+            </button>
+          )}
         </footer>
       </div>
     </div>

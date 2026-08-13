@@ -117,6 +117,17 @@ const api = {
   pickImageFile: (destino: 'archivo' | 'avatar'): Promise<Result<ImageRef | null>> =>
     ipcRenderer.invoke('image:pickFile', destino),
 
+  /**
+   * Deja una imagen lista para guardar: si viene de Commons la descarga, para
+   * que se pueda ver sin conexión. El campo `offline` del resultado dice si
+   * quedó guardada de verdad en el computador.
+   */
+  prepareImage: (
+    image: ImageRef | null,
+    destino: 'archivo' | 'avatar'
+  ): Promise<Result<{ image: ImageRef | null; offline: boolean }>> =>
+    ipcRenderer.invoke('image:prepare', image, destino),
+
   setCollectionImage: (collectionId: number, image: ImageRef | null): Promise<Result<void>> =>
     ipcRenderer.invoke('collections:setImage', collectionId, image),
 
