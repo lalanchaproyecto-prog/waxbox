@@ -4,6 +4,8 @@ import { formatTotalDuration, durationToSeconds } from '@core/models/duration'
 import { getFormat } from '@core/models/formats'
 import ExportDialog from './ExportDialog'
 import GenerateSetlistDialog from './GenerateSetlistDialog'
+import ImagePicker from './ImagePicker'
+import { imageSrc, type ImageRef } from '@core/models/imageRef'
 
 interface SetlistsScreenProps {
   /** La colección, para saber qué géneros existen de verdad. */
@@ -36,6 +38,8 @@ function SetlistsScreen({
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [exportingId, setExportingId] = useState<number | null>(null)
   const [generating, setGenerating] = useState(false)
+  /** Setlist al que se le está eligiendo imagen. */
+  const [imagenDe, setImagenDe] = useState<SetlistSummary | SetlistDetail | null>(null)
 
   const allGenres = useMemo(() => {
     const set = new Set<string>()
@@ -179,6 +183,9 @@ function SetlistsScreen({
             </div>
           ) : (
             <div className="setlist-detail-title">
+              {imageSrc(detail.image) && (
+                <img className="setlist-detail-image" src={imageSrc(detail.image)!} alt="" />
+              )}
               <h2>{detail.name}</h2>
               <button
                 className="btn-link"
@@ -188,6 +195,9 @@ function SetlistsScreen({
                 }}
               >
                 ✎ Renombrar
+              </button>
+              <button className="btn-link" onClick={() => setImagenDe(detail)}>
+                🖼 Imagen
               </button>
             </div>
           )}
@@ -468,6 +478,28 @@ function SetlistsScreen({
           Volver
         </button>
       </footer>
+
+      {/*
+        La sugerencia de búsqueda sale de los géneros de la colección cuando los
+        hay: el nombre de un setlist generado ("Setlist Rock — 20 canciones")
+        buscado tal cual no daría ninguna imagen, y "rock" sí.
+      */}
+      {imagenDe && (
+        <ImagePicker
+          title={imagenDe.name}
+          current={imagenDe.image}
+          destino="archivo"
+          sugerencia={imagenDe.name}
+          generos={allGenres}
+          onChange={async (image: ImageRef | null) => {
+            const result = await window.api.setSetlistImage(imagenDe.id, image)
+            if (!result.ok) { setError(result.error); return }
+            refreshList()
+            if (detail && detail.id === imagenDe.id) loadDetail(imagenDe.id)
+          }}
+          onClose={() => setImagenDe(null)}
+        />
+      )}
     </div>
   )
 }

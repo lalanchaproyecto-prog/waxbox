@@ -79,6 +79,11 @@ export interface EditableAlbum {
   condition: ConditionId | null
   /** Notas personales sobre esta copia. */
   notes: string | null
+  /**
+   * Etiquetas libres que escribe la persona: "regalo", "firmado", "de mi papá".
+   * No vienen de ninguna fuente; son suyas y solo suyas.
+   */
+  tags: string[]
 }
 
 /** Arma el borrador editable a partir de lo que devolvieron las fuentes. */
@@ -114,7 +119,8 @@ export function draftFromSheet(
     })),
     userEditedFields: [],
     condition: null,
-    notes: null
+    notes: null,
+    tags: []
   }
 }
 
@@ -153,7 +159,8 @@ export function emptyManualDraft(
     tracks: [],
     userEditedFields: [],
     condition: null,
-    notes: null
+    notes: null,
+    tags: []
   }
 }
 

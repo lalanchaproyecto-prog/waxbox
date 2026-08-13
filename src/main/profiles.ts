@@ -29,6 +29,7 @@ import { randomBytes } from 'crypto'
 import { userInfo } from 'os'
 
 import type { Profile } from '../core/models/profile'
+import type { ImageRef } from '../core/models/imageRef'
 
 export type { Profile }
 
@@ -113,6 +114,29 @@ export function renameProfile(profileId: string, name: string, emoji?: string): 
   if (emoji) profile.emoji = emoji
 
   writeProfilesFile(data)
+}
+
+/**
+ * Cambia la imagen de un perfil. null la quita y vuelve a verse el emoji.
+ *
+ * Devuelve el nombre del avatar que dejó de usarse, si había uno propio, para
+ * que quien llama lo borre y no se acumulen imágenes sin dueño.
+ */
+export function setProfileImage(profileId: string, image: ImageRef | null): string | null {
+  const data = readProfilesFile()
+  const profile = data.profiles.find((item) => item.id === profileId)
+  if (!profile) throw new Error('Ese perfil ya no existe.')
+
+  const anterior = profile.image ?? null
+  profile.image = image
+  writeProfilesFile(data)
+
+  // Solo los archivos propios ocupan espacio aquí; una imagen de Commons vive
+  // en internet. Y si es exactamente la misma, borrarla dejaría el perfil
+  // apuntando a un archivo que ya no está.
+  if (!anterior || anterior.kind !== 'avatar') return null
+  if (image && image.kind === 'avatar' && image.value === anterior.value) return null
+  return anterior.value
 }
 
 /**

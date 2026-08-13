@@ -32,6 +32,8 @@ import type {
 } from '../core/database/db'
 import type { DeezerTrackRef } from '../core/services/deezer'
 import type { PlaybackSource } from '../core/player/queue'
+import type { CommonsImage } from '../core/services/wikimediaCommons'
+import type { ImageRef } from '../core/models/imageRef'
 
 const api = {
   suggestArtists: (query: string): Promise<Result<ArtistSuggestion[]>> =>
@@ -104,6 +106,25 @@ const api = {
 
   albumCount: (collectionId: number): Promise<Result<number>> =>
     ipcRenderer.invoke('collection:count', collectionId),
+
+  // --- Imágenes de perfil, colección y setlist ---------------------------
+
+  /** Busca imágenes libres en Wikimedia Commons. */
+  searchCommonsImages: (query: string): Promise<Result<CommonsImage[]>> =>
+    ipcRenderer.invoke('commons:search', query),
+
+  /** Abre el diálogo para elegir una imagen propia y la guarda. */
+  pickImageFile: (destino: 'archivo' | 'avatar'): Promise<Result<ImageRef | null>> =>
+    ipcRenderer.invoke('image:pickFile', destino),
+
+  setCollectionImage: (collectionId: number, image: ImageRef | null): Promise<Result<void>> =>
+    ipcRenderer.invoke('collections:setImage', collectionId, image),
+
+  setSetlistImage: (setlistId: number, image: ImageRef | null): Promise<Result<void>> =>
+    ipcRenderer.invoke('setlist:setImage', setlistId, image),
+
+  setProfileImage: (profileId: string, image: ImageRef | null): Promise<Result<void>> =>
+    ipcRenderer.invoke('profiles:setImage', profileId, image),
 
   // --- Perfiles ----------------------------------------------------------
 

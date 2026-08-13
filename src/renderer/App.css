@@ -4099,3 +4099,293 @@ body::after {
   padding: 0.5rem 1.1rem;
   font-size: var(--text-sm);
 }
+
+/* ---------- Selector de imagen (Commons o archivo propio) ---------- */
+
+.image-picker-modal {
+  max-width: 720px;
+}
+
+.image-picker-preview {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.8rem;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.image-picker-thumb {
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-body);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-1), var(--inset-top);
+}
+
+.image-picker-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-picker-empty {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.image-picker-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.image-picker-kind {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/*
+  El crédito de la imagen. No es decoración: las licencias de Wikimedia Commons
+  exigen nombrar al autor y la licencia allí donde se usa la imagen.
+*/
+.image-picker-credit {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+  line-height: var(--leading-normal);
+}
+
+.image-picker-tabs {
+  display: flex;
+  gap: 0.3rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.image-picker-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  margin-bottom: -1px;
+}
+
+.image-picker-tab.active {
+  color: var(--accent-link);
+  border-bottom-color: var(--accent);
+}
+
+.image-picker-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.image-picker-search {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.image-picker-search input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-base);
+}
+
+.image-picker-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.image-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.6rem;
+  max-height: 42vh;
+  overflow-y: auto;
+}
+
+.image-picker-option {
+  position: relative;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--bg-inset);
+  aspect-ratio: 4 / 3;
+}
+
+.image-picker-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.image-picker-option:hover {
+  border-color: var(--border-strong);
+}
+
+.image-picker-option.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--halo-accent);
+}
+
+.image-picker-option-credit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.65rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Imágenes de perfil, colección y setlist ---------- */
+
+.profile-card-image {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: var(--radius-pill);
+  object-fit: cover;
+  box-shadow: var(--shadow-1), var(--inset-top);
+}
+
+.collection-row-image {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-1);
+}
+
+.setlist-detail-image {
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  box-shadow: var(--shadow-1);
+}
+
+/* ---------- Etiquetas propias ---------- */
+
+.tag-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--bg-active);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-pill);
+  padding: 0.25rem 0.7rem;
+  font-size: var(--text-xs);
+  color: var(--text-body);
+}
+
+.tag-chip.suggestion {
+  background: transparent;
+  border-style: dashed;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tag-chip.suggestion:hover {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.tag-chip-remove {
+  background: none;
+  border: none;
+  color: var(--text-dimmed);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.tag-chip-remove:hover {
+  color: var(--danger-hover);
+}
+
+.tag-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tag-input-row input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.8rem;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-base);
+}
+
+.tag-input-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tag-input-row .btn {
+  padding: 0.5rem 1.1rem;
+  font-size: var(--text-sm);
+}
+
+.tag-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tag-suggestions-label {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+}
+
+/* ---------- Filtros combinados ---------- */
+
+.filter-selects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

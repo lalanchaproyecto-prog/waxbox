@@ -60,6 +60,7 @@ export const COLLECTION_FIELDS: readonly ExportFieldDefinition[] = [
   { id: 'label', label: 'Sello', defaultOn: true },
   { id: 'format', label: 'Formato', hint: 'Vinilo, CD o casete', defaultOn: true },
   { id: 'condition', label: 'Estado de conservación', defaultOn: true },
+  { id: 'tags', label: 'Tus etiquetas', defaultOn: false },
   { id: 'notes', label: 'Tus notas', defaultOn: false },
   {
     id: 'tracklist',

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { Profile } from '@core/models/profile'
+import { imageSrc, type ImageRef } from '@core/models/imageRef'
+import ImagePicker from './ImagePicker'
 
 interface ProfilePickerProps {
   profiles: Profile[]
@@ -22,6 +24,8 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
   const [newName, setNewName] = useState('')
   const [newEmoji, setNewEmoji] = useState(EMOJIS[0])
   const [editing, setEditing] = useState<string | null>(null)
+  /** Perfil al que se le está eligiendo imagen. */
+  const [imagenDe, setImagenDe] = useState<Profile | null>(null)
   const [editName, setEditName] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -108,9 +112,18 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
             ) : (
               <>
                 <button className="profile-card" onClick={() => onPick(profile.id)}>
-                  <span className="profile-card-emoji" aria-hidden="true">
-                    {profile.emoji}
-                  </span>
+                  {/* Con imagen se ve la imagen; sin ella, el emoji de siempre. */}
+                  {imageSrc(profile.image ?? null) ? (
+                    <img
+                      className="profile-card-image"
+                      src={imageSrc(profile.image ?? null)!}
+                      alt=""
+                    />
+                  ) : (
+                    <span className="profile-card-emoji" aria-hidden="true">
+                      {profile.emoji}
+                    </span>
+                  )}
                   <span className="profile-card-name">{profile.name}</span>
                 </button>
 
@@ -123,6 +136,9 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
                     }}
                   >
                     Renombrar
+                  </button>
+                  <button className="btn-link" onClick={() => setImagenDe(profile)}>
+                    Imagen
                   </button>
                   {profiles.length > 1 &&
                     (confirmDeleteId === profile.id ? (
@@ -208,6 +224,25 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
         Los perfiles sirven para organizarse, no para esconder datos: no tienen
         contraseña y cualquiera que abra Waxbox puede entrar a cualquiera.
       </p>
+
+      {/*
+        Las imágenes de perfil van a la carpeta compartida ('avatar') y no a la
+        del perfil: esta pantalla se dibuja antes de abrir ninguno, así que las
+        de un perfil concreto todavía no se podrían leer.
+      */}
+      {imagenDe && (
+        <ImagePicker
+          title={imagenDe.name}
+          current={imagenDe.image ?? null}
+          destino="avatar"
+          sugerencia={imagenDe.name}
+          onChange={async (image: ImageRef | null) => {
+            const result = await window.api.setProfileImage(imagenDe.id, image)
+            if (result.ok) onChanged()
+          }}
+          onClose={() => setImagenDe(null)}
+        />
+      )}
     </div>
   )
 }

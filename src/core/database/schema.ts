@@ -210,6 +210,26 @@ export const MIGRATIONS: readonly Migration[] = [
     addColumns: [
       { table: 'albums', column: 'source', type: "TEXT DEFAULT 'musicbrainz'" }
     ]
+  },
+  {
+    version: 4,
+    description: 'Imágenes de colección y setlist, y etiquetas propias del álbum',
+    addColumns: [
+      /*
+        La imagen se guarda como JSON y no como una ruta suelta porque tiene que
+        llevar pegada la atribución: las imágenes de Wikimedia Commons exigen
+        crédito al autor y mención de la licencia. Ver models/imageRef.ts.
+      */
+      { table: 'collections', column: 'image', type: 'TEXT' },
+      { table: 'setlists', column: 'image', type: 'TEXT' },
+      /*
+        Etiquetas libres que escribe la persona ("regalo", "firmado", "de mi
+        papá"). Van como lista JSON en la misma columna, igual que los géneros:
+        se filtran en memoria sobre una colección personal, así que una tabla
+        aparte con sus uniones sería complejidad sin ninguna ganancia.
+      */
+      { table: 'albums', column: 'tags', type: 'TEXT' }
+    ]
   }
 ]
 

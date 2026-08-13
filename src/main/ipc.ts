@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, dialog } from 'electron'
 import { runExport } from './export'
 import type { ExportRequest, ExportOutcome } from '../core/models/exportFields'
 import {
@@ -17,6 +17,8 @@ import type { Result } from '../core/result'
 import { buildAlbumSheet, type AlbumSheet } from '../core/services/albumSheet'
 import { checkApiKey, searchTrackVideo, type YouTubeVideo } from '../core/services/youtube'
 import { getPreviewUrl, findTracks, type DeezerTrackRef } from '../core/services/deezer'
+ import { searchImages, type CommonsImage } from '../core/services/wikimediaCommons'
+ import type { ImageRef } from '../core/models/imageRef'
 import {
   getYoutubeApiKey,
   setYoutubeApiKey,
@@ -32,11 +34,12 @@ import {
   renameProfile,
   deleteProfile,
   setActiveProfile,
+  setProfileImage,
   getLastActiveId,
   profileDbPath,
   type Profile
 } from './profiles'
-import { copyPhoto, deletePhoto } from './photos'
+import { copyPhoto, deletePhoto, copyAvatar, deleteAvatar } from './photos'
 import {
   pickAudioFiles,
   matchFilesToTracks,
@@ -65,6 +68,8 @@ import {
   pickTracksByGenres,
   createSetlistWithTracks,
   findPossibleDuplicates,
+  setCollectionImage,
+  setSetlistImage,
   linkTrackFile,
   unlinkTrackFile,
   recordPlay,
@@ -418,6 +423,78 @@ export function registerIpcHandlers(): void {
       attemptSync(() => {
         recordPlay(getDatabase(), trackId, source)
         persist()
+      })
+  )
+
+  // --- Imágenes de perfil, colección y setlist ---------------------------
+
+  /** Busca imágenes libres en Wikimedia Commons. */
+  ipcMain.handle(
+    'commons:search',
+    (_event, query: string): Promise<Result<CommonsImage[]>> =>
+      attempt(() => searchImages(query))
+  )
+
+  /**
+   * Elige una imagen del computador y la deja guardada.
+   *
+   * `destino` decide dónde: 'avatar' va a la carpeta compartida de perfiles,
+   * que se puede leer sin ningún perfil abierto; 'archivo' va a la carpeta del
+   * perfil actual, junto a las fotos de los discos.
+   */
+  ipcMain.handle(
+    'image:pickFile',
+    async (
+      event,
+      destino: 'archivo' | 'avatar'
+    ): Promise<Result<ImageRef | null>> => {
+      const window = BrowserWindow.fromWebContents(event.sender)
+      const options: Electron.OpenDialogOptions = {
+        title: 'Elegir una imagen',
+        properties: ['openFile'],
+        filters: [{ name: 'Imágenes', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif'] }]
+      }
+
+      const picked = window
+        ? await dialog.showOpenDialog(window, options)
+        : await dialog.showOpenDialog(options)
+
+      return attemptSync(() => {
+        if (picked.canceled || picked.filePaths.length === 0) return null
+        const origen = picked.filePaths[0]
+        return destino === 'avatar'
+          ? { kind: 'avatar' as const, value: copyAvatar(origen) }
+          : { kind: 'archivo' as const, value: copyPhoto(origen) }
+      })
+    }
+  )
+
+  ipcMain.handle(
+    'collections:setImage',
+    (_event, collectionId: number, image: ImageRef | null): Result<void> =>
+      attemptSync(() => {
+        const huerfana = setCollectionImage(getDatabase(), collectionId, image)
+        if (huerfana) deletePhoto(huerfana)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'setlist:setImage',
+    (_event, setlistId: number, image: ImageRef | null): Result<void> =>
+      attemptSync(() => {
+        const huerfana = setSetlistImage(getDatabase(), setlistId, image)
+        if (huerfana) deletePhoto(huerfana)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'profiles:setImage',
+    (_event, profileId: string, image: ImageRef | null): Result<void> =>
+      attemptSync(() => {
+        const huerfano = setProfileImage(profileId, image)
+        if (huerfano) deleteAvatar(huerfano)
       })
   )
 

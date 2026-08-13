@@ -7,6 +7,11 @@ import type { ArtistLink } from '../services/musicbrainz'
 import { durationToSeconds } from '../models/duration'
 import { normalizeSource, type AlbumSource } from '../models/albumSource'
 import { extensionOf, type TrackFile } from '../models/audioFile'
+import {
+  parseImageRef,
+  serializeImageRef,
+  type ImageRef
+} from '../models/imageRef'
 import type { PlaybackSource } from '../player/queue'
 import type { DeezerTrackRef } from '../services/deezer'
 import {
@@ -26,6 +31,8 @@ export interface AlbumSummary {
   genres: string[]
   label: string | null
   condition: ConditionId | null
+  /** Etiquetas libres que escribió la persona. */
+  tags: string[]
   userCoverFront: string | null
   canonicalCover: string | null
   trackCount: number
@@ -65,6 +72,7 @@ export interface SavedAlbum {
   label: string | null
   condition: ConditionId | null
   notes: string | null
+  tags: string[]
   userCoverFront: string | null
   userCoverBack: string | null
   canonicalCover: string | null
@@ -170,6 +178,8 @@ export interface CollectionSummary {
   name: string
   albumCount: number
   setlistCount: number
+  /** Imagen elegida por la persona: archivo propio o de Wikimedia Commons. */
+  image: ImageRef | null
   createdAt: string
 }
 
@@ -177,7 +187,7 @@ export function listCollections(db: Database): CollectionSummary[] {
   const collections: CollectionSummary[] = []
 
   const stmt = db.prepare(
-    `SELECT c.id, c.name, c.created_at,
+    `SELECT c.id, c.name, c.created_at, c.image,
             (SELECT COUNT(*) FROM albums a WHERE a.collection_id = c.id) AS album_count,
             (SELECT COUNT(*) FROM setlists s WHERE s.collection_id = c.id) AS setlist_count
      FROM collections c
@@ -190,6 +200,7 @@ export function listCollections(db: Database): CollectionSummary[] {
       id: row['id'] as number,
       name: row['name'] as string,
       createdAt: row['created_at'] as string,
+      image: parseImageRef(row['image']),
       albumCount: row['album_count'] as number,
       setlistCount: row['setlist_count'] as number
     })
@@ -197,6 +208,65 @@ export function listCollections(db: Database): CollectionSummary[] {
 
   stmt.free()
   return collections
+}
+
+/**
+ * Cambia la imagen de una colección. null la quita.
+ *
+ * Devuelve el nombre del archivo que dejó de usarse, si había uno propio, para
+ * que quien llama lo borre del disco y no queden fotos huérfanas ocupando
+ * espacio para siempre.
+ */
+export function setCollectionImage(
+  db: Database,
+  collectionId: number,
+  image: ImageRef | null
+): string | null {
+  const anterior = imageOf(db, 'collections', collectionId)
+  db.run('UPDATE collections SET image = ? WHERE id = ?', [
+    serializeImageRef(image),
+    collectionId
+  ])
+  return orphanedPhoto(anterior, image)
+}
+
+export function setSetlistImage(
+  db: Database,
+  setlistId: number,
+  image: ImageRef | null
+): string | null {
+  const anterior = imageOf(db, 'setlists', setlistId)
+  db.run("UPDATE setlists SET image = ?, updated_at = datetime('now') WHERE id = ?", [
+    serializeImageRef(image),
+    setlistId
+  ])
+  return orphanedPhoto(anterior, image)
+}
+
+/** La imagen guardada de una fila, sea de colecciones o de setlists. */
+function imageOf(db: Database, table: 'collections' | 'setlists', id: number): ImageRef | null {
+  const stmt = db.prepare(`SELECT image FROM ${table} WHERE id = ?`)
+  stmt.bind([id])
+  if (!stmt.step()) {
+    stmt.free()
+    return null
+  }
+  const raw = stmt.getAsObject()['image']
+  stmt.free()
+  return parseImageRef(raw)
+}
+
+/**
+ * Qué archivo de foto quedó sin dueño al reemplazar una imagen.
+ *
+ * Solo cuentan los archivos propios: una imagen de Commons vive en internet y
+ * no ocupa nada aquí. Y si la imagen nueva es exactamente la misma, no hay nada
+ * que borrar — borrarla dejaría la fila apuntando a un archivo inexistente.
+ */
+function orphanedPhoto(anterior: ImageRef | null, nueva: ImageRef | null): string | null {
+  if (!anterior || anterior.kind !== 'archivo') return null
+  if (nueva && nueva.kind === 'archivo' && nueva.value === anterior.value) return null
+  return anterior.value
 }
 
 export function createCollection(db: Database, name: string): number {
@@ -284,8 +354,8 @@ export function saveAlbum(
          user_cover_front, user_cover_back, canonical_cover,
          description, description_source, description_url,
          musicbrainz_id, source, artist_links, user_edited_fields,
-         condition, notes)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+         condition, notes, tags)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         collectionId,
         album.format,
@@ -305,7 +375,8 @@ export function saveAlbum(
         jsonOrEmpty(album.artistLinks),
         jsonOrEmpty(album.userEditedFields),
         album.condition,
-        album.notes
+        album.notes,
+        jsonOrEmpty(album.tags)
       ]
     )
 
@@ -361,7 +432,7 @@ export function listAlbums(db: Database, collectionId: number): AlbumSummary[] {
 
   const stmt = db.prepare(
     `SELECT a.id, a.format, a.artists, a.title, a.year, a.genres, a.label,
-            a.condition, a.user_cover_front, a.canonical_cover, a.source,
+            a.condition, a.tags, a.user_cover_front, a.canonical_cover, a.source,
             a.created_at,
             (SELECT COUNT(*) FROM tracks t WHERE t.album_id = a.id) AS track_count
      FROM albums a
@@ -381,6 +452,7 @@ export function listAlbums(db: Database, collectionId: number): AlbumSummary[] {
       genres: parseJson<string[]>(row['genres'], []),
       label: row['label'] as string | null,
       condition: row['condition'] as ConditionId | null,
+      tags: parseJson<string[]>(row['tags'], []),
       userCoverFront: row['user_cover_front'] as string | null,
       canonicalCover: row['canonical_cover'] as string | null,
       source: normalizeSource(row['source']),
@@ -417,6 +489,7 @@ export function getAlbum(db: Database, albumId: number): SavedAlbum | null {
     label: row['label'] as string | null,
     condition: (row['condition'] as ConditionId | null) ?? null,
     notes: (row['notes'] as string | null) ?? null,
+    tags: parseJson<string[]>(row['tags'], []),
     userCoverFront: row['user_cover_front'] as string | null,
     userCoverBack: row['user_cover_back'] as string | null,
     canonicalCover: row['canonical_cover'] as string | null,
@@ -594,7 +667,7 @@ export function updateAlbum(
         format = ?, artists = ?, title = ?, year = ?, genres = ?, label = ?,
         description = ?, description_source = ?, description_url = ?,
         canonical_cover = ?, musicbrainz_id = ?, source = ?, artist_links = ?,
-        user_edited_fields = ?, condition = ?, notes = ?,
+        user_edited_fields = ?, condition = ?, notes = ?, tags = ?,
         updated_at = datetime('now')
       WHERE id = ?`,
       [
@@ -614,6 +687,7 @@ export function updateAlbum(
         jsonOrEmpty(album.userEditedFields),
         album.condition,
         album.notes,
+        jsonOrEmpty(album.tags),
         albumId
       ]
     )
@@ -811,6 +885,8 @@ export interface SetlistSummary {
   totalSeconds: number
   /** Canciones sin duración en el catálogo, para poder avisar que el total es parcial. */
   tracksWithoutDuration: number
+  /** Imagen elegida por la persona: archivo propio o de Wikimedia Commons. */
+  image: ImageRef | null
   createdAt: string
 }
 
@@ -833,6 +909,7 @@ export interface SetlistDetail {
   id: number
   name: string
   tracks: SetlistEntry[]
+  image: ImageRef | null
   createdAt: string
 }
 
@@ -856,10 +933,16 @@ export function deleteSetlist(db: Database, setlistId: number): void {
 }
 
 export function listSetlists(db: Database, collectionId: number): SetlistSummary[] {
-  const rows: Array<{ id: number; name: string; createdAt: string; trackCount: number }> = []
+  const rows: Array<{
+    id: number
+    name: string
+    createdAt: string
+    trackCount: number
+    image: ImageRef | null
+  }> = []
 
   const stmt = db.prepare(
-    `SELECT s.id, s.name, s.created_at,
+    `SELECT s.id, s.name, s.created_at, s.image,
             (SELECT COUNT(*) FROM setlist_tracks st WHERE st.setlist_id = s.id) AS track_count
      FROM setlists s
      WHERE s.collection_id = ?
@@ -873,7 +956,8 @@ export function listSetlists(db: Database, collectionId: number): SetlistSummary
       id: row['id'] as number,
       name: row['name'] as string,
       createdAt: row['created_at'] as string,
-      trackCount: row['track_count'] as number
+      trackCount: row['track_count'] as number,
+      image: parseImageRef(row['image'])
     })
   }
   stmt.free()
@@ -913,7 +997,7 @@ function setlistDuration(
 }
 
 export function getSetlist(db: Database, setlistId: number): SetlistDetail | null {
-  const head = db.prepare('SELECT id, name, created_at FROM setlists WHERE id = ?')
+  const head = db.prepare('SELECT id, name, created_at, image FROM setlists WHERE id = ?')
   head.bind([setlistId])
 
   if (!head.step()) {
@@ -962,6 +1046,7 @@ export function getSetlist(db: Database, setlistId: number): SetlistDetail | nul
     id: headRow['id'] as number,
     name: headRow['name'] as string,
     createdAt: headRow['created_at'] as string,
+    image: parseImageRef(headRow['image']),
     tracks
   }
 }

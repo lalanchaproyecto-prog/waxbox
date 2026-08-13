@@ -49,6 +49,8 @@ interface AlbumReviewProps {
    * audio, que se guardan aparte de la ficha y no llegan por `onChange`.
    */
   onReload?: () => void
+  /** Etiquetas que ya existen en la colección, para reusarlas escritas igual. */
+  knownTags?: string[]
 }
 
 function groupBySide(tracks: EditableTrack[]): Array<[string, EditableTrack[]]> {
@@ -81,7 +83,8 @@ function AlbumReview({
   features = DEFAULT_FEATURES,
   collectionId,
   backLabel = 'Elegir otra edición',
-  onReload
+  onReload,
+  knownTags = []
 }: AlbumReviewProps) {
   const [editingSaved, setEditingSaved] = useState(false)
   const [workingCopy, setWorkingCopy] = useState<EditableAlbum>(album)
@@ -786,6 +789,40 @@ function AlbumReview({
         </section>
       )}
 
+      {/*
+        Etiquetas: palabras libres que pone la persona para agrupar sus discos
+        como quiera ("regalo", "firmado", "de mi papá"). No vienen de ninguna
+        fuente y no se parecen al género: el género describe la música, la
+        etiqueta describe la copia.
+      */}
+      {(canEdit || (savedMode && active.tags.length > 0)) && (
+        <section className="review-block">
+          <h3 className="section-title">Tus etiquetas</h3>
+
+          {canEdit ? (
+            <>
+              <p className="setting-description">
+                Palabras tuyas para encontrarlo después. Se pueden combinar con los
+                demás filtros de la colección.
+              </p>
+              <TagEditor
+                tags={active.tags}
+                suggestions={knownTags}
+                onChange={(tags) => handleChange({ ...active, tags })}
+              />
+            </>
+          ) : (
+            <div className="tag-chips">
+              {active.tags.map((tag) => (
+                <span className="tag-chip" key={tag}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       <footer className="preview-footer">
         {savedMode && editingSaved ? (
           <>
@@ -868,6 +905,100 @@ function AlbumReview({
           showCredits={features.credits}
           sideOptions={canEditTracks ? sideOptionsFor(active.format) : undefined}
         />
+      )}
+    </div>
+  )
+}
+
+interface TagEditorProps {
+  tags: string[]
+  /** Etiquetas que ya existen en la colección, para reusarlas escritas igual. */
+  suggestions: string[]
+  onChange: (tags: string[]) => void
+}
+
+/**
+ * Escribir y quitar etiquetas.
+ *
+ * Las sugerencias no son un adorno: el filtro de la colección compara texto
+ * exacto, así que "Regalo" y "regalo" serían dos etiquetas distintas y los
+ * discos quedarían repartidos entre ambas. Ofrecer las existentes para marcar
+ * es lo que mantiene la lista limpia sin obligar a nadie a recordar cómo las
+ * escribió la vez anterior.
+ */
+function TagEditor({ tags, suggestions, onChange }: TagEditorProps) {
+  const [draft, setDraft] = useState('')
+
+  function add(raw: string) {
+    const tag = raw.trim()
+    if (tag.length === 0) return
+    // Comparación sin distinguir mayúsculas para no crear casi-duplicados.
+    if (tags.some((item) => item.toLowerCase() === tag.toLowerCase())) {
+      setDraft('')
+      return
+    }
+    onChange([...tags, tag])
+    setDraft('')
+  }
+
+  function remove(tag: string) {
+    onChange(tags.filter((item) => item !== tag))
+  }
+
+  const sinUsar = suggestions.filter(
+    (tag) => !tags.some((item) => item.toLowerCase() === tag.toLowerCase())
+  )
+
+  return (
+    <div className="tag-editor">
+      {tags.length > 0 && (
+        <div className="tag-chips">
+          {tags.map((tag) => (
+            <span className="tag-chip removable" key={tag}>
+              {tag}
+              <button
+                className="tag-chip-remove"
+                onClick={() => remove(tag)}
+                title={`Quitar "${tag}"`}
+                aria-label={`Quitar la etiqueta ${tag}`}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="tag-input-row">
+        <input
+          type="text"
+          value={draft}
+          placeholder="Ej: regalo, firmado, de mi papá"
+          spellCheck={false}
+          aria-label="Nueva etiqueta"
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            // Enter y coma agregan: la coma es lo que la gente teclea sin pensar.
+            if (event.key === 'Enter' || event.key === ',') {
+              event.preventDefault()
+              add(draft)
+            }
+          }}
+        />
+        <button className="btn btn-ghost" onClick={() => add(draft)} disabled={!draft.trim()}>
+          Agregar
+        </button>
+      </div>
+
+      {sinUsar.length > 0 && (
+        <div className="tag-suggestions">
+          <span className="tag-suggestions-label">Ya usaste:</span>
+          {sinUsar.map((tag) => (
+            <button key={tag} className="tag-chip suggestion" onClick={() => add(tag)}>
+              + {tag}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )

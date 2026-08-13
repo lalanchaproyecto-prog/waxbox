@@ -228,6 +228,8 @@ export function renderCollectionHtml(
         facts.push(`<span><b>Género:</b> ${esc(album.genres.join(', '))}</span>`)
       if (fields.has('condition'))
         facts.push(`<span><b>Estado:</b> ${esc(conditionLabel(album.condition))}</span>`)
+      if (fields.has('tags') && album.tags.length > 0)
+        facts.push(`<span><b>Etiquetas:</b> ${esc(album.tags.join(', '))}</span>`)
 
       const notes =
         fields.has('notes') && album.notes

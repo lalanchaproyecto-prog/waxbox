@@ -515,6 +515,11 @@ function App() {
     a.localeCompare(b)
   )
 
+  /** Etiquetas que ya existen, para reusarlas escritas exactamente igual. */
+  const knownTags = [...new Set(collection.flatMap((item) => item.tags))].sort((a, b) =>
+    a.localeCompare(b)
+  )
+
   return (
     /*
       El reproductor envuelve la app entera y nunca se desmonta: por eso la
@@ -676,6 +681,7 @@ function App() {
             onDelete={handleDeleteSaved}
             onUpdate={handleUpdateSaved}
             onReload={() => handleOpenSaved(savedAlbum.id)}
+            knownTags={knownTags}
           />
         )}
 
@@ -786,6 +792,7 @@ function App() {
             }
             onStartOver={startOver}
             features={features}
+            knownTags={knownTags}
             onSave={handleSave}
           />
         )}

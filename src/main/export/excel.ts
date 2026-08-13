@@ -76,6 +76,7 @@ export function buildCollectionWorkbook(
   if (fields.has('label')) columns.push({ header: 'Sello', key: 'label', width: 22 })
   if (fields.has('format')) columns.push({ header: 'Formato', key: 'format', width: 11 })
   if (fields.has('condition')) columns.push({ header: 'Estado', key: 'condition', width: 15 })
+  if (fields.has('tags')) columns.push({ header: 'Etiquetas', key: 'tags', width: 24 })
   if (fields.has('notes')) columns.push({ header: 'Tus notas', key: 'notes', width: 40 })
   if (fields.has('review')) columns.push({ header: 'Reseña', key: 'review', width: 60 })
   if (fields.has('artistLinks'))
@@ -93,6 +94,7 @@ export function buildCollectionWorkbook(
       label: album.label ?? '',
       format: getFormat(album.format)?.label ?? album.format,
       condition: conditionLabel(album.condition),
+      tags: album.tags.join(', '),
       notes: album.notes ?? '',
       review: album.description ?? '',
       artistLinks: album.artistLinks.map((link) => link.url).join('\n')

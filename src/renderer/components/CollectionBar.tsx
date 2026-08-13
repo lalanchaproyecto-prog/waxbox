@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CollectionSummary } from '@core/database/db'
+import { imageSrc, type ImageRef } from '@core/models/imageRef'
+import ImagePicker from './ImagePicker'
 
 interface CollectionBarProps {
   collections: CollectionSummary[]
@@ -134,6 +136,8 @@ function CollectionsManager({
   const [renamingId, setRenamingId] = useState<number | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+  /** Colección a la que se le está eligiendo imagen. */
+  const [imagenDe, setImagenDe] = useState<CollectionSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   async function handleCreate() {
@@ -223,6 +227,9 @@ function CollectionsManager({
                 </div>
               ) : (
                 <>
+                  {imageSrc(item.image) && (
+                    <img className="collection-row-image" src={imageSrc(item.image)!} alt="" />
+                  )}
                   <div className="collection-row-text">
                     <span className="collection-row-name">
                       {item.name}
@@ -244,6 +251,10 @@ function CollectionsManager({
                       }}
                     >
                       ✎ Renombrar
+                    </button>
+
+                    <button className="btn-link" onClick={() => setImagenDe(item)}>
+                      🖼 Imagen
                     </button>
 
                     {confirmDeleteId === item.id ? (
@@ -318,6 +329,21 @@ function CollectionsManager({
           </button>
         </footer>
       </div>
+
+      {imagenDe && (
+        <ImagePicker
+          title={imagenDe.name}
+          current={imagenDe.image}
+          destino="archivo"
+          sugerencia={imagenDe.name}
+          onChange={async (image: ImageRef | null) => {
+            const result = await window.api.setCollectionImage(imagenDe.id, image)
+            if (result.ok) onChanged()
+            else setError(result.error)
+          }}
+          onClose={() => setImagenDe(null)}
+        />
+      )}
     </div>
   )
 }

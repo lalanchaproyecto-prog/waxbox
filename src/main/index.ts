@@ -6,11 +6,13 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc'
 import { closeDatabase, getDatabase } from './database'
 import { trackFilePath } from '../core/database/db'
-import { getPhotosDir } from './photos'
+import { getPhotosDir, getAvatarsDir } from './photos'
 import { ensureProfilesReady } from './profiles'
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'waxbox-photo', privileges: { standard: true, secure: true } },
+  /* Imágenes de perfil: se leen sin perfil abierto, para el selector. */
+  { scheme: 'waxbox-avatar', privileges: { standard: true, secure: true } },
   /*
     `stream: true` es lo que permite adelantar y retroceder dentro de una
     canción: sin eso el archivo se sirve entero de una vez y la barra de
@@ -146,6 +148,22 @@ app.whenReady().then(async () => {
     } catch {
       return new Response('Sin perfil activo', { status: 404 })
     }
+  })
+
+  /*
+    Sirve una imagen de perfil.
+
+    A diferencia de waxbox-photo, esta no depende de que haya un perfil abierto:
+    el selector de perfiles necesita dibujar los avatares justo antes de que se
+    elija ninguno.
+  */
+  protocol.handle('waxbox-avatar', (request) => {
+    const raw = request.url.slice('waxbox-avatar://'.length)
+    const filename = decodeURIComponent(raw).replace(/^\/+/, '')
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return new Response('Forbidden', { status: 403 })
+    }
+    return net.fetch(pathToFileURL(join(getAvatarsDir(), filename)).href)
   })
 
   /*
