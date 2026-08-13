@@ -20,80 +20,86 @@
 */
 
 :root {
-  /* ---------- Superficies: cuero oscuro ---------- */
-  --bg-body: #141110;
-  --bg-card: #1c1815;
-  --bg-input: #211c19;
-  --bg-inset: #17130f;
-  --bg-hover: #272120;
-  --bg-active: #322a26;
-  --bg-subtle: #2b2421;
+  /*
+    ---------- Superficies: grafito ----------
+    Grises de verdad, con apenas una pizca de calidez para que no se vean
+    azulados. La primera versión de esta paleta era marrón hasta en los grises y
+    la app entera terminaba beige; lo vintage tiene que venir de los acentos y
+    las texturas, no de teñir de café cada superficie.
+  */
+  --bg-body: #131316;
+  --bg-card: #1b1b1f;
+  --bg-input: #202025;
+  --bg-inset: #161619;
+  --bg-hover: #26262c;
+  --bg-active: #303038;
+  --bg-subtle: #2a2a31;
 
-  --border: #2e2724;
-  --border-input: #3a312c;
-  --border-strong: #453a33;
-  --border-subtle: #241e1b;
-  --border-separator: #262019;
-  --border-accent: #4a3a26;
+  --border: #2c2c33;
+  --border-input: #3a3a43;
+  --border-strong: #474751;
+  --border-subtle: #232329;
+  --border-separator: #26262d;
+  --border-accent: #4d3227;
 
   /* ---------- Texto ---------- */
-  --text-heading: #f7f1e8;
-  --text-primary: #e8ded2;
-  --text-body: #d3c6b7;
-  --text-secondary: #bcae9e;
-  --text-muted: #9b8d7e;
-  --text-dimmed: #82756a;
-  --text-faint: #5c5249;
+  --text-heading: #f4f3f1;
+  --text-primary: #e2e0dd;
+  --text-body: #cbc8c4;
+  --text-secondary: #b0aca7;
+  --text-muted: #8e8a85;
+  --text-dimmed: #75716c;
+  --text-faint: #545150;
 
   /*
-    ---------- Acento: latón ----------
-    Reemplaza al índigo que había antes. El índigo era un azul de interfaz
-    moderna; el latón es el metal de un tocadiscos, y es lo que amarra la
-    paleta con las texturas.
+    ---------- Acento: bermellón ----------
+    El naranja rojizo de un equipo de sonido de los setenta — la aguja del
+    medidor, el botón de grabar. Es deliberadamente atrevido: sobre grafito, un
+    color apagado desaparece, y era justo lo que le pasaba al latón.
+
+    El tono es lo bastante profundo como para llevar texto blanco encima con
+    contraste suficiente para leerse.
   */
-  --accent: #c98b3f;
-  --accent-hover: #dda157;
-  --accent-soft: #e3b273;
-  --accent-link: #dda157;
+  --accent: #d1481c;
+  --accent-hover: #e35a2c;
+  --accent-soft: #f29a72;
+  --accent-link: #f08054;
+  --on-accent: #ffffff;
+
+  /* Mostaza para halos y detalles: el latón sigue, pero de reparto. */
+  --accent-warm: #d9a521;
 
   /*
-    Texto que va ENCIMA del acento. Va oscuro y no blanco: el latón es un color
-    claro, y el blanco encima no llega al contraste mínimo legible.
+    Turquesa para los setlists. Frente al bermellón es el contraste más fuerte
+    posible sin salirse de la paleta de un equipo de audio antiguo, y deja claro
+    que los setlists son otra sección y no otra acción sobre los discos.
   */
-  --on-accent: #2a1c0c;
+  --accent-cool: #137c71;
+  --on-accent-cool: #ffffff;
 
-  /* Ámbar cálido para detalles y halos, distinto del acento principal. */
-  --accent-warm: #e8a55c;
+  /* ---------- Estados ----------
+     El rojo de error se distingue del bermellón del acento yéndose a carmesí:
+     si fueran vecinos, un aviso de error parecería un botón principal. */
+  --error-bg: #251518;
+  --error-border: #522a30;
+  --error-text: #f2aeb4;
+  --warning-bg: #26200f;
+  --warning-text: #e0c077;
+  --success-bg: #12271f;
+  --success-text: #6fd3a5;
+  --danger: #d33b52;
+  --danger-hover: #e85068;
 
-  /*
-    Verde jade para los setlists. Antes ese papel lo cumplía el ámbar, que se
-    distinguía del índigo; ahora que el acento principal ES cálido, los setlists
-    necesitan un color frío para seguir leyéndose como "otra sección".
-  */
-  --accent-cool: #4aa892;
-  --on-accent-cool: #06231d;
-
-  /* ---------- Estados ---------- */
-  --error-bg: #241413;
-  --error-border: #4e2724;
-  --error-text: #f0b5ae;
-  --warning-bg: #261d10;
-  --warning-text: #e0b877;
-  --success-bg: #14291f;
-  --success-text: #7fd8a0;
-  --danger: #d4453a;
-  --danger-hover: #ea5b4f;
-
-  --overlay: rgba(12, 8, 6, 0.72);
-  --halo-accent: rgba(201, 139, 63, 0.22);
-  --halo-warm: rgba(232, 165, 92, 0.10);
+  --overlay: rgba(8, 8, 10, 0.74);
+  --halo-accent: rgba(209, 72, 28, 0.24);
+  --halo-warm: rgba(217, 165, 33, 0.10);
 
   /* ---------- Tinte dinámico ----------
      Lo reescribe en vivo el extractor de color de la portada. Estos valores son
      el respaldo para cuando no hay portada o todavía no se analizó. */
-  --tint: #c98b3f;
-  --tint-soft: rgba(201, 139, 63, 0.16);
-  --tint-text: #f7f1e8;
+  --tint: #d1481c;
+  --tint-soft: rgba(209, 72, 28, 0.18);
+  --tint-text: #f4f3f1;
 
   /* ---------- Tipografía ----------
      Fuente del sistema, sin archivos que descargar: en Windows 11 se usa Segoe
@@ -200,7 +206,7 @@
   --grain-opacity: 0.05;
 
   /* ---------- Vidrio esmerilado ---------- */
-  --glass-bg: rgba(32, 26, 22, 0.62);
+  --glass-bg: rgba(27, 27, 32, 0.64);
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-blur: 22px;
 
@@ -215,69 +221,74 @@
   gris azulado, que es lo que hace que las mismas texturas sigan funcionando.
 */
 :root[data-theme='light'] {
-  --bg-body: #efe7da;
-  --bg-card: #fbf6ec;
-  --bg-input: #f3ece0;
-  --bg-inset: #e7ddcd;
-  --bg-hover: #f0e7d8;
-  --bg-active: #e2d6c2;
-  --bg-subtle: #e8ddcb;
+  /*
+    Papel gris, no papel crema. Antes esto era casi amarillo y hacía que la app
+    entera se viera beige; ahora es el gris cálido de una carátula impresa, que
+    deja que el bermellón y el turquesa sean lo único con color de verdad.
+  */
+  --bg-body: #e8e7e3;
+  --bg-card: #f8f7f5;
+  --bg-input: #f0efec;
+  --bg-inset: #dedcd7;
+  --bg-hover: #edebe7;
+  --bg-active: #dbd9d3;
+  --bg-subtle: #e3e1dc;
 
-  --border: #d8cbb6;
-  --border-input: #c9b99f;
-  --border-strong: #b8a58a;
-  --border-subtle: #e3d8c6;
-  --border-separator: #e0d4c0;
-  --border-accent: #cbb08a;
+  --border: #d2d0ca;
+  --border-input: #bfbcb5;
+  --border-strong: #a9a69f;
+  --border-subtle: #e2e0db;
+  --border-separator: #dedcd6;
+  --border-accent: #c8ab9c;
 
-  --text-heading: #241a12;
-  --text-primary: #35281d;
-  --text-body: #45362a;
-  --text-secondary: #5b4a3b;
-  --text-muted: #776553;
-  --text-dimmed: #8b7967;
-  --text-faint: #a89684;
+  --text-heading: #1b1b1d;
+  --text-primary: #2e2e31;
+  --text-body: #3f3f43;
+  --text-secondary: #55555a;
+  --text-muted: #70706f;
+  --text-dimmed: #85857f;
+  --text-faint: #a3a29c;
 
-  /* En papel el latón claro no contrasta: se oscurece para poder leerlo. */
-  --accent: #b4762c;
-  --accent-hover: #9c631f;
-  --accent-soft: #8a5718;
-  --accent-link: #8f5a1e;
-  --on-accent: #fdf7ec;
+  /* Sobre papel el bermellón se profundiza para que el blanco encima se lea. */
+  --accent: #b23c12;
+  --accent-hover: #9a330d;
+  --accent-soft: #c25a2e;
+  --accent-link: #a8380f;
+  --on-accent: #ffffff;
 
-  --accent-warm: #b06f22;
+  --accent-warm: #9a7410;
 
-  --accent-cool: #1f7a67;
-  --on-accent-cool: #f0fbf7;
+  --accent-cool: #12695f;
+  --on-accent-cool: #ffffff;
 
-  --error-bg: #fdf0ee;
-  --error-border: #e8c4bd;
-  --error-text: #a4322a;
-  --warning-bg: #fdf4e3;
-  --warning-text: #8a5a12;
-  --success-bg: #ecf7f1;
-  --success-text: #16624a;
-  --danger: #bf3b30;
-  --danger-hover: #a53129;
+  --error-bg: #fdeff1;
+  --error-border: #e8bfc6;
+  --error-text: #a02338;
+  --warning-bg: #fbf5e4;
+  --warning-text: #7d6112;
+  --success-bg: #ebf6f1;
+  --success-text: #146049;
+  --danger: #bc2f45;
+  --danger-hover: #a3253a;
 
-  --overlay: rgba(60, 44, 30, 0.35);
-  --halo-accent: rgba(180, 118, 44, 0.16);
-  --halo-warm: rgba(176, 111, 34, 0.08);
+  --overlay: rgba(40, 40, 44, 0.34);
+  --halo-accent: rgba(178, 60, 18, 0.14);
+  --halo-warm: rgba(154, 116, 16, 0.07);
 
-  --tint: #b4762c;
-  --tint-soft: rgba(180, 118, 44, 0.14);
-  --tint-text: #241a12;
+  --tint: #b23c12;
+  --tint-soft: rgba(178, 60, 18, 0.13);
+  --tint-text: #1b1b1d;
 
-  --shadow-1: 0 1px 2px rgba(90, 66, 40, 0.14);
-  --shadow-2: 0 4px 14px rgba(90, 66, 40, 0.16);
-  --shadow-3: 0 14px 40px rgba(90, 66, 40, 0.2);
-  --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  --inset-bottom: inset 0 -1px 0 rgba(120, 92, 60, 0.16);
+  --shadow-1: 0 1px 2px rgba(40, 38, 34, 0.13);
+  --shadow-2: 0 4px 14px rgba(40, 38, 34, 0.15);
+  --shadow-3: 0 14px 40px rgba(40, 38, 34, 0.19);
+  --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --inset-bottom: inset 0 -1px 0 rgba(60, 58, 54, 0.14);
 
   --texture-leather:
     radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.5), transparent 42%),
     radial-gradient(circle at 78% 68%, rgba(255, 255, 255, 0.35), transparent 38%),
-    radial-gradient(circle at 45% 88%, rgba(150, 120, 80, 0.1), transparent 45%);
+    radial-gradient(circle at 45% 88%, rgba(90, 88, 84, 0.09), transparent 45%);
 
   --texture-metal:
     repeating-linear-gradient(
@@ -291,8 +302,8 @@
   --texture-paper:
     repeating-linear-gradient(
       45deg,
-      rgba(120, 92, 60, 0.03) 0px,
-      rgba(120, 92, 60, 0.03) 1px,
+      rgba(70, 68, 64, 0.03) 0px,
+      rgba(70, 68, 64, 0.03) 1px,
       transparent 1px,
       transparent 4px
     );
@@ -300,19 +311,24 @@
   --texture-grooves:
     repeating-radial-gradient(
       circle at center,
-      rgba(120, 92, 60, 0.06) 0px,
-      rgba(120, 92, 60, 0.06) 1px,
+      rgba(70, 68, 64, 0.06) 0px,
+      rgba(70, 68, 64, 0.06) 1px,
       transparent 1px,
       transparent 4px
     );
 
   --grain-opacity: 0.035;
 
-  --glass-bg: rgba(251, 246, 236, 0.7);
+  --glass-bg: rgba(248, 247, 245, 0.72);
   --glass-border: rgba(255, 255, 255, 0.85);
 
-  --polaroid-frame: #ffffff;
-  --polaroid-shadow: 0 8px 22px rgba(90, 66, 40, 0.22);
+  /*
+    El marco de la Polaroid se queda cálido a propósito, en los dos temas: es la
+    única pieza que cita al primer Instagram, y un marco gris perdería la
+    referencia. Es el contrapunto tibio de una paleta que ahora es fría.
+  */
+  --polaroid-frame: #fdfbf6;
+  --polaroid-shadow: 0 8px 22px rgba(40, 38, 34, 0.2);
 }
 
 /*

@@ -68,6 +68,21 @@ function loadFeatures(profileId: string): FeatureFlags {
   }
 }
 
+/**
+ * Cuánto se sostiene como mínimo la pantalla de carga, en milisegundos.
+ *
+ * Suficiente para que el disco alcance a dar algo de vuelta y se lea el nombre,
+ * y lo bastante corto como para que nadie sienta que la app tarda en abrir.
+ */
+const SPLASH_MINIMO_MS = 1600
+
+/** Espera lo que falte para completar el mínimo. Si ya pasó, no espera nada. */
+function holdSplash(startedAt: number): Promise<void> {
+  const restante = SPLASH_MINIMO_MS - (Date.now() - startedAt)
+  if (restante <= 0) return Promise.resolve()
+  return new Promise((resolve) => setTimeout(resolve, restante))
+}
+
 function applyTheme(pref: ThemePreference): void {
   if (pref === 'auto') {
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -129,12 +144,21 @@ function App() {
    *
    * Con uno solo se entra directo, para no molestar con un selector a quien usa
    * la app en solitario. Con varios, se muestra el selector.
+   *
+   * La pantalla de carga se sostiene un mínimo de tiempo aunque todo esté listo
+   * antes. Abrir una base local es tan rápido que el logo alcanzaba a
+   * parpadear: en vez de sentirse veloz, se veía como un defecto. El tiempo
+   * mínimo NO retrasa nada — el trabajo real ocurre mientras tanto, y solo se
+   * espera lo que falte para completarlo.
    */
   async function startUp(): Promise<void> {
+    const startedAt = Date.now()
+
     const result = await window.api.listProfiles()
 
     if (!result.ok) {
       setError(result.error)
+      await holdSplash(startedAt)
       setStarting(false)
       return
     }
@@ -145,6 +169,7 @@ function App() {
       await activateProfile(result.data.profiles[0])
     }
 
+    await holdSplash(startedAt)
     setStarting(false)
   }
 

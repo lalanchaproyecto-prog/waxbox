@@ -3715,10 +3715,11 @@ body::after {
   position: relative;
 }
 
+/* Gira en 4 segundos: en los 1,6 s que dura el arranque el giro se nota. */
 .logo-completo-marca {
   color: var(--accent);
   filter: drop-shadow(0 6px 18px var(--halo-accent));
-  animation: gira 9s linear infinite;
+  animation: gira 4s linear infinite;
 }
 
 /* El disco gira lento, como en un tocadiscos. */
