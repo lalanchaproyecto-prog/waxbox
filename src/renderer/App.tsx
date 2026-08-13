@@ -22,6 +22,8 @@ import ProfilePicker from './components/ProfilePicker'
 import type { Profile } from '@core/models/profile'
 import ExploreScreen from './components/ExploreScreen'
 import { Isotipo, LogoCompleto } from './components/Logo'
+import { PlayerProvider } from './player/PlayerProvider'
+import PlayerBar from './player/PlayerBar'
 
 type View =
   | 'home'
@@ -514,6 +516,12 @@ function App() {
   )
 
   return (
+    /*
+      El reproductor envuelve la app entera y nunca se desmonta: por eso la
+      música sigue sonando al cambiar de pantalla. Va aquí y no dentro de una
+      vista concreta justamente para eso.
+    */
+    <PlayerProvider youtubeConfigured={settings.youtubeConfigured}>
     <div className="app">
       <header className="app-header">
         <div className="logo">
@@ -667,6 +675,7 @@ function App() {
             collectionId={activeCollectionId ?? 0}
             onDelete={handleDeleteSaved}
             onUpdate={handleUpdateSaved}
+            onReload={() => handleOpenSaved(savedAlbum.id)}
           />
         )}
 
@@ -789,7 +798,11 @@ function App() {
           Waxbox v{APP_VERSION} — una iniciativa de Proyecto La Lancha
         </button>
       </footer>
+
+      {/* Solo aparece cuando hay algo cargado; si no, se esconde sola. */}
+      {features.playback && <PlayerBar />}
     </div>
+    </PlayerProvider>
   )
 }
 

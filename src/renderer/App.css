@@ -3825,3 +3825,277 @@ body::after {
   border-radius: 4px;
   box-shadow: var(--polaroid-shadow);
 }
+
+/* ---------- Reproductor persistente ---------- */
+
+/*
+  Flota sobre el contenido en vez de estar pegado al borde, siguiendo la
+  referencia de la píldora de vidrio. `position: fixed` es lo que lo mantiene
+  quieto mientras el resto de la app se desplaza.
+*/
+.player-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 1.1rem;
+  transform: translateX(-50%);
+  width: min(920px, calc(100vw - 2.5rem));
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: player-in var(--dur-base) var(--ease);
+}
+
+@keyframes player-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.player-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-pill);
+}
+
+.player-cover {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.player-cover-empty {
+  color: var(--text-faint);
+  font-size: 1.2rem;
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.player-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-heading);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-source {
+  color: var(--text-dimmed);
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.player-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: var(--radius-pill);
+  transition: color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.player-btn:hover:not(:disabled) {
+  color: var(--text-heading);
+  background: var(--bg-hover);
+}
+
+.player-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.player-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* El botón principal sí tiene volumen: es el que se busca sin mirar. */
+.player-btn-main {
+  width: 2.6rem;
+  height: 2.6rem;
+  background-color: var(--accent);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.24), transparent 60%);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-2), var(--inset-top);
+  font-size: 0.9rem;
+}
+
+.player-btn-main:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  color: var(--on-accent);
+}
+
+.player-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 2 1 14rem;
+  min-width: 0;
+}
+
+.player-time {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+  flex-shrink: 0;
+}
+
+.player-time-note {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  flex: 1;
+  text-align: center;
+}
+
+.player-progress {
+  flex: 1;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-inset);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  overflow: hidden;
+  min-width: 4rem;
+}
+
+.player-progress:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.player-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  /* Sin transición: el ancho ya se actualiza cuadro a cuadro y animarlo
+     encima lo haría ir siempre atrasado respecto al audio. */
+}
+
+.player-extra {
+  display: flex;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.player-problem {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--error-text);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-pill);
+  padding: 0.3rem 0.9rem;
+  align-self: center;
+}
+
+/* --- Panel del video de YouTube --- */
+
+.player-video {
+  padding: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.player-video-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.player-video-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 42vh;
+  border: none;
+  border-radius: var(--radius-md);
+  background: #000;
+}
+
+.player-video-note {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+  text-align: center;
+}
+
+/*
+  Deja aire abajo para que el reproductor no tape el final del contenido.
+  Se aplica siempre: calcular la altura real de la barra obligaría a medirla en
+  cada dibujado, y este espacio de más no molesta cuando no hay nada sonando.
+*/
+.app-main {
+  padding-bottom: 7rem;
+}
+
+/* --- La canción que está sonando, en el tracklist --- */
+
+.track-row.sonando {
+  background: var(--tint-soft);
+  border-radius: var(--radius-sm);
+}
+
+.track-row.sonando .track-title {
+  color: var(--accent-link);
+  font-weight: 600;
+}
+
+/* --- Archivos de audio propios --- */
+
+.audio-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.9rem;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.audio-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.audio-actions .btn {
+  padding: 0.5rem 1.1rem;
+  font-size: var(--text-sm);
+}

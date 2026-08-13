@@ -9,12 +9,25 @@ Cuando agregas un disco, la app completa automáticamente los datos del álbum (
 tracklist) consultando servicios públicos de música, y te deja revisar y corregir todo antes de guardarlo.
 
 Waxbox es exclusivamente para música en formato físico: lo que tienes en la mano y en el estante.
-Música digital, streaming y archivos de audio quedan fuera del alcance del proyecto.
+La música digital y el streaming quedan fuera del alcance del proyecto: Waxbox cataloga objetos,
+no bibliotecas digitales.
+
+Con una excepción, que es la que confirma la regla: **puedes asociar tus propios archivos de audio
+a las canciones de un disco que ya tienes** — el código de descarga que venía dentro del vinilo, o
+el CD que rippeaste. No es una biblioteca digital: es poder escuchar el disco que está en tu
+estante. Waxbox guarda la ruta a tus archivos donde ya están, sin copiarlos ni moverlos.
 
 ## Estado del proyecto
 
-En desarrollo. Actualmente funciona el esqueleto de la aplicación, la ventana principal y el
-formulario para agregar un disco a la colección.
+En desarrollo activo. Ya funcionan:
+
+- Agregar discos con datos automáticos de MusicBrainz, Cover Art Archive, Wikipedia y Deezer.
+- Cargar a mano los discos que no están en ningún catálogo.
+- Colección con buscador, filtros, vista de tabla y estado de conservación.
+- Perfiles y colecciones múltiples.
+- Setlists, incluido un generador automático por género.
+- Exportación a Excel y PDF.
+- Reproductor propio con tus archivos, los adelantos de Deezer y video de YouTube.
 
 ## Requisitos
 

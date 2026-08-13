@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { EditableAlbum, EditableTrack } from '@core/albumDraft'
 import {
   markEdited,
@@ -19,6 +19,8 @@ import AddToSetlistButton from './AddToSetlistButton'
 import type { SetlistUsage } from '@core/database/db'
 import { DEFAULT_FEATURES, type FeatureFlags } from '@core/models/features'
 import { useDominantColor, tintStyle } from '../theme/useDominantColor'
+import { usePlayer } from '../player/PlayerProvider'
+import type { PlayableTrack } from '@core/player/queue'
 
 interface AlbumReviewProps {
   album: EditableAlbum
@@ -42,6 +44,11 @@ interface AlbumReviewProps {
    * álbum manual no se vuelve a una lista de ediciones sino al formulario.
    */
   backLabel?: string
+  /**
+   * Vuelve a leer el disco de la base. Se llama después de asociar archivos de
+   * audio, que se guardan aparte de la ficha y no llegan por `onChange`.
+   */
+  onReload?: () => void
 }
 
 function groupBySide(tracks: EditableTrack[]): Array<[string, EditableTrack[]]> {
@@ -73,7 +80,8 @@ function AlbumReview({
   albumId,
   features = DEFAULT_FEATURES,
   collectionId,
-  backLabel = 'Elegir otra edición'
+  backLabel = 'Elegir otra edición',
+  onReload
 }: AlbumReviewProps) {
   const [editingSaved, setEditingSaved] = useState(false)
   const [workingCopy, setWorkingCopy] = useState<EditableAlbum>(album)
@@ -133,17 +141,14 @@ function AlbumReview({
   const [confirmRemoveTrack, setConfirmRemoveTrack] = useState<number | null>(null)
   const [setlistWarning, setSetlistWarning] = useState<SetlistUsage | null>(null)
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const [playingKey, setPlayingKey] = useState<string | null>(null)
-  const [busyKey, setBusyKey] = useState<string | null>(null)
-  const [problem, setProblem] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    return () => {
-      audioRef.current?.pause()
-      audioRef.current = null
-    }
-  }, [])
+  /*
+    La reproducción dejó de vivir aquí: ahora la lleva el reproductor global,
+    que no se desmonta al cambiar de pantalla. Esta ficha solo le entrega el
+    álbum como cola y le dice por cuál canción empezar.
+  */
+  const player = usePlayer()
+  const [audioBusy, setAudioBusy] = useState(false)
+  const [audioNote, setAudioNote] = useState<string | null>(null)
 
   function updateForm(field: keyof EditableAlbum, value: unknown) {
     setForm((current) => ({
@@ -216,51 +221,79 @@ function AlbumReview({
     })
   }
 
-  async function handlePlay(track: EditableTrack, key: string) {
-    if (playingKey === key) {
-      audioRef.current?.pause()
-      setPlayingKey(null)
-      return
-    }
+  const coverToShow = active.userCoverFront ?? active.canonicalCover
 
-    audioRef.current?.pause()
-    if (!track.deezer) return
-
-    setBusyKey(key)
-    setProblem((current) => {
-      const next = { ...current }
-      delete next[key]
-      return next
-    })
-
-    const result = await window.api.getPreviewUrl(track.deezer.trackId)
-    setBusyKey(null)
-
-    if (!result.ok || !result.data) {
-      setProblem((current) => ({
-        ...current,
-        [key]: result.ok ? 'Deezer ya no ofrece adelanto de esta canción.' : result.error
+  /** Convierte el tracklist en la cola que entiende el reproductor. */
+  function buildQueue(): PlayableTrack[] {
+    return active.tracks
+      .filter((track) => track.id !== undefined)
+      .map((track) => ({
+        trackId: track.id!,
+        title: track.title,
+        artist: track.artist,
+        albumTitle: active.title,
+        cover: coverToShow,
+        file: track.file ?? null,
+        deezer: track.deezer
       }))
-      return
-    }
-
-    const audio = new Audio(result.data)
-    audio.addEventListener('ended', () => setPlayingKey(null))
-    audio.addEventListener('error', () => {
-      setProblem((current) => ({ ...current, [key]: 'No se pudo reproducir el adelanto.' }))
-      setPlayingKey(null)
-    })
-
-    audioRef.current = audio
-    try {
-      await audio.play()
-      setPlayingKey(key)
-    } catch {
-      setProblem((current) => ({ ...current, [key]: 'No se pudo reproducir el adelanto.' }))
-    }
   }
 
-  const withPreview = active.tracks.filter((track) => track.deezer).length
+  /** Pone a sonar el álbum entero, empezando por la canción elegida. */
+  function playFrom(track: EditableTrack) {
+    const queue = buildQueue()
+    const start = queue.findIndex((item) => item.trackId === track.id)
+    player.play(queue, start >= 0 ? start : 0)
+  }
+
+  /**
+   * Asocia archivos de audio propios a las canciones de este disco.
+   *
+   * Se eligen todos de una vez y se reparten por nombre de archivo: hacerlo
+   * canción por canción sería abrir el diálogo doce veces.
+   */
+  async function addAudioFiles() {
+    if (albumId === undefined) return
+
+    setAudioBusy(true)
+    setAudioNote(null)
+
+    const result = await window.api.pickAudioForAlbum(
+      active.tracks
+        .filter((track) => track.id !== undefined)
+        .map((track) => ({ trackId: track.id!, title: track.title }))
+    )
+
+    setAudioBusy(false)
+
+    if (!result.ok) {
+      setAudioNote(result.error)
+      return
+    }
+
+    const { linked, unmatched } = result.data
+
+    if (linked === 0 && unmatched.length === 0) return // canceló el diálogo
+
+    const partes = [
+      linked === 1
+        ? 'Se asoció 1 archivo.'
+        : `Se asociaron ${linked} archivos.`
+    ]
+    if (unmatched.length > 0) {
+      partes.push(
+        unmatched.length === 1
+          ? `Uno no coincidió con ninguna canción: ${unmatched[0]}.`
+          : `${unmatched.length} no coincidieron con ninguna canción.`
+      )
+    }
+    setAudioNote(partes.join(' '))
+
+    // Hay que recargar el disco para ver los archivos recién asociados.
+    if (onReload) onReload()
+  }
+
+  const conArchivo = active.tracks.filter((track) => track.file && !track.file.missing).length
+  const conDeezer = active.tracks.filter((track) => track.deezer).length
   const openTrackData = openTrack !== null ? active.tracks[openTrack] : null
 
   function editedMark(field: string) {
@@ -283,8 +316,6 @@ function AlbumReview({
     if (track.userEditedFields.length > 0) parts.push('editada por ti')
     return parts.join(' · ')
   }
-
-  const coverToShow = active.userCoverFront ?? active.canonicalCover
 
   /*
     La pantalla se tiñe con el color dominante de la portada, como en Apple
@@ -510,13 +541,6 @@ function AlbumReview({
         <h3 className="section-title">Tracklist ({active.tracks.length})</h3>
 
         <p className="tracklist-note">
-          {features.playback && (
-            <>
-              {withPreview > 0
-                ? `Puedes escuchar 30 segundos de ${withPreview} de las ${active.tracks.length} canciones, cortesía de Deezer.`
-                : 'Deezer no tiene adelantos de las canciones de este álbum.'}{' '}
-            </>
-          )}
           {canEdit &&
             (features.credits
               ? 'Haz clic en una canción para ver sus créditos y corregirlos.'
@@ -525,17 +549,70 @@ function AlbumReview({
             !editingSaved &&
             features.credits &&
             'Haz clic en una canción para ver sus créditos.'}
-          {features.playback && !youtubeConfigured && !savedMode && (
-            <>
-              {' '}
-              Si quieres ver el video completo,{' '}
-              <button className="btn-link" onClick={onOpenSettings}>
-                configura tu clave de YouTube
-              </button>
-              .
-            </>
-          )}
         </p>
+
+        {/*
+          De dónde va a sonar este disco.
+
+          El orden del texto es el mismo que usa el reproductor para decidir:
+          primero tus archivos, después Deezer, y YouTube al final.
+        */}
+        {features.playback && savedMode && (
+          <div className="audio-sources">
+            <p className="tracklist-note">
+              {conArchivo > 0 && (
+                <strong>
+                  {conArchivo === active.tracks.length
+                    ? 'Tienes el audio de todas las canciones. '
+                    : `Tienes el audio de ${conArchivo} de ${active.tracks.length} canciones. `}
+                </strong>
+              )}
+              {conDeezer > 0
+                ? `Deezer tiene adelanto de 30 segundos de ${conDeezer}.`
+                : 'Deezer no tiene adelantos de este álbum.'}
+              {!youtubeConfigured && conArchivo < active.tracks.length && (
+                <>
+                  {' '}
+                  Si además{' '}
+                  <button className="btn-link" onClick={onOpenSettings}>
+                    configuras tu clave de YouTube
+                  </button>
+                  , se puede buscar allí lo que falte.
+                </>
+              )}
+            </p>
+
+            <div className="audio-actions">
+              <button
+                className="btn btn-ghost"
+                onClick={addAudioFiles}
+                disabled={audioBusy}
+                title="Elige los archivos de este disco; se reparten solos por el nombre"
+              >
+                {audioBusy ? 'Eligiendo...' : '♪ Agregar mis archivos de audio'}
+              </button>
+
+              {active.tracks.some((t) => t.id !== undefined) && (
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => player.play(buildQueue(), 0)}
+                  title="Escuchar el disco entero desde el principio"
+                >
+                  ▶ Reproducir el disco
+                </button>
+              )}
+            </div>
+
+            {audioNote && <p className="section-note">{audioNote}</p>}
+
+            {active.tracks.some((t) => t.file?.missing) && (
+              <p className="feedback-error">
+                Algún archivo ya no está en la carpeta donde lo agregaste. Si moviste tu
+                música, vuelve a agregarlo.
+              </p>
+            )}
+          </div>
+        )}
 
         {groups.map(([side, sideTracks]) => {
           const heading = sideHeading(side, usesSides)
@@ -546,10 +623,14 @@ function AlbumReview({
                 {sideTracks.map((track) => {
                   const index = active.tracks.indexOf(track)
                   const key = `${side}-${track.number}-${track.title}`
-                  const isPlaying = playingKey === key
-                  const isBusy = busyKey === key
+                  // La canción que está sonando ahora mismo, según el
+                  // reproductor global.
+                  const sonando =
+                    player.current !== null &&
+                    track.id !== undefined &&
+                    player.current.trackId === track.id
                   return (
-                    <li className="track-row" key={key}>
+                    <li className={`track-row${sonando ? ' sonando' : ''}`} key={key}>
                       <span className="track-number">{track.number}</span>
 
                       <button className="track-main track-open" onClick={() => setOpenTrack(index)}>
@@ -558,30 +639,34 @@ function AlbumReview({
                           <span className="track-artist">{track.artist}</span>
                         )}
                         <span className="track-credits-count">{trackSubtitle(track)}</span>
-                        {problem[key] && <span className="track-problem">{problem[key]}</span>}
                       </button>
 
-                      <span className="track-duration">{track.duration ?? '—'}</span>
+                      <span className="track-duration numeric">{track.duration ?? '—'}</span>
 
-                      {features.playback && youtubeConfigured && (
-                        <YouTubeLink artist={track.artist} title={track.title} />
-                      )}
-
-                      {features.playback && (
-                      <button
-                        className={`listen-btn${isPlaying ? ' playing' : ''}`}
-                        onClick={() => handlePlay(track, key)}
-                        disabled={!track.deezer || isBusy}
-                        title={
-                          track.deezer
-                            ? isPlaying
+                      {/*
+                        Reproducir carga el ÁLBUM ENTERO en el reproductor y
+                        empieza por esta canción, no suelta una canción sola:
+                        al terminar sigue la que viene, como en cualquier
+                        reproductor.
+                      */}
+                      {features.playback && savedMode && track.id !== undefined && (
+                        <button
+                          className={`listen-btn${sonando && player.playing ? ' playing' : ''}`}
+                          onClick={() => (sonando ? player.toggle() : playFrom(track))}
+                          title={
+                            sonando && player.playing
                               ? 'Pausar'
-                              : 'Escuchar 30 segundos'
-                            : 'Deezer no tiene adelanto de esta canción'
-                        }
-                      >
-                        {isBusy ? '···' : isPlaying ? '❚❚' : '▶'}
-                      </button>
+                              : track.file && !track.file.missing
+                                ? 'Reproducir tu archivo'
+                                : track.deezer
+                                  ? 'Reproducir el adelanto de Deezer'
+                                  : youtubeConfigured
+                                    ? 'Buscar en YouTube y reproducir'
+                                    : 'Sin ninguna fuente para escuchar esta canción'
+                          }
+                        >
+                          {sonando && player.playing ? '❚❚' : '▶'}
+                        </button>
                       )}
 
                       {features.setlists &&
@@ -785,23 +870,6 @@ function AlbumReview({
         />
       )}
     </div>
-  )
-}
-
-function YouTubeLink({ artist, title }: { artist: string; title: string }) {
-  const [busy, setBusy] = useState(false)
-
-  async function open() {
-    setBusy(true)
-    const result = await window.api.searchTrackVideo(artist, title)
-    setBusy(false)
-    if (result.ok && result.data) window.open(result.data.url, '_blank')
-  }
-
-  return (
-    <button className="youtube-btn" onClick={open} disabled={busy} title="Ver el video en YouTube">
-      {busy ? '···' : 'YT'}
-    </button>
   )
 }
 

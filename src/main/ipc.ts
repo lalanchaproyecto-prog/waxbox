@@ -38,6 +38,13 @@ import {
 } from './profiles'
 import { copyPhoto, deletePhoto } from './photos'
 import {
+  pickAudioFiles,
+  matchFilesToTracks,
+  withMissingFlag,
+  type MatchableTrack
+} from './audio'
+import type { PlaybackSource } from '../core/player/queue'
+import {
   saveAlbum,
   updateAlbum,
   listAlbums,
@@ -58,6 +65,9 @@ import {
   pickTracksByGenres,
   createSetlistWithTracks,
   findPossibleDuplicates,
+  linkTrackFile,
+  unlinkTrackFile,
+  recordPlay,
   listCollections,
   createCollection,
   renameCollection,
@@ -258,10 +268,27 @@ export function registerIpcHandlers(): void {
       attemptSync(() => listAlbums(getDatabase(), collectionId))
   )
 
+  /*
+    Al leer un disco se comprueba, canción por canción, si su archivo de audio
+    sigue estando donde se registró. La base guarda la ruta pero no puede mirar
+    el disco duro; este proceso sí, y es el momento correcto para hacerlo: la
+    persona pudo mover su carpeta de música desde la última vez.
+  */
   ipcMain.handle(
     'collection:get',
     (_event, albumId: number): Result<SavedAlbum | null> =>
-      attemptSync(() => getAlbum(getDatabase(), albumId))
+      attemptSync(() => {
+        const album = getAlbum(getDatabase(), albumId)
+        if (!album) return null
+
+        return {
+          ...album,
+          tracks: album.tracks.map((track) => ({
+            ...track,
+            file: withMissingFlag(track.file)
+          }))
+        }
+      })
   )
 
   ipcMain.handle(
@@ -309,6 +336,89 @@ export function registerIpcHandlers(): void {
       attemptSync(() =>
         findPossibleDuplicates(getDatabase(), collectionId, artists, title, excludeAlbumId)
       )
+  )
+
+  // --- Archivos de audio propios -----------------------------------------
+
+  /**
+   * Elige archivos y los reparte entre las canciones de un álbum.
+   *
+   * Todo en un solo paso a propósito: asociar 12 canciones de a una sería
+   * abrir el diálogo 12 veces. El emparejamiento es por nombre de archivo y
+   * solo cuando es inequívoco; lo que no calza se informa en vez de adivinarse.
+   */
+  ipcMain.handle(
+    'audio:pickForAlbum',
+    async (
+      event,
+      tracks: MatchableTrack[]
+    ): Promise<
+      Result<{ linked: number; unmatched: string[]; tracksWithoutFile: number[] }>
+    > => {
+      const window = BrowserWindow.fromWebContents(event.sender)
+      const files = await pickAudioFiles(window)
+
+      return attemptSync(() => {
+        if (files.length === 0) {
+          return { linked: 0, unmatched: [], tracksWithoutFile: [] }
+        }
+
+        const outcome = matchFilesToTracks(files, tracks)
+        const db = getDatabase()
+
+        for (const match of outcome.matched) {
+          linkTrackFile(db, match.trackId, match.path)
+        }
+        if (outcome.matched.length > 0) persist()
+
+        return {
+          linked: outcome.matched.length,
+          unmatched: outcome.unmatched,
+          tracksWithoutFile: outcome.tracksWithoutFile
+        }
+      })
+    }
+  )
+
+  /** Asocia un archivo a UNA canción concreta. */
+  ipcMain.handle(
+    'audio:pickForTrack',
+    async (event, trackId: number): Promise<Result<{ linked: boolean }>> => {
+      const window = BrowserWindow.fromWebContents(event.sender)
+      const files = await pickAudioFiles(window)
+
+      return attemptSync(() => {
+        if (files.length === 0) return { linked: false }
+        linkTrackFile(getDatabase(), trackId, files[0].path)
+        persist()
+        return { linked: true }
+      })
+    }
+  )
+
+  ipcMain.handle(
+    'audio:unlink',
+    (_event, trackId: number): Result<void> =>
+      attemptSync(() => {
+        unlinkTrackFile(getDatabase(), trackId)
+        persist()
+      })
+  )
+
+  /**
+   * Anota que una canción sonó.
+   *
+   * Todavía no lo lee nadie; lo van a usar el panel de inicio y las listas
+   * inteligentes. Se guarda desde ya porque el historial no se puede
+   * reconstruir hacia atrás.
+   */
+  ipcMain.handle(
+    'plays:record',
+    (_event, trackId: number, source: PlaybackSource): Result<void> =>
+      attemptSync(() => {
+        recordPlay(getDatabase(), trackId, source)
+        persist()
+      })
   )
 
   // --- Perfiles ----------------------------------------------------------

@@ -70,6 +70,45 @@ CREATE TABLE IF NOT EXISTS track_credits (
   FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
 );
 
+/*
+  Archivo de audio propio de una canción.
+
+  Guarda la RUTA al archivo donde ya está, sin copiarlo. Copiar un álbum en
+  FLAC serían cientos de megas duplicados; las fotos sí se copian porque pesan
+  kilobytes. El costo de esta decisión es que si la persona mueve la carpeta,
+  la app tiene que avisar que el archivo no está en vez de fallar callada.
+
+  UNIQUE en track_id: una canción tiene un archivo propio o ninguno.
+*/
+CREATE TABLE IF NOT EXISTS track_files (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  track_id INTEGER NOT NULL,
+  path TEXT NOT NULL,
+  /* Extensión en minúsculas: mp3, flac, m4a, wav, ogg, opus. */
+  format TEXT NOT NULL,
+  added_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE,
+  UNIQUE (track_id)
+);
+
+/*
+  Historial de reproducciones.
+
+  Nada lo lee todavía: lo van a usar el panel de inicio y las listas
+  inteligentes ("no lo escucho hace tiempo", racha de escucha). Se registra
+  desde ahora porque el historial NO se puede reconstruir hacia atrás — si
+  empezara a guardarse recién cuando exista quien lo lea, esas funciones
+  nacerían sin ningún dato que mostrar.
+*/
+CREATE TABLE IF NOT EXISTS plays (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  track_id INTEGER NOT NULL,
+  played_at TEXT DEFAULT (datetime('now')),
+  /* De dónde sonó: 'archivo', 'deezer' o 'youtube'. */
+  source TEXT NOT NULL,
+  FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS setlists (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   collection_id INTEGER,
@@ -111,6 +150,9 @@ CREATE TABLE IF NOT EXISTS setlist_tracks (
 export const INDEXES = `
 CREATE INDEX IF NOT EXISTS idx_albums_collection ON albums(collection_id);
 CREATE INDEX IF NOT EXISTS idx_setlists_collection ON setlists(collection_id);
+CREATE INDEX IF NOT EXISTS idx_track_files_track ON track_files(track_id);
+CREATE INDEX IF NOT EXISTS idx_plays_track ON plays(track_id);
+CREATE INDEX IF NOT EXISTS idx_plays_when ON plays(played_at);
 `
 
 /** Nombre de la colección que se crea sola para quien nunca eligió una. */

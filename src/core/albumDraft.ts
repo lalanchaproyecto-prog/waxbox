@@ -17,6 +17,7 @@ import type { PhysicalFormatId } from './models/formats'
 import type { ConditionId } from './models/condition'
 import type { Credit } from './models/credits'
 import type { AlbumSource } from './models/albumSource'
+import type { TrackFile } from './models/audioFile'
 import type { AlbumSheet } from './services/albumSheet'
 import type { ArtistLink } from './services/musicbrainz'
 import type { DeezerTrackRef } from './services/deezer'
@@ -38,6 +39,14 @@ export interface EditableTrack {
   deezer: DeezerTrackRef | null
   /** Campos de esta canción que la persona corrigió a mano. */
   userEditedFields: string[]
+  /**
+   * Archivo de audio propio, si hay uno asociado.
+   *
+   * Es opcional porque un borrador recién traído de MusicBrainz todavía no
+   * existe en la base y no puede tener archivos asociados. No se guarda con el
+   * resto de la ficha: vive en su propia tabla, con su propio flujo.
+   */
+  file?: TrackFile | null
 }
 
 export interface EditableAlbum {

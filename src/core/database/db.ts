@@ -6,6 +6,8 @@ import type { Credit } from '../models/credits'
 import type { ArtistLink } from '../services/musicbrainz'
 import { durationToSeconds } from '../models/duration'
 import { normalizeSource, type AlbumSource } from '../models/albumSource'
+import { extensionOf, type TrackFile } from '../models/audioFile'
+import type { PlaybackSource } from '../player/queue'
 import type { DeezerTrackRef } from '../services/deezer'
 import {
   SCHEMA,
@@ -43,6 +45,14 @@ export interface SavedTrack {
   deezer: DeezerTrackRef | null
   credits: Credit[]
   userEditedFields: string[]
+  /**
+   * Archivo de audio propio, si la persona asoció uno. Tiene prioridad sobre
+   * Deezer y YouTube al reproducir.
+   *
+   * `missing` lo completa el proceso principal, que es el único que puede mirar
+   * el disco duro; aquí siempre sale en false.
+   */
+  file: TrackFile | null
 }
 
 export interface SavedAlbum {
@@ -454,7 +464,8 @@ function loadTracks(db: Database, albumId: number): SavedTrack[] {
       duration: row['duration'] as string | null,
       deezer,
       credits: loadCredits(db, trackId),
-      userEditedFields: parseJson<string[]>(row['user_edited_fields'], [])
+      userEditedFields: parseJson<string[]>(row['user_edited_fields'], []),
+      file: loadTrackFile(db, trackId)
     })
   }
 
@@ -482,6 +493,92 @@ function loadCredits(db: Database, trackId: number): Credit[] {
 
   stmt.free()
   return credits
+}
+
+// --------------------------------------------------------------------------
+// Archivos de audio propios
+// --------------------------------------------------------------------------
+
+/**
+ * El archivo propio de una canción, o null si no tiene.
+ *
+ * `missing` sale siempre en false: este módulo no toca el disco duro — corre
+ * también en la ventana, donde no hay acceso a archivos. Quien sí puede
+ * comprobar si el archivo sigue ahí es el proceso principal, y lo completa
+ * antes de mandarlo a la ventana.
+ */
+function loadTrackFile(db: Database, trackId: number): TrackFile | null {
+  const stmt = db.prepare('SELECT path, format FROM track_files WHERE track_id = ?')
+  stmt.bind([trackId])
+
+  if (!stmt.step()) {
+    stmt.free()
+    return null
+  }
+
+  const row = stmt.getAsObject()
+  stmt.free()
+
+  return {
+    path: row['path'] as string,
+    format: row['format'] as string,
+    missing: false
+  }
+}
+
+/** La ruta del archivo de una canción. La usa el protocolo waxbox-audio://. */
+export function trackFilePath(db: Database, trackId: number): string | null {
+  return loadTrackFile(db, trackId)?.path ?? null
+}
+
+/**
+ * Asocia un archivo a una canción, reemplazando el anterior si lo había.
+ *
+ * El formato se deduce de la extensión y no se pregunta: es el mismo dato,
+ * y preguntarlo abriría la puerta a que no coincidan.
+ */
+export function linkTrackFile(db: Database, trackId: number, path: string): void {
+  db.run(
+    `INSERT INTO track_files (track_id, path, format) VALUES (?,?,?)
+     ON CONFLICT(track_id) DO UPDATE SET
+       path = excluded.path,
+       format = excluded.format,
+       added_at = datetime('now')`,
+    [trackId, path, extensionOf(path)]
+  )
+}
+
+export function unlinkTrackFile(db: Database, trackId: number): void {
+  db.run('DELETE FROM track_files WHERE track_id = ?', [trackId])
+}
+
+/** Cuántas canciones de un álbum tienen archivo propio. */
+export function albumFileCount(db: Database, albumId: number): number {
+  const stmt = db.prepare(
+    `SELECT COUNT(*) AS n FROM track_files tf
+     JOIN tracks t ON t.id = tf.track_id
+     WHERE t.album_id = ?`
+  )
+  stmt.bind([albumId])
+  stmt.step()
+  const count = (stmt.getAsObject()['n'] as number) ?? 0
+  stmt.free()
+  return count
+}
+
+// --------------------------------------------------------------------------
+// Historial de reproducciones
+// --------------------------------------------------------------------------
+
+/**
+ * Anota que una canción sonó.
+ *
+ * Todavía nadie lee esta tabla: la van a usar el panel de inicio y las listas
+ * inteligentes. Se guarda desde ahora porque un historial no se puede
+ * reconstruir hacia atrás.
+ */
+export function recordPlay(db: Database, trackId: number, source: PlaybackSource): void {
+  db.run('INSERT INTO plays (track_id, source) VALUES (?,?)', [trackId, source])
 }
 
 export function updateAlbum(

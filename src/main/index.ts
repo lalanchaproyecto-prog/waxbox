@@ -1,14 +1,25 @@
 import { app, BrowserWindow, Menu, MenuItem, protocol, net, shell } from 'electron'
 import { join } from 'path'
+import { existsSync } from 'fs'
 import { pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc'
-import { closeDatabase } from './database'
+import { closeDatabase, getDatabase } from './database'
+import { trackFilePath } from '../core/database/db'
 import { getPhotosDir } from './photos'
 import { ensureProfilesReady } from './profiles'
 
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'waxbox-photo', privileges: { standard: true, secure: true } }
+  { scheme: 'waxbox-photo', privileges: { standard: true, secure: true } },
+  /*
+    `stream: true` es lo que permite adelantar y retroceder dentro de una
+    canción: sin eso el archivo se sirve entero de una vez y la barra de
+    progreso no puede saltar a un punto cualquiera.
+  */
+  {
+    scheme: 'waxbox-audio',
+    privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true }
+  }
 ])
 
 /**
@@ -135,6 +146,38 @@ app.whenReady().then(async () => {
     } catch {
       return new Response('Sin perfil activo', { status: 404 })
     }
+  })
+
+  /*
+    Sirve el audio propio de una canción.
+
+    LA DIRECCIÓN LLEVA EL ID DE LA CANCIÓN, NO LA RUTA DEL ARCHIVO.
+    Es deliberado: si la ventana pudiera pedir "waxbox-audio://C:/lo/que/sea",
+    cualquier código que llegue a correr ahí podría leer cualquier archivo del
+    computador. Con el id, el proceso principal busca la ruta en su propia base
+    de datos, así que lo único que se puede servir es un archivo que la persona
+    asoció a mano a una canción suya.
+  */
+  protocol.handle('waxbox-audio', (request) => {
+    const match = /^waxbox-audio:\/\/track\/(\d+)/.exec(request.url)
+    if (!match) return new Response('Petición inválida', { status: 400 })
+
+    const trackId = Number.parseInt(match[1], 10)
+
+    let filePath: string | null = null
+    try {
+      filePath = trackFilePath(getDatabase(), trackId)
+    } catch {
+      // Sin perfil abierto no hay base que consultar.
+      return new Response('Sin perfil activo', { status: 404 })
+    }
+
+    if (!filePath) return new Response('Esa canción no tiene archivo propio', { status: 404 })
+    if (!existsSync(filePath)) {
+      return new Response('El archivo ya no está en esa carpeta', { status: 410 })
+    }
+
+    return net.fetch(pathToFileURL(filePath).href)
   })
 
   registerIpcHandlers()

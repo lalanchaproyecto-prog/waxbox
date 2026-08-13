@@ -31,6 +31,7 @@ import type {
   DuplicateCandidate
 } from '../core/database/db'
 import type { DeezerTrackRef } from '../core/services/deezer'
+import type { PlaybackSource } from '../core/player/queue'
 
 const api = {
   suggestArtists: (query: string): Promise<Result<ArtistSuggestion[]>> =>
@@ -145,6 +146,24 @@ const api = {
 
   setlistUsageForAlbum: (albumId: number): Promise<Result<SetlistUsage>> =>
     ipcRenderer.invoke('collection:setlistUsage', albumId),
+
+  // --- Archivos de audio propios -----------------------------------------
+
+  /** Elige archivos y los reparte entre las canciones de un álbum por nombre. */
+  pickAudioForAlbum: (
+    tracks: Array<{ trackId: number; title: string }>
+  ): Promise<Result<{ linked: number; unmatched: string[]; tracksWithoutFile: number[] }>> =>
+    ipcRenderer.invoke('audio:pickForAlbum', tracks),
+
+  pickAudioForTrack: (trackId: number): Promise<Result<{ linked: boolean }>> =>
+    ipcRenderer.invoke('audio:pickForTrack', trackId),
+
+  unlinkAudio: (trackId: number): Promise<Result<void>> =>
+    ipcRenderer.invoke('audio:unlink', trackId),
+
+  /** Anota que una canción sonó, para el historial de escucha. */
+  recordPlay: (trackId: number, source: PlaybackSource): Promise<Result<void>> =>
+    ipcRenderer.invoke('plays:record', trackId, source),
 
   /** Discos ya guardados con el mismo artista y título. Solo para avisar. */
   findPossibleDuplicates: (
