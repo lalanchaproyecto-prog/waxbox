@@ -11,6 +11,7 @@
 
 import type { DeezerTrackRef } from '../services/deezer'
 import type { TrackFile } from '../models/audioFile'
+import type { PhysicalFormatId } from '../models/formats'
 
 /** De dónde está sonando algo. */
 export type PlaybackSource = 'archivo' | 'deezer' | 'youtube'
@@ -22,6 +23,17 @@ export interface PlayableTrack {
   title: string
   artist: string
   albumTitle: string
+  /**
+   * En qué formato físico está el disco del que sale esta canción.
+   *
+   * El reproductor lo necesita para dibujar el objeto correcto cuando se
+   * abre a pantalla completa: un vinilo gira con su brazo, un CD gira sin
+   * aguja porque no la tiene, y un casete no es un disco.
+   *
+   * Opcional para no romper ninguna cola armada antes de que esto existiera:
+   * sin formato, el reproductor grande simplemente muestra la portada.
+   */
+  format?: PhysicalFormatId
   /** Portada a mostrar en la barra. Puede ser null. */
   cover: string | null
   /** Archivo propio, si la persona asoció uno. */

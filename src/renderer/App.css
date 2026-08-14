@@ -6366,3 +6366,198 @@ body {
   color: var(--text-body);
   overflow-wrap: anywhere;
 }
+
+/* ==========================================================================
+   EL REPRODUCTOR GRANDE
+   ========================================================================== */
+
+/*
+  No es la barra agrandada: es otra distribución.
+
+  Lo que cambia al abrirlo no es el tamaño sino qué manda. En la barra manda
+  el control —play, siguiente, avance— y la portada es una miniatura. Aquí
+  manda el objeto: el disco al centro, girando, y los controles pasan a ser
+  lo secundario. Es la diferencia entre tener música de fondo mientras
+  catalogas y estar escuchando un disco.
+
+  La música NO se corta al cambiar de tamaño: es el mismo reproductor, el
+  mismo elemento de audio, solo dibujado de otra forma.
+*/
+.player-grande {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6) var(--space-7);
+  background: var(--bg-body);
+  overflow-y: auto;
+}
+
+.grande-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex: none;
+}
+
+.grande-cuerpo {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+  align-items: center;
+  justify-items: center;
+  min-height: 0;
+}
+
+/* --- El objeto --- */
+
+.grande-objeto {
+  position: relative;
+  width: min(38vh, 380px);
+  /* Hueco para que el disco salga sin meterse bajo el texto de al lado. */
+  padding-right: 34%;
+  box-sizing: content-box;
+}
+
+.grande-disc-wrap {
+  position: absolute;
+  z-index: 1;
+  top: 8%;
+  /* Sale más que en la ficha: aquí el disco es el tema de la pantalla. */
+  left: 56%;
+  width: 84%;
+  aspect-ratio: 1;
+}
+
+.grande-disc-wrap .disc {
+  width: 100%;
+}
+
+/* --- La información --- */
+
+.grande-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 30rem;
+  min-width: 0;
+}
+
+.grande-title {
+  font-family: var(--font-display);
+  font-variation-settings: var(--width-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-tight);
+  color: var(--text-heading);
+  text-wrap: balance;
+}
+
+.grande-artist {
+  font-size: var(--text-md);
+  color: var(--text-secondary);
+}
+
+.grande-progreso {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Los controles se agrandan aquí: son el único sitio donde se toca. */
+.player-grande .player-controls {
+  gap: var(--space-4);
+}
+
+.player-grande .player-btn {
+  font-size: var(--text-md);
+}
+
+.player-grande .player-btn-main {
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: var(--text-md);
+}
+
+.grande-video {
+  flex: none;
+  max-width: 46rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* --- Ventanas bajas o angostas --- */
+
+/*
+  Por debajo de 900px de ancho, o de 620px de alto, las dos columnas se
+  apilan y el disco se achica. En una ventana baja, un disco de 38vh dejaría
+  el título y los controles fuera de la pantalla.
+*/
+@media (max-width: 900px), (max-height: 620px) {
+  .grande-cuerpo {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+    align-content: center;
+  }
+
+  .grande-objeto {
+    width: min(26vh, 220px);
+  }
+
+  .grande-title {
+    font-size: var(--text-lg);
+  }
+}
+
+/* --- Paneles ocultos --- */
+
+.orden-aviso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.orden-ocultos {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.orden-ocultos-titulo {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-dimmed);
+}
+
+.orden-restaurar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg-card);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.orden-restaurar:hover {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.orden-ocultar {
+  color: var(--danger) !important;
+}

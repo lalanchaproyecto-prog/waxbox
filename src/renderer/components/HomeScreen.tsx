@@ -36,6 +36,27 @@ const MODULOS = [
 
 type ModuloId = (typeof MODULOS)[number]['id']
 
+/**
+ * Traduce los fallos crípticos del puente a algo accionable.
+ *
+ * "No handler registered" no es un error de la colección ni de los datos: es
+ * que el proceso principal de Electron sigue siendo el de antes del cambio.
+ * El renderer se recarga solo al guardar un archivo, pero el proceso
+ * principal no, así que la ventana queda pidiéndole algo que su mitad
+ * de atrás todavía no sabe hacer.
+ */
+function explicarFallo(mensaje: string): string {
+  if (mensaje.includes('No handler registered')) {
+    return (
+      'La app está a medio actualizar: la ventana ya tiene los paneles nuevos, pero el ' +
+      'proceso de fondo todavía es el anterior y no sabe responderlos. Cierra Waxbox por ' +
+      'completo y vuelve a abrirla (si la ejecutas con «npm run dev», detén el comando con ' +
+      'Ctrl+C y arráncalo otra vez).'
+    )
+  }
+  return mensaje
+}
+
 function ordenKey(collectionId: number): string {
   return `waxbox-home-orden-${collectionId}`
 }
@@ -59,6 +80,29 @@ function cargarOrden(collectionId: number): ModuloId[] {
   }
 }
 
+function ocultosKey(collectionId: number): string {
+  return `waxbox-home-ocultos-${collectionId}`
+}
+
+/**
+ * Qué paneles decidió NO ver.
+ *
+ * Se guarda la lista de ocultos y no la de visibles a propósito: así, un
+ * panel nuevo en una versión futura aparece por omisión en vez de quedarse
+ * escondido para quien ya había guardado su selección.
+ */
+function cargarOcultos(collectionId: number): ModuloId[] {
+  const validos = MODULOS.map((m) => m.id) as string[]
+  try {
+    const raw = localStorage.getItem(ocultosKey(collectionId))
+    if (!raw) return []
+    const guardado = JSON.parse(raw) as string[]
+    return guardado.filter((id): id is ModuloId => validos.includes(id))
+  } catch {
+    return []
+  }
+}
+
 function HomeScreen({
   collectionId,
   collectionName,
@@ -72,6 +116,7 @@ function HomeScreen({
   const [errorStats, setErrorStats] = useState<string | null>(null)
   const [errorPaneles, setErrorPaneles] = useState<string | null>(null)
   const [orden, setOrden] = useState<ModuloId[]>(() => cargarOrden(collectionId))
+  const [ocultos, setOcultos] = useState<ModuloId[]>(() => cargarOcultos(collectionId))
   const [ordenando, setOrdenando] = useState(false)
 
   /*
@@ -112,7 +157,7 @@ function HomeScreen({
       if (res.ok) setData(res.data)
       else setErrorPaneles(res.error)
     } catch (error) {
-      setErrorPaneles(String(error))
+      setErrorPaneles(explicarFallo(String(error)))
     }
   }, [collectionId])
 
@@ -122,11 +167,18 @@ function HomeScreen({
 
   useEffect(() => {
     setOrden(cargarOrden(collectionId))
+    setOcultos(cargarOcultos(collectionId))
   }, [collectionId])
 
   function guardarOrden(nuevo: ModuloId[]) {
     setOrden(nuevo)
     localStorage.setItem(ordenKey(collectionId), JSON.stringify(nuevo))
+  }
+
+  function alternarVisible(id: ModuloId) {
+    const nuevo = ocultos.includes(id) ? ocultos.filter((x) => x !== id) : [...ocultos, id]
+    setOcultos(nuevo)
+    localStorage.setItem(ocultosKey(collectionId), JSON.stringify(nuevo))
   }
 
   function mover(id: ModuloId, delta: number) {
@@ -463,14 +515,16 @@ function HomeScreen({
       ) : null
   }
 
-  /** Los controles de reordenar que recibe cada tarjeta. */
+  /** Los controles de personalizar que recibe cada tarjeta. */
   function ctl(id: ModuloId) {
+    const visibles = orden.filter((x) => !ocultos.includes(x))
     return {
       ordenando,
       onSubir: () => mover(id, -1),
       onBajar: () => mover(id, 1),
-      primero: orden.indexOf(id) === 0,
-      ultimo: orden.indexOf(id) === orden.length - 1
+      onOcultar: () => alternarVisible(id),
+      primero: visibles.indexOf(id) === 0,
+      ultimo: visibles.indexOf(id) === visibles.length - 1
     }
   }
 
@@ -495,9 +549,36 @@ function HomeScreen({
       />
 
       {ordenando && (
-        <p className="orden-aviso">
-          Usa las flechas de cada panel para moverlo. El orden se guarda para esta colección.
-        </p>
+        <div className="orden-aviso">
+          <p>
+            Mueve los paneles con las flechas y ocúltalos con la ✕. Se guarda para esta
+            colección.
+          </p>
+
+          {/*
+            Los ocultos se listan aquí y no en un menú aparte: si se pudieran
+            apagar pero no se viera dónde vuelven a encenderse, quedarían
+            perdidos para siempre.
+          */}
+          {ocultos.length > 0 && (
+            <div className="orden-ocultos">
+              <span className="orden-ocultos-titulo">Ocultos</span>
+              {orden
+                .filter((id) => ocultos.includes(id))
+                .map((id) => (
+                  <button
+                    key={id}
+                    className="orden-restaurar"
+                    onClick={() => alternarVisible(id)}
+                    title="Volver a mostrarlo"
+                  >
+                    {MODULOS.find((m) => m.id === id)?.label ?? id}
+                    <span aria-hidden="true">+</span>
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
       )}
 
       {loans.length > 0 && (
@@ -531,7 +612,9 @@ function HomeScreen({
         </div>
       )}
 
-      <div className="home-grid">{orden.map((id) => paneles[id])}</div>
+      <div className="home-grid">
+        {orden.filter((id) => !ocultos.includes(id)).map((id) => paneles[id])}
+      </div>
     </div>
   )
 }
@@ -547,6 +630,7 @@ interface CardProps {
   ordenando: boolean
   onSubir: () => void
   onBajar: () => void
+  onOcultar: () => void
   primero: boolean
   ultimo: boolean
 }
@@ -566,6 +650,7 @@ function Card({
   ordenando,
   onSubir,
   onBajar,
+  onOcultar,
   primero,
   ultimo
 }: CardProps) {
@@ -580,6 +665,14 @@ function Card({
             </button>
             <button onClick={onBajar} disabled={ultimo} aria-label={`Bajar ${titulo}`}>
               ↓
+            </button>
+            <button
+              className="orden-ocultar"
+              onClick={onOcultar}
+              aria-label={`Ocultar ${titulo}`}
+              title="Ocultar este panel"
+            >
+              ✕
             </button>
           </div>
         )}

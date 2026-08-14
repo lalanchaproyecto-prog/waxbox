@@ -289,6 +289,7 @@ function AlbumReview({
         title: track.title,
         artist: track.artist,
         albumTitle: active.title,
+        format: active.format,
         cover: coverToShow,
         file: track.file ?? null,
         deezer: track.deezer
@@ -420,11 +421,19 @@ function AlbumReview({
                   }`}
                 />
                 {/*
-                  El brazo solo existe mientras suena. Un brazo apoyado sobre
-                  un disco que está a medias dentro de su funda no es una
-                  imagen de nada: el disco guardado no tiene brazo encima.
+                  El brazo solo existe mientras suena Y solo sobre un vinilo.
+
+                  Un lector de CD no tiene aguja: el disco gira dentro de una
+                  bandeja cerrada y lo lee un láser. Dibujarle un brazo encima
+                  sería inventarle una pieza que ese objeto no tiene, y este
+                  es justamente el sitio donde la app dice qué objeto es.
+
+                  Y un brazo apoyado sobre un disco a medio guardar tampoco es
+                  imagen de nada: por eso tampoco aparece en reposo.
                 */}
-                {sonandoEsteAlbum && <span className="tonearm tonearm-down" />}
+                {sonandoEsteAlbum && format?.id === 'vinilo' && (
+                  <span className="tonearm tonearm-down" />
+                )}
               </span>
             )}
 
