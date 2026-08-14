@@ -2,6 +2,19 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { PHYSICAL_FORMATS, type PhysicalFormatId } from '@core/models/formats'
 import type { ArtistSuggestion, AlbumSuggestion } from '@core/services/musicbrainz'
 import PhotoPicker from './PhotoPicker'
+import PageHeader from './PageHeader'
+import FlowSteps from './FlowSteps'
+
+/**
+ * Los dos caminos para agregar un disco.
+ *
+ * Se declaran aquí, junto al primer paso que comparten, para que las cuatro
+ * pantallas del flujo digan lo mismo. Si cada una llevara su propia copia de
+ * la lista, bastaría con cambiar una para que el indicador se contradijera
+ * a sí mismo a mitad de camino.
+ */
+export const PASOS_CATALOGO = ['Buscar', 'Elegir edición', 'Revisar y guardar']
+export const PASOS_MANUAL = ['Buscar', 'Escribir los datos', 'Revisar y guardar']
 
 export interface AlbumDraft {
   coverFront: File | null
@@ -138,11 +151,13 @@ function AddAlbumForm({ initial, onSubmit, onBrowseArtist, onCancel }: AddAlbumF
   const showTitleDrop = titleFocused && albumSuggestions.length > 0
 
   return (
-    <form className="add-form" onSubmit={handleSubmit}>
-      <header className="add-form-header">
-        <h2>Agregar un disco</h2>
-        <p>Sube las fotos de tu copia y escribe el artista y el álbum.</p>
-      </header>
+    <form className="screen add-form" onSubmit={handleSubmit}>
+      <FlowSteps steps={PASOS_CATALOGO} current={0} onCancel={onCancel} />
+
+      <PageHeader
+        title="Agregar un disco"
+        subtitle="Escribe el artista y el álbum; Waxbox busca el resto"
+      />
 
       <section className="form-section">
         <h3 className="section-title">Tus fotos</h3>

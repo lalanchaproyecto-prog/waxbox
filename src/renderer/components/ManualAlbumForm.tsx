@@ -10,6 +10,9 @@ import {
 import type { PhysicalFormatId } from '@core/models/formats'
 import { durationToSeconds } from '@core/models/duration'
 import type { DuplicateCandidate } from '@core/database/db'
+import PageHeader from './PageHeader'
+import FlowSteps from './FlowSteps'
+import { PASOS_MANUAL } from './AddAlbumForm'
 import type { FeatureFlags } from '@core/models/features'
 import PhotoPicker from './PhotoPicker'
 
@@ -253,15 +256,13 @@ function ManualAlbumForm({
   }
 
   return (
-    <div className="add-form manual-form">
-      <header className="add-form-header">
-        <h2>Cargar el disco a mano</h2>
-        <p>
-          Este disco no está en MusicBrainz, así que los datos los escribes tú. Una vez
-          guardado funciona igual que cualquier otro: se busca, se filtra, se exporta y
-          sus canciones se pueden poner en un setlist.
-        </p>
-      </header>
+    <div className="screen add-form manual-form">
+      <FlowSteps steps={PASOS_MANUAL} current={1} onCancel={onCancel} />
+
+      <PageHeader
+        title="Cargar el disco a mano"
+        subtitle="Los datos los escribes tú; después funciona igual que cualquier otro"
+      />
 
       {duplicates.length > 0 && (
         <div className="duplicate-warning">

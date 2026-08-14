@@ -880,6 +880,7 @@ function App() {
             albums={artistBrowse.albums}
             onPick={handlePickArtistAlbum}
             onBack={() => setView('add')}
+            onCancel={startOver}
           />
         )}
 
@@ -888,6 +889,7 @@ function App() {
             candidates={candidates}
             onPick={handlePick}
             onBack={() => setView(artistBrowse ? 'artist-albums' : 'add')}
+            onCancel={startOver}
           />
         )}
 

@@ -1,3 +1,7 @@
+import PageHeader from './PageHeader'
+import FlowSteps from './FlowSteps'
+import { PASOS_CATALOGO } from './AddAlbumForm'
+
 interface NoResultsScreenProps {
   /** Qué se buscó, para poder repetirlo en pantalla. */
   artist: string
@@ -27,11 +31,10 @@ function NoResultsScreen({
   onCancel
 }: NoResultsScreenProps) {
   return (
-    <div className="picker no-results">
-      <header className="picker-header">
-        <h2>No encontramos ese disco</h2>
-        <p>{message}</p>
-      </header>
+    <div className="screen picker no-results">
+      <FlowSteps steps={PASOS_CATALOGO} current={0} onCancel={onCancel} />
+
+      <PageHeader title="No encontramos ese disco" subtitle={message} />
 
       <div className="no-results-query">
         <div>
@@ -69,11 +72,6 @@ function NoResultsScreen({
         </section>
       </div>
 
-      <footer className="picker-footer">
-        <button className="btn btn-ghost" onClick={onCancel}>
-          Cancelar
-        </button>
-      </footer>
     </div>
   )
 }

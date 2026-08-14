@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import type { ReleaseCandidate } from '@core/services/musicbrainz'
+import PageHeader from './PageHeader'
+import FlowSteps from './FlowSteps'
+import { PASOS_CATALOGO } from './AddAlbumForm'
+import { IconBack } from './Icons'
 
 interface ReleasePickerProps {
   candidates: ReleaseCandidate[]
   onPick: (candidate: ReleaseCandidate) => void
   onBack: () => void
+  /** Salir del flujo entero, no solo retroceder un paso. */
+  onCancel: () => void
 }
 
 function countryFlag(code: string): string {
@@ -34,17 +40,22 @@ function CoverThumb({ musicbrainzId, title }: { musicbrainzId: string; title: st
   )
 }
 
-function ReleasePicker({ candidates, onPick, onBack }: ReleasePickerProps) {
+function ReleasePicker({ candidates, onPick, onBack, onCancel }: ReleasePickerProps) {
   return (
-    <div className="picker">
-      <header className="picker-header">
-        <h2>Elige tu edición</h2>
-        <p>
-          MusicBrainz encontró {candidates.length}{' '}
-          {candidates.length === 1 ? 'edición' : 'ediciones'}. Elige la que coincide con tu copia
-          — fíjate en el año, el país y el formato.
-        </p>
-      </header>
+    <div className="screen picker">
+      <FlowSteps steps={PASOS_CATALOGO} current={1} onCancel={onCancel} />
+
+      <button className="page-back" onClick={onBack}>
+        <IconBack size={16} />
+        <span>Cambiar la búsqueda</span>
+      </button>
+
+      <PageHeader
+        title="Elige tu edición"
+        subtitle={`${candidates.length} ${
+          candidates.length === 1 ? 'edición encontrada' : 'ediciones encontradas'
+        } · fíjate en el año, el país y el formato`}
+      />
 
       <ul className="candidate-list">
         {candidates.map((candidate) => (
@@ -80,11 +91,6 @@ function ReleasePicker({ candidates, onPick, onBack }: ReleasePickerProps) {
         ))}
       </ul>
 
-      <footer className="picker-footer">
-        <button className="btn btn-ghost" onClick={onBack}>
-          Volver
-        </button>
-      </footer>
     </div>
   )
 }

@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import type { ArtistAlbum } from '@core/services/musicbrainz'
+import PageHeader from './PageHeader'
+import FlowSteps from './FlowSteps'
+import { PASOS_CATALOGO } from './AddAlbumForm'
+import { IconBack } from './Icons'
 
 const TYPE_LABELS: Record<string, string> = {
   Album: 'Álbum',
@@ -38,19 +42,28 @@ interface ArtistAlbumPickerProps {
   albums: ArtistAlbum[]
   onPick: (album: ArtistAlbum) => void
   onBack: () => void
+  /** Salir del flujo entero, no solo retroceder un paso. */
+  onCancel: () => void
 }
 
-function ArtistAlbumPicker({ artistName, albums, onPick, onBack }: ArtistAlbumPickerProps) {
+function ArtistAlbumPicker({ artistName, albums, onPick, onBack, onCancel }: ArtistAlbumPickerProps) {
   return (
-    <div className="picker">
-      <header className="picker-header">
-        <h2>Discografía de {artistName}</h2>
-        <p>
-          {albums.length === 0
-            ? 'No se encontraron títulos para este artista.'
-            : `Se encontraron ${albums.length} ${albums.length === 1 ? 'título' : 'títulos'}. Elige el que tienes en tu colección.`}
-        </p>
-      </header>
+    <div className="screen picker">
+      <FlowSteps steps={PASOS_CATALOGO} current={0} onCancel={onCancel} />
+
+      <button className="page-back" onClick={onBack}>
+        <IconBack size={16} />
+        <span>Cambiar la búsqueda</span>
+      </button>
+
+      <PageHeader
+        title={`Discografía de ${artistName}`}
+        subtitle={
+          albums.length === 0
+            ? 'Sin títulos para este artista'
+            : `${albums.length} ${albums.length === 1 ? 'título' : 'títulos'} · elige el que tienes`
+        }
+      />
 
       {albums.length > 0 && (
         <ul className="candidate-list">
@@ -75,11 +88,6 @@ function ArtistAlbumPicker({ artistName, albums, onPick, onBack }: ArtistAlbumPi
         </ul>
       )}
 
-      <footer className="picker-footer">
-        <button className="btn btn-ghost" onClick={onBack}>
-          Volver
-        </button>
-      </footer>
     </div>
   )
 }

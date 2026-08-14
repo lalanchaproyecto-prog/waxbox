@@ -18,6 +18,8 @@ import { hasPurchase, formatPurchaseDate, EMPTY_PURCHASE } from '@core/models/pu
 import TrackDetail from './TrackDetail'
 import AddToSetlistButton from './AddToSetlistButton'
 import { IconBack } from './Icons'
+import FlowSteps from './FlowSteps'
+import { PASOS_CATALOGO, PASOS_MANUAL } from './AddAlbumForm'
 import VariantsSection from './VariantsSection'
 import LoansSection from './LoansSection'
 import type { SetlistUsage, DuplicateCandidate } from '@core/database/db'
@@ -397,12 +399,24 @@ function AlbumReview({
 
   return (
     <div className="screen ficha tinted" style={tintStyle(dominant)}>
-      {savedMode && (
-        <button className="page-back" onClick={onBack}>
-          <IconBack size={16} />
-          <span>Colección</span>
-        </button>
+      {/*
+        Antes de guardar, esta pantalla es el último paso de una tarea, y el
+        indicador lo dice. Ya guardado es una sub-página de la colección, y
+        entonces lo que corresponde es el "volver" de siempre.
+      */}
+      {!savedMode && (
+        <FlowSteps
+          steps={isManualAlbum ? PASOS_MANUAL : PASOS_CATALOGO}
+          current={2}
+          onCancel={onStartOver}
+          cancelLabel="Descartar y salir"
+        />
       )}
+
+      <button className="page-back" onClick={onBack}>
+        <IconBack size={16} />
+        <span>{savedMode ? 'Colección' : backLabel}</span>
+      </button>
 
       <header className="ficha-hero">
         {/*
@@ -1136,9 +1150,10 @@ function AlbumReview({
                 </p>
               </div>
             )}
-            <button className="btn btn-ghost" onClick={onBack}>
-              {backLabel}
-            </button>
+            {/*
+              Volver ya está arriba a la izquierda, junto al indicador de
+              pasos: aquí abajo solo queda la acción que cierra la tarea.
+            */}
             {onSave ? (
               <button className="btn btn-primary" onClick={onSave}>
                 Guardar en mi colección

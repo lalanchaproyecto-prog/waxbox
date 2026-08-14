@@ -849,51 +849,134 @@ body {
   line-height: 1.5;
 }
 
+/* ==========================================================================
+   AGREGAR UN DISCO — la tarea
+   ========================================================================== */
+
+/*
+  Agregar un disco es una TAREA, no un sitio.
+
+  Antes eran cuatro pantallas sueltas —buscar, discografía, elegir edición,
+  revisar— que se veían como cuatro lugares distintos de la app, cada una con
+  su propio "Volver" al final. No había forma de saber en cuál de los cuatro
+  estabas ni cuánto faltaba.
+
+  Los números aquí SÍ dicen algo cierto: es una secuencia con un orden que no
+  se puede alterar. Numerar cosas que no son una secuencia es decoración;
+  numerar esta convierte cuatro pantallas en una tarea con principio y fin.
+*/
+
+.flow-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.flow-list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.flow-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+/* La flecha entre pasos se dibuja sola: es la relación, no contenido. */
+.flow-step + .flow-step::before {
+  content: '→';
+  color: var(--text-dimmed);
+  margin-right: var(--space-2);
+}
+
+.flow-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  font-size: var(--text-xs);
+  border: 1px solid var(--border-strong);
+  color: var(--text-dimmed);
+  flex: none;
+}
+
+.flow-label {
+  color: var(--text-dimmed);
+}
+
+/* Dónde estás. Es lo único que cambia, así que es lo único con relleno. */
+.flow-actual .flow-num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.flow-actual .flow-label {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+/* Lo ya resuelto: el visto reemplaza al número, que ya cumplió su función. */
+.flow-hecho .flow-num {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.flow-hecho .flow-label {
+  color: var(--text-secondary);
+}
+
 /* ---------- Elegir edición ---------- */
 
 .picker {
-  width: 100%;
-  max-width: 680px;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  max-width: 780px;
 }
 
-.picker-header h2 {
-  font-size: 1.5rem;
-  color: var(--text-heading);
-  margin-bottom: 0.35rem;
-}
+/*
+  La lista ya no tiene altura máxima con su propio scroll.
 
-.picker-header p {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
+  La tenía (26rem) y eso creaba un segundo desplazamiento dentro de la
+  página: con nueve ediciones había que descubrir que esa caja se movía por
+  dentro. Ahora la lista crece y desplaza la página, que es lo que la gente
+  ya sabe hacer.
+*/
 .candidate-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  max-height: 26rem;
-  overflow-y: auto;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
 }
 
 .candidate {
   width: 100%;
   display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  align-items: flex-start;
-  background: var(--bg-input);
+  gap: var(--space-4);
+  align-items: center;
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.85rem 1.1rem;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition: border-color var(--dur-base) var(--ease),
+    background-color var(--dur-base) var(--ease);
 }
 
 .candidate:hover {
@@ -902,12 +985,13 @@ body {
 }
 
 .candidate-cover-wrap {
-  flex-shrink: 0;
+  flex: none;
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--bg-body);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
 }
 
 .candidate-cover {
@@ -923,58 +1007,115 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  opacity: 0.3;
+  font-size: var(--text-md);
+  opacity: 0.4;
 }
 
 .candidate-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .candidate-main {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 1px;
+  min-width: 0;
 }
 
 .candidate-title {
-  color: var(--text-heading);
-  font-size: 1rem;
+  font-size: var(--text-sm);
   font-weight: 600;
+  color: var(--text-heading);
+  overflow-wrap: anywhere;
 }
 
 .candidate-artist {
-  color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .candidate-note {
+  font-size: var(--text-xs);
   color: var(--text-dimmed);
-  font-size: 0.8rem;
-  font-style: italic;
 }
 
+/*
+  Los datos que distinguen una edición de otra: año, país, formato, sello,
+  número de canciones. Van en la mono porque son exactamente eso —datos de
+  catálogo— y porque es lo que hay que comparar entre una fila y la
+  siguiente.
+*/
 .candidate-meta {
   display: flex;
+  gap: var(--space-2);
   flex-wrap: wrap;
-  gap: 0.4rem;
 }
 
-.tag {
-  background: var(--bg-subtle);
+.candidate-meta .tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  font-size: 0.75rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-2);
+  white-space: nowrap;
 }
 
-.picker-footer {
+/* ---------- Sin resultados: la bifurcación ---------- */
+
+.no-results-query {
   display: flex;
-  justify-content: flex-start;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  padding: var(--space-4);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.no-results-query > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.no-results-query strong {
+  font-size: var(--text-md);
+  color: var(--text-heading);
+}
+
+.no-results-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.no-results-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.no-results-option p {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+/* La salida recomendada: cargarlo a mano. Es la que resuelve de verdad. */
+.no-results-option.highlighted {
+  border-color: var(--accent);
 }
 
 /* ==========================================================================
