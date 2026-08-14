@@ -5,6 +5,7 @@ import { getFormat } from '@core/models/formats'
 import ExportDialog from './ExportDialog'
 import GenerateSetlistDialog from './GenerateSetlistDialog'
 import ImagePicker from './ImagePicker'
+import PageHeader from './PageHeader'
 import { imageSrc, type ImageRef } from '@core/models/imageRef'
 
 interface SetlistsScreenProps {
@@ -12,7 +13,6 @@ interface SetlistsScreenProps {
   albums: AlbumSummary[]
   /** Colección activa: los setlists son suyos. */
   collectionId: number
-  onBack: () => void
   /** Abre el modo explorar para sumar canciones al setlist indicado. */
   onExplore: (setlist: { id: number; name: string }) => void
   /** Setlist que debe abrirse al entrar, si se viene de vuelta del modo explorar. */
@@ -22,7 +22,6 @@ interface SetlistsScreenProps {
 function SetlistsScreen({
   albums,
   collectionId,
-  onBack,
   onExplore,
   initialSetlistId
 }: SetlistsScreenProps) {
@@ -279,9 +278,6 @@ function SetlistsScreen({
         )}
 
         <footer className="setlist-detail-footer">
-          <button className="btn btn-ghost" onClick={onBack}>
-            Volver
-          </button>
           <div className="setlist-detail-actions">
             {detail.tracks.length > 0 && (
               <button className="btn btn-ghost" onClick={() => setExportingId(detail.id)}>
@@ -313,29 +309,29 @@ function SetlistsScreen({
   // --- Lista de setlists --------------------------------------------------
 
   return (
-    <div className="setlists">
-      <header className="collection-header">
-        <div>
-          <h2>Mis setlists</h2>
-          <p className="collection-count">
-            {setlists.length === 0
-              ? 'Ninguno todavía'
-              : setlists.length === 1
-                ? '1 setlist'
-                : `${setlists.length} setlists`}
-          </p>
-        </div>
-        {!creating && (
-          <div className="collection-header-actions">
-            <button className="btn btn-ghost" onClick={() => setGenerating(true)}>
-              Generar automático
-            </button>
-            <button className="btn btn-primary" onClick={() => setCreating(true)}>
-              + Nuevo setlist
-            </button>
-          </div>
-        )}
-      </header>
+    <div className="screen setlists">
+      <PageHeader
+        title="Setlists"
+        subtitle={
+          setlists.length === 0
+            ? 'Ninguno todavía'
+            : setlists.length === 1
+              ? '1 setlist'
+              : `${setlists.length} setlists`
+        }
+        actions={
+          !creating && (
+            <>
+              <button className="btn btn-ghost" onClick={() => setGenerating(true)}>
+                Generar automático
+              </button>
+              <button className="btn btn-primary" onClick={() => setCreating(true)}>
+                Nuevo setlist
+              </button>
+            </>
+          )
+        }
+      />
 
       {generating && (
         <GenerateSetlistDialog
@@ -472,12 +468,6 @@ function SetlistsScreen({
           </li>
         ))}
       </ul>
-
-      <footer className="settings-footer">
-        <button className="btn btn-ghost" onClick={onBack}>
-          Volver
-        </button>
-      </footer>
 
       {/*
         La sugerencia de búsqueda sale de los géneros de la colección cuando los

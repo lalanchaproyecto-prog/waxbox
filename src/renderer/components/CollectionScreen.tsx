@@ -5,17 +5,13 @@ import type { PhysicalFormatId } from '@core/models/formats'
 import { conditionShort, CONDITIONS } from '@core/models/condition'
 import type { ConditionId } from '@core/models/condition'
 import ExportDialog from './ExportDialog'
+import PageHeader from './PageHeader'
 
 interface CollectionScreenProps {
   albums: AlbumSummary[]
   collectionId: number
   onOpen: (albumId: number) => void
   onAdd: () => void
-  onBack: () => void
-  /** Sin definir cuando la función de setlists está apagada en Configuración. */
-  onOpenSetlists?: () => void
-  /** Abre la lista de deseos. */
-  onOpenWishlist?: () => void
 }
 
 type ViewMode = 'grid' | 'table'
@@ -106,15 +102,7 @@ function matchesFilters(album: AlbumSummary, filtros: Filtros): boolean {
   return true
 }
 
-function CollectionScreen({
-  albums,
-  collectionId,
-  onOpen,
-  onAdd,
-  onBack,
-  onOpenSetlists,
-  onOpenWishlist
-}: CollectionScreenProps) {
+function CollectionScreen({ albums, collectionId, onOpen, onAdd }: CollectionScreenProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [sortKey, setSortKey] = useState<SortKey>('title')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
@@ -202,37 +190,32 @@ function CollectionScreen({
   const hasActiveFilters = activos.length > 0
 
   return (
-    <div className="collection">
-      <header className="collection-header">
-        <div>
-          <button className="btn-link" onClick={onBack}>&larr; Inicio</button>
-          <h2>Tu colección</h2>
-          <p className="collection-count">
-            {albums.length === 1 ? '1 disco' : `${albums.length} discos`}
-            {(search.trim() || hasActiveFilters) && filtered.length !== albums.length &&
-              ` · ${filtered.length} encontrados`}
-          </p>
-        </div>
-        <div className="collection-header-actions">
-          {/* Va aparte y en otro color: no es gestionar discos, es su propia sección. */}
-          {onOpenWishlist && (
-            <button className="btn btn-ghost" onClick={onOpenWishlist}>
-              Deseos
+    <div className="screen">
+      {/*
+        Deseos y Setlists ya no viven aquí: son secciones del menú, y tenerlas
+        también como botones dentro de la colección hacía parecer que eran
+        acciones sobre los discos. Exportar sí se queda, porque exporta ESTA
+        pantalla — lo que estás viendo, con sus filtros aplicados.
+      */}
+      <PageHeader
+        title="Colección"
+        subtitle={
+          `${albums.length === 1 ? '1 disco' : `${albums.length} discos`}` +
+          ((search.trim() || hasActiveFilters) && filtered.length !== albums.length
+            ? ` · ${filtered.length} encontrados`
+            : '')
+        }
+        actions={
+          <>
+            <button className="btn btn-ghost" onClick={() => setExporting(true)}>
+              Exportar
             </button>
-          )}
-          {onOpenSetlists && (
-            <button className="btn btn-ghost" onClick={onOpenSetlists}>
-              Setlists
+            <button className="btn btn-primary" onClick={onAdd}>
+              Agregar disco
             </button>
-          )}
-          <button className="btn btn-ghost" onClick={() => setExporting(true)}>
-            Exportar
-          </button>
-          <button className="btn btn-primary" onClick={onAdd}>
-            + Agregar disco
-          </button>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {exporting && (
         <ExportDialog

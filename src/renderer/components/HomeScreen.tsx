@@ -8,9 +8,6 @@ interface HomeScreenProps {
   collectionId: number
   collectionName: string
   onOpenAlbum: (albumId: number) => void
-  onOpenCollection: () => void
-  onOpenSetlists?: () => void
-  onOpenWishlist: () => void
   onAdd: () => void
 }
 
@@ -18,9 +15,6 @@ function HomeScreen({
   collectionId,
   collectionName,
   onOpenAlbum,
-  onOpenCollection,
-  onOpenSetlists,
-  onOpenWishlist,
   onAdd
 }: HomeScreenProps) {
   const [stats, setStats] = useState<CollectionStats | null>(null)
@@ -196,26 +190,13 @@ function HomeScreen({
             </section>
           )}
 
-          {/* Navegación */}
-          <nav className="home-nav">
-            <button className="home-nav-btn" onClick={onOpenCollection}>
-              Ver colección completa
-            </button>
-            {onOpenSetlists && (
-              <button className="home-nav-btn" onClick={onOpenSetlists}>
-                Setlists
-              </button>
-            )}
-            <button className="home-nav-btn" onClick={onOpenWishlist}>
-              Lista de deseos
-              {stats.wishlistCount > 0 && (
-                <span className="home-nav-badge">{stats.wishlistCount}</span>
-              )}
-            </button>
-            <button className="home-nav-btn" onClick={onAdd}>
-              + Agregar disco
-            </button>
-          </nav>
+          {/*
+            Aquí había una fila de cuatro botones —Colección, Setlists,
+            Deseos, Agregar— que era el menú principal de la app escondido al
+            final del scroll del inicio. Ahora esas cuatro cosas viven en el
+            menú lateral, visibles desde cualquier pantalla, así que repetirlas
+            aquí solo daría dos caminos para lo mismo.
+          */}
         </>
       )}
     </div>

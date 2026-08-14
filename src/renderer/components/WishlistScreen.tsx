@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import type { WishlistItem, WishlistDraft } from '@core/database/db'
 import { PHYSICAL_FORMATS, getFormat } from '@core/models/formats'
 import type { PhysicalFormatId } from '@core/models/formats'
+import PageHeader from './PageHeader'
 
 interface WishlistScreenProps {
   collectionId: number
-  onBack: () => void
+  /** Para que el contador del menú siga siendo cierto al agregar o quitar. */
+  onChanged: () => void
 }
 
 const PRIORITIES = [
@@ -27,7 +29,7 @@ function emptyDraft(): WishlistDraft {
   }
 }
 
-function WishlistScreen({ collectionId, onBack }: WishlistScreenProps) {
+function WishlistScreen({ collectionId, onChanged }: WishlistScreenProps) {
   const [items, setItems] = useState<WishlistItem[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -41,6 +43,7 @@ function WishlistScreen({ collectionId, onBack }: WishlistScreenProps) {
   async function load() {
     const result = await window.api.listWishlist(collectionId)
     if (result.ok) setItems(result.data)
+    onChanged()
   }
 
   function startAdd() {
@@ -93,16 +96,22 @@ function WishlistScreen({ collectionId, onBack }: WishlistScreenProps) {
   }
 
   return (
-    <div className="wishlist-screen">
-      <header className="screen-header">
-        <button className="btn btn-ghost" onClick={onBack}>
-          Volver
-        </button>
-        <h2>Lista de deseos</h2>
-        <button className="btn btn-primary" onClick={startAdd}>
-          + Agregar deseo
-        </button>
-      </header>
+    <div className="screen wishlist-screen">
+      <PageHeader
+        title="Lista de deseos"
+        subtitle={
+          items.length === 0
+            ? 'Nada anotado todavía'
+            : items.length === 1
+              ? '1 disco que buscas'
+              : `${items.length} discos que buscas`
+        }
+        actions={
+          <button className="btn btn-primary" onClick={startAdd}>
+            Agregar deseo
+          </button>
+        }
+      />
 
       {showForm && (
         <section className="review-block wishlist-form">

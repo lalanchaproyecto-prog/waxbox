@@ -23,7 +23,10 @@ import type { Profile } from '@core/models/profile'
 import ExploreScreen from './components/ExploreScreen'
 import WishlistScreen from './components/WishlistScreen'
 import HomeScreen from './components/HomeScreen'
-import { Isotipo, LogoCompleto } from './components/Logo'
+import LoansScreen from './components/LoansScreen'
+import Sidebar, { type Section } from './components/Sidebar'
+import CommandPalette from './components/CommandPalette'
+import { LogoCompleto } from './components/Logo'
 import { PlayerProvider } from './player/PlayerProvider'
 import PlayerBar from './player/PlayerBar'
 
@@ -44,6 +47,21 @@ type View =
   | 'setlists'
   | 'explore'
   | 'wishlist'
+  | 'loans'
+
+/**
+ * Las cinco secciones del menú.
+ *
+ * Se separan del resto de las vistas porque se navegan distinto: entrar a una
+ * sección REEMPLAZA dónde estás, mientras que abrir la ficha de un disco se
+ * APILA encima para poder volver. Antes todo era la misma cosa y por eso no
+ * había manera de volver a ningún sitio.
+ */
+const SECTIONS: readonly View[] = ['home', 'collection', 'setlists', 'wishlist', 'loans']
+
+function isSection(view: View): view is Section {
+  return (SECTIONS as readonly string[]).includes(view)
+}
 
 export type ThemePreference = 'auto' | 'dark' | 'light'
 
@@ -141,8 +159,65 @@ function App() {
   /** Setlist al que se le están sumando canciones desde el modo explorar. */
   const [exploreTarget, setExploreTarget] = useState<{ id: number; name: string } | null>(null)
 
+  /**
+   * De dónde se vino, para poder volver.
+   *
+   * Solo se apila al entrar a una sub-página o a una tarea; cambiar de
+   * sección la vacía. Así "volver" desde la ficha de un disco lleva a la
+   * pantalla real de la que se salió —la colección, el inicio o la búsqueda—
+   * en vez de a un sitio fijo.
+   */
+  const [backStack, setBackStack] = useState<View[]>([])
+
+  /** Contadores de los badges del menú. */
+  const [counts, setCounts] = useState({ wishlist: 0, loans: 0 })
+
+  const [paletteOpen, setPaletteOpen] = useState(false)
+
   useEffect(() => {
     startUp()
+  }, [])
+
+  /**
+   * Ir a una sección del menú: reemplaza, no apila.
+   *
+   * Vaciar la pila es deliberado — desde una sección no se "vuelve" a la
+   * anterior, se cambia de sitio, igual que en el menú de cualquier app.
+   */
+  function goToSection(next: Section): void {
+    setError(null)
+    setBackStack([])
+    setView(next)
+  }
+
+  /** Abrir algo encima de lo que hay: la ficha de un disco, una tarea, ajustes. */
+  function pushView(next: View): void {
+    setError(null)
+    setBackStack((stack) => [...stack, view])
+    setView(next)
+  }
+
+  /** Volver a lo anterior. Sin nada apilado, al inicio. */
+  function goBack(): void {
+    setError(null)
+    setBackStack((stack) => {
+      const previous = stack[stack.length - 1]
+      setView(previous ?? 'home')
+      return stack.slice(0, -1)
+    })
+  }
+
+  /* Ctrl+K abre la búsqueda desde cualquier pantalla. Antes solo funcionaba
+     dentro de la colección, que es justo donde menos falta hacía. */
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setPaletteOpen((open) => !open)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   /**
@@ -277,6 +352,28 @@ function App() {
     if (collectionId === null) return
     const result = await window.api.listAlbums(collectionId)
     if (result.ok) setCollection(result.data)
+    await refreshCounts(collectionId)
+  }
+
+  /**
+   * Los números de los badges del menú.
+   *
+   * Viven en App y no en cada pantalla porque el menú está siempre visible:
+   * si los cargara la pantalla de deseos, el contador solo sería correcto
+   * mientras estuvieras justo ahí.
+   */
+  async function refreshCounts(
+    collectionId: number | null = activeCollectionId
+  ): Promise<void> {
+    if (collectionId === null) return
+    const [wishlist, loans] = await Promise.all([
+      window.api.wishlistCount(collectionId),
+      window.api.activeLoans(collectionId)
+    ])
+    setCounts({
+      wishlist: wishlist.ok ? wishlist.data : 0,
+      loans: loans.ok ? loans.data.length : 0
+    })
   }
 
   async function handleSearch(newDraft: AlbumDraft) {
@@ -421,7 +518,7 @@ function App() {
     }
 
     setSavedAlbum(result.data)
-    setView('saved')
+    pushView('saved')
   }
 
   async function handleUpdateSaved(updatedAlbum: EditableAlbum) {
@@ -456,7 +553,9 @@ function App() {
 
     setSavedAlbum(null)
     await refreshCollection()
-    setView('home')
+    /* El disco que se estaba viendo ya no existe, así que volver a la ficha
+       no es una opción: se sale a la colección, que es de donde se llega. */
+    goToSection('collection')
   }
 
   /** Cambiar de colección vuelve al inicio: lo que se estaba viendo era de otra. */
@@ -469,7 +568,7 @@ function App() {
     setAlbum(null)
     setExploreTarget(null)
     setError(null)
-    setView('home')
+    goToSection('home')
   }
 
   /** Recarga la lista tras crear, renombrar o borrar una colección. */
@@ -503,7 +602,7 @@ function App() {
     setAlbum(null)
     setError(null)
     setNoResultsMessage('')
-    setView('home')
+    goToSection('home')
   }
 
   const hasAlbums = collection.length > 0
@@ -531,73 +630,62 @@ function App() {
       vista concreta justamente para eso.
     */
     <PlayerProvider youtubeConfigured={settings.youtubeConfigured}>
-    <div className="app">
-      <header className="app-header">
-        <div className="logo">
-          <span className="logo-icon">
-            <Isotipo size={30} />
-          </span>
-          <h1>Waxbox</h1>
-        </div>
-        <p className="slogan">Tu música, tu historia.</p>
-        <nav className="header-nav">
-          {activeProfile && (
-            <button
-              className="settings-link profile-chip"
-              onClick={handleSignOut}
-              title="Cambiar de perfil"
-            >
-              <span aria-hidden="true">{activeProfile.emoji}</span> {activeProfile.name}
-            </button>
-          )}
-          {activeProfile && view !== 'settings' && (
-            <button className="settings-link" onClick={() => setView('settings')}>
-              Configuración
-            </button>
-          )}
-        </nav>
+    {/*
+      Tres estados de la app, y solo uno se dibuja a la vez.
 
-        {activeProfile && activeCollectionId !== null && collections.length > 0 && (
-          <CollectionBar
-            collections={collections}
-            activeId={activeCollectionId}
-            onSwitch={handleSwitchCollection}
-            onChanged={handleCollectionsChanged}
-          />
-        )}
-      </header>
+      El arranque y el selector de perfil van a pantalla completa SIN el menú
+      lateral: todavía no hay ninguna base de datos abierta, así que un menú
+      ahí no llevaría a ningún sitio.
+    */}
+    {starting ? (
+      <div className="app app-bare">
+        <div className="splash">
+          <LogoCompleto />
+          <span className="spinner" />
+        </div>
+      </div>
+    ) : !activeProfile ? (
+      <div className="app app-bare">
+        <ProfilePicker
+          profiles={profiles}
+          onPick={(profileId) => {
+            const profile = profiles.find((item) => item.id === profileId)
+            if (profile) activateProfile(profile)
+          }}
+          onChanged={async () => {
+            const result = await window.api.listProfiles()
+            if (result.ok) setProfiles(result.data.profiles)
+          }}
+        />
+      </div>
+    ) : (
+    <div className="app">
+      {activeCollectionId !== null && collections.length > 0 && (
+        <Sidebar
+          profile={activeProfile}
+          onSignOut={handleSignOut}
+          collections={collections}
+          activeCollectionId={activeCollectionId}
+          onSwitchCollection={handleSwitchCollection}
+          onCollectionsChanged={handleCollectionsChanged}
+          section={isSection(view) ? view : null}
+          onNavigate={goToSection}
+          counts={{
+            albums: collection.length,
+            setlists:
+              collections.find((item) => item.id === activeCollectionId)?.setlistCount ?? 0,
+            wishlist: counts.wishlist,
+            loans: counts.loans
+          }}
+          features={features}
+          onAdd={() => pushView('add')}
+          onOpenSettings={() => pushView('settings')}
+          onOpenSearch={() => setPaletteOpen(true)}
+          settingsActive={view === 'settings' || view === 'about'}
+        />
+      )}
 
       <main className="app-main">
-        {/*
-          Pantalla de carga del arranque. Es el único lugar donde aparece el
-          logo completo: en el resto de la app va solo el isotipo, para no
-          repetir la marca en cada pantalla.
-        */}
-        {starting && (
-          <div className="splash">
-            <LogoCompleto />
-            <span className="spinner" />
-          </div>
-        )}
-
-        {/* Sin perfil abierto no se consulta nada: en el proceso principal
-            todavía no hay ninguna base de datos abierta. */}
-        {!starting && !activeProfile && (
-          <ProfilePicker
-            profiles={profiles}
-            onPick={(profileId) => {
-              const profile = profiles.find((item) => item.id === profileId)
-              if (profile) activateProfile(profile)
-            }}
-            onChanged={async () => {
-              const result = await window.api.listProfiles()
-              if (result.ok) setProfiles(result.data.profiles)
-            }}
-          />
-        )}
-
-        {!starting && activeProfile && (
-          <>
         {loading && (
           <div className="loading">
             <span className="spinner" />
@@ -615,26 +703,24 @@ function App() {
         )}
 
         {!loading && !error && view === 'home' && !hasAlbums && (
-          <div className="home">
-            <div className="stats-card">
-              <span className="stat-number">0</span>
-              <span className="stat-label">discos en tu colección</span>
-            </div>
-            <p className="empty-note">
-              Tu colección está vacía. Agrega tu primer disco, casete o CD para empezar.
+          <div className="screen empty-first-run">
+            <h2 className="page-title">Tu colección está vacía</h2>
+            <p className="empty-state-help">
+              Agrega tu primer disco, casete o CD para empezar. Waxbox completa el año, el
+              sello y el tracklist por ti.
             </p>
-            <button className="btn btn-primary" onClick={() => setView('add')}>
-              + Agregar disco
+            <button className="btn btn-primary" onClick={() => pushView('add')}>
+              Agregar disco
             </button>
 
             {!settings.youtubeConfigured && (
               <p className="optional-note">
-                Opcional: si quieres además escuchar las canciones de tus discos, puedes
-                configurar una clave gratuita de YouTube cuando quieras desde{' '}
-                <button className="btn-link" onClick={() => setView('settings')}>
+                Opcional: si quieres además ver el video de las canciones, puedes configurar
+                una clave gratuita de YouTube cuando quieras desde{' '}
+                <button className="btn-link" onClick={() => pushView('settings')}>
                   Configuración
                 </button>
-                . No hace falta para empezar a usar Waxbox.
+                . No hace falta para empezar.
               </p>
             )}
           </div>
@@ -647,17 +733,7 @@ function App() {
               collections.find((c) => c.id === activeCollectionId)?.name ?? 'Mi colección'
             }
             onOpenAlbum={handleOpenSaved}
-            onOpenCollection={() => setView('collection')}
-            onOpenSetlists={
-              features.setlists
-                ? () => {
-                    setExploreTarget(null)
-                    setView('setlists')
-                  }
-                : undefined
-            }
-            onOpenWishlist={() => setView('wishlist')}
-            onAdd={() => setView('add')}
+            onAdd={() => pushView('add')}
           />
         )}
 
@@ -666,17 +742,15 @@ function App() {
             albums={collection}
             collectionId={activeCollectionId}
             onOpen={handleOpenSaved}
-            onAdd={() => setView('add')}
-            onBack={() => setView('home')}
-            onOpenSetlists={
-              features.setlists
-                ? () => {
-                    setExploreTarget(null)
-                    setView('setlists')
-                  }
-                : undefined
-            }
-            onOpenWishlist={() => setView('wishlist')}
+            onAdd={() => pushView('add')}
+          />
+        )}
+
+        {!loading && !error && view === 'loans' && activeCollectionId !== null && (
+          <LoansScreen
+            collectionId={activeCollectionId}
+            onOpenAlbum={handleOpenSaved}
+            onChanged={() => refreshCounts()}
           />
         )}
 
@@ -698,8 +772,8 @@ function App() {
             }}
             onChange={() => {}}
             youtubeConfigured={settings.youtubeConfigured}
-            onOpenSettings={() => setView('settings')}
-            onBack={() => setView('home')}
+            onOpenSettings={() => pushView('settings')}
+            onBack={goBack}
             onStartOver={startOver}
             savedMode
             features={features}
@@ -717,10 +791,9 @@ function App() {
           <SetlistsScreen
             albums={collection}
             collectionId={activeCollectionId}
-            onBack={() => setView('home')}
             onExplore={(setlist) => {
               setExploreTarget(setlist)
-              setView('explore')
+              pushView('explore')
             }}
             initialSetlistId={exploreTarget?.id ?? null}
           />
@@ -731,14 +804,14 @@ function App() {
             albums={collection}
             collectionId={activeCollectionId}
             target={exploreTarget}
-            onBack={() => setView('setlists')}
+            onBack={goBack}
           />
         )}
 
         {!loading && !error && view === 'wishlist' && activeCollectionId !== null && (
           <WishlistScreen
             collectionId={activeCollectionId}
-            onBack={() => setView('home')}
+            onChanged={() => refreshCounts()}
           />
         )}
 
@@ -750,21 +823,19 @@ function App() {
             onThemeChange={setTheme}
             features={features}
             onFeaturesChange={setFeatures}
-            onOpenAbout={() => setView('about')}
-            onBack={() => setView('home')}
+            onOpenAbout={() => pushView('about')}
+            onBack={goBack}
           />
         )}
 
-        {!loading && !error && view === 'about' && (
-          <AboutScreen onBack={() => setView('settings')} />
-        )}
+        {!loading && !error && view === 'about' && <AboutScreen onBack={goBack} />}
 
         {!loading && !error && view === 'add' && (
           <AddAlbumForm
             initial={draft}
             onSubmit={handleSearch}
             onBrowseArtist={handleBrowseArtist}
-            onCancel={() => setView('home')}
+            onCancel={goBack}
           />
         )}
 
@@ -820,7 +891,7 @@ function App() {
             album={album}
             onChange={setAlbum}
             youtubeConfigured={settings.youtubeConfigured}
-            onOpenSettings={() => setView('settings')}
+            onOpenSettings={() => pushView('settings')}
             onBack={() => setView(album.source === 'manual' ? 'manual' : 'results')}
             backLabel={
               album.source === 'manual' ? 'Volver a los datos' : 'Elegir otra edición'
@@ -831,19 +902,40 @@ function App() {
             onSave={handleSave}
           />
         )}
-          </>
-        )}
       </main>
-
-      <footer className="app-footer">
-        <button className="footer-link" onClick={() => setView('about')}>
-          Waxbox v{APP_VERSION} — una iniciativa de Proyecto La Lancha
-        </button>
-      </footer>
 
       {/* Solo aparece cuando hay algo cargado; si no, se esconde sola. */}
       {features.playback && <PlayerBar />}
+
+      {/*
+        Ctrl+K. Busca discos Y secciones en la misma lista: quien escribe
+        "exportar" no tiene por qué saber si eso es una pantalla o un botón.
+      */}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        albums={collection}
+        onOpenAlbum={handleOpenSaved}
+        actions={[
+          { label: 'Inicio', hint: 'Sección', run: () => goToSection('home') },
+          { label: 'Colección', hint: 'Sección', run: () => goToSection('collection') },
+          ...(features.setlists
+            ? [{ label: 'Setlists', hint: 'Sección', run: () => goToSection('setlists') }]
+            : []),
+          { label: 'Lista de deseos', hint: 'Sección', run: () => goToSection('wishlist') },
+          { label: 'Préstamos', hint: 'Sección', run: () => goToSection('loans') },
+          { label: 'Agregar disco', hint: 'Acción', run: () => pushView('add') },
+          { label: 'Exportar la colección', hint: 'Acción', run: () => goToSection('collection') },
+          { label: 'Configuración', hint: 'Ajustes', run: () => pushView('settings') },
+          {
+            label: `Acerca de Waxbox v${APP_VERSION}`,
+            hint: 'Ajustes',
+            run: () => pushView('about')
+          }
+        ]}
+      />
     </div>
+    )}
     </PlayerProvider>
   )
 }

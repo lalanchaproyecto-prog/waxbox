@@ -48,114 +48,381 @@ body {
   color: var(--on-accent);
 }
 
+/* ==========================================================================
+   El armazón: menú fijo a la izquierda, contenido a la derecha
+   ========================================================================== */
+
+/*
+  Antes `.app-main` centraba el contenido en los dos ejes. Eso hacía que cada
+  pantalla se acomodara en un sitio distinto según cuánto contenido tuviera:
+  el título saltaba de posición al cambiar de vista y las pantallas cortas
+  quedaban flotando en medio de la nada. Ahora el contenido empieza siempre
+  arriba a la izquierda, en el mismo punto, en todas las pantallas.
+*/
 .app {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 232px 1fr;
   min-height: 100vh;
-  padding: 2rem;
 }
 
-/* ---------- Encabezado ---------- */
-
-.app-header {
-  text-align: center;
-  padding: 2rem 0 1.5rem;
-}
-
-.logo {
+/* Arranque y selector de perfil: sin menú, porque todavía no hay a dónde ir. */
+.app-bare {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 0.4rem;
+  padding: var(--space-6);
 }
 
-/* El isotipo toma el color del acento, porque está dibujado con currentColor. */
-.logo-icon {
-  color: var(--accent);
+.app-main {
+  min-width: 0;
+  padding: var(--space-6) var(--space-7) var(--space-8);
+  /* Sitio para que el reproductor no tape la última fila de contenido. */
+  padding-bottom: 7rem;
+}
+
+/* La pantalla, con un ancho máximo para que el texto no cruce el monitor. */
+.screen {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 1180px;
 }
 
-/* El agujero del centro del disco deja ver el fondo. */
-.isotipo-hole {
-  fill: var(--bg-body);
+/* ---------- Barra lateral ---------- */
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-3);
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
 }
 
-.logo h1 {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 700;
+.sidebar-identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.profile-block {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background-color var(--dur-base) var(--ease),
+    border-color var(--dur-base) var(--ease);
+}
+
+.profile-block:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+/* Ojo: `.profile-emoji` a secas ya existe, y es el selector de emoji del
+   ProfilePicker. Este es el del bloque de identidad del menú. */
+.profile-block-emoji {
+  font-size: var(--text-md);
+  line-height: 1;
+}
+
+.profile-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
   color: var(--text-heading);
-  letter-spacing: var(--tracking-display);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-switch {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+}
+
+/* --- Buscar --- */
+
+.sidebar-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease),
+    color var(--dur-base) var(--ease);
+}
+
+.sidebar-search:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.sidebar-search span {
+  flex: 1;
+  text-align: left;
+}
+
+.sidebar-kbd,
+.palette-foot kbd {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--text-dimmed);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-1);
+  white-space: nowrap;
+}
+
+/* --- Las secciones --- */
+
+.sidebar-nav {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease),
+    color var(--dur-base) var(--ease);
+}
+
+.sidebar-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 /*
-  El eslogan deja de ser cursiva. La cursiva era el único rastro "vintage" en la
-  tipografía, y la regla de la dirección estética es justamente la contraria: lo
-  antiguo va en las texturas y el color, la letra se mantiene moderna.
+  Dónde estás parado. Va con el acento relleno y en negrita: es la única
+  información del menú que cambia, y tiene que leerse sin buscarla.
 */
-.slogan {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
+.sidebar-item.active {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
 }
 
-/* ---------- Zona central ---------- */
-
-.app-main {
+.sidebar-label {
   flex: 1;
+  text-align: left;
+}
+
+.sidebar-badge {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+  background: var(--bg-inset);
+  border-radius: var(--radius-pill);
+  padding: 1px var(--space-2);
+}
+
+/* Un préstamo pendiente sí pide atención; un conteo de discos no. */
+.sidebar-badge.alert {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.sidebar-item.active .sidebar-badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: inherit;
+}
+
+.sidebar-sep {
+  flex: 1;
+}
+
+/* --- Pie del menú --- */
+
+.sidebar-foot {
+  margin-top: auto;
   display: flex;
   flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/*
+  Agregar un disco está siempre a un clic, desde cualquier pantalla. Es la
+  acción por la que existe la app y antes vivía al final del scroll del
+  inicio.
+*/
+.sidebar-add {
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem 0;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease);
 }
 
-.home {
+.sidebar-add:hover {
+  background: var(--accent-hover);
+}
+
+/* ---------- Cabecera de pantalla ---------- */
+
+.page-header {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
-.stats-card {
+.page-header-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.page-header-text {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  background-color: var(--bg-card);
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 55%),
-    var(--texture-paper);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2), var(--inset-top), var(--inset-bottom);
-  padding: 2.25rem 3.25rem;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
-.stat-number {
+.page-title {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
+  font-variation-settings: var(--width-display);
+  font-size: var(--text-xl);
   font-weight: 700;
   letter-spacing: var(--tracking-display);
   line-height: var(--leading-tight);
   color: var(--text-heading);
-  font-variant-numeric: tabular-nums;
 }
 
-.stat-label {
+.page-subtitle {
   font-size: var(--text-xs);
   color: var(--text-dimmed);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* Solo en sub-páginas de verdad: la ficha de un disco, el modo explorar. */
+.page-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-2) var(--space-1) 0;
+  background: none;
+  border: none;
+  color: var(--accent-link);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.page-back:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---------- Estados vacíos ---------- */
+
+/*
+  Una pantalla vacía es una invitación a hacer algo, no un mensaje de que
+  algo falta. Siempre dice qué hacer y dónde.
+*/
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.empty-state-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.empty-state-help {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  max-width: 58ch;
+  line-height: var(--leading-normal);
+}
+
+.empty-first-run {
+  gap: var(--space-4);
+  max-width: 46rem;
+  padding-top: var(--space-8);
+}
+
+.empty-first-run .btn {
+  align-self: flex-start;
+}
+
+/* El agujero del centro del disco del isotipo deja ver el fondo. */
+.isotipo-hole {
+  fill: var(--bg-body);
 }
 
 .empty-note {
   color: var(--text-muted);
-  font-size: 0.95rem;
-  max-width: 22rem;
-  text-align: center;
+  font-size: var(--text-sm);
+  max-width: 58ch;
 }
 
 /* ---------- Botones ---------- */
@@ -892,38 +1159,13 @@ body {
   padding-top: 1.25rem;
 }
 
-/* ---------- Acceso a configuración ---------- */
-
-.app-header {
-  position: relative;
-}
-
-.settings-link {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-family: inherit;
-  padding: 0.45rem 0.9rem;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
-}
-
-.settings-link:hover {
-  border-color: var(--accent);
-  color: var(--text-primary);
-}
+/* Configuración se llega desde el menú lateral: ver `.sidebar-settings`. */
 
 .optional-note {
-  max-width: 26rem;
-  text-align: center;
+  max-width: 58ch;
   color: var(--text-dimmed);
-  font-size: 0.85rem;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
   margin-top: 0.5rem;
 }
 
@@ -1466,61 +1708,13 @@ body {
   font-size: 0.85rem;
 }
 
-/* ---------- Pie ---------- */
-
-.app-footer {
-  text-align: center;
-  padding: 1.5rem 0 0.5rem;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.app-footer p {
-  font-size: 0.8rem;
-  color: var(--text-faint);
-}
-
-.footer-link {
-  background: none;
-  border: none;
-  font-family: inherit;
-  font-size: 0.8rem;
-  color: var(--text-faint);
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  transition: color 0.2s;
-}
-
-.footer-link:hover {
-  color: var(--accent-soft);
-}
+/*
+  El pie desapareció. Llevaba el único acceso a "Acerca de", escrito como una
+  línea de texto gris que no parecía un botón; ahora se llega desde
+  Configuración y desde Ctrl+K.
+*/
 
 /* ---------- Colección ---------- */
-
-.collection {
-  width: 100%;
-  max-width: 1100px;
-}
-
-.collection-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.collection-header h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-heading);
-}
-
-.collection-count {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-top: 0.15rem;
-}
 
 /* --- Toolbar: buscador + toggle de vista --- */
 
@@ -2691,33 +2885,40 @@ body {
   max-width: 34rem;
 }
 
-.profile-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
 /* ---------- Selector de colección ---------- */
 
+/* Vive dentro del menú lateral, debajo del perfil: las dos preguntas son la
+   misma —de quién y de cuál colección— y antes eran dos mecanismos sueltos
+   en la misma cabecera. */
 .collection-bar {
   position: relative;
-  display: inline-block;
-  margin-top: 0.85rem;
+  display: block;
 }
 
 .collection-switch {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: var(--bg-card);
+  gap: var(--space-2);
+  width: 100%;
+  background: var(--bg-inset);
   border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.4rem 0.95rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  text-align: left;
+  transition: border-color var(--dur-base) var(--ease),
+    background-color var(--dur-base) var(--ease);
+}
+
+.collection-switch-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .collection-switch:hover {
@@ -2740,16 +2941,15 @@ body {
 
 .collection-menu {
   position: absolute;
-  top: calc(100% + 0.4rem);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(100% + var(--space-1));
+  left: 0;
   z-index: 70;
   width: 17rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
-  padding: 0.6rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-3);
+  padding: var(--space-2);
   text-align: left;
 }
 
@@ -2892,19 +3092,7 @@ body {
   font-size: 0.8rem;
 }
 
-/* ---------- Navegación de la cabecera ---------- */
-
-.header-nav {
-  position: absolute;
-  top: 0;
-  right: 0;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.header-nav .settings-link {
-  position: static;
-}
+/* La navegación de la cabecera se fue al menú lateral: ver `.sidebar`. */
 
 /* ---------- Botón "+" para agregar a un setlist ---------- */
 
@@ -4982,49 +5170,7 @@ body {
   padding: 0 0.2rem 0.3rem;
 }
 
-/* --- Navegación del dashboard --- */
-
-.home-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: center;
-  border-top: 1px solid var(--border-separator);
-  padding-top: 1.25rem;
-}
-
-.home-nav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  padding: 0.6rem 1.3rem;
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color var(--dur-base) var(--ease),
-    background var(--dur-base) var(--ease),
-    color var(--dur-base) var(--ease);
-}
-
-.home-nav-btn:hover {
-  border-color: var(--accent);
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.home-nav-badge {
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.1rem 0.5rem;
-  border-radius: var(--radius-pill);
-}
+/* La navegación que había al final del dashboard se fue al menú lateral. */
 
 @media (max-width: 520px) {
   .home-stats-row {
@@ -5046,5 +5192,303 @@ body {
   .home-recent-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 0.6rem;
+  }
+}
+
+/* ==========================================================================
+   Paleta de comandos (Ctrl+K)
+   ========================================================================== */
+
+/*
+  Aparece arriba y no centrada en la pantalla: cuando algo se abre para
+  escribir, que salga a la altura de los ojos evita que la mirada tenga que
+  volver a buscar el campo.
+*/
+.palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--overlay);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12vh var(--space-5) var(--space-5);
+}
+
+.palette {
+  width: 100%;
+  max-width: 34rem;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+}
+
+.palette-input {
+  padding: var(--space-4) var(--space-5);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-heading);
+  font-family: inherit;
+  font-size: var(--text-md);
+}
+
+.palette-input::placeholder {
+  color: var(--text-dimmed);
+}
+
+.palette-input:focus {
+  outline: none;
+}
+
+.palette-results {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  max-height: 22rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.palette-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+/*
+  Se marca la fila con el teclado y con el ratón de la misma forma, y no con
+  dos estilos distintos: es la misma selección, se llegue como se llegue.
+*/
+.palette-item.highlighted {
+  background: var(--accent);
+}
+
+.palette-label {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.palette-hint {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+  white-space: nowrap;
+  flex: none;
+}
+
+.palette-item.highlighted .palette-label,
+.palette-item.highlighted .palette-hint {
+  color: var(--on-accent);
+}
+
+.palette-empty {
+  padding: var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.palette-foot {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-inset);
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+}
+
+/* ==========================================================================
+   Pantalla de préstamos
+   ========================================================================== */
+
+.loans-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.loan-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/*
+  El estado se marca con una franja al canto además del color de la etiqueta.
+  El color solo no basta: quien no distingue rojo de verde necesita otra
+  señal, y la palabra "Con retraso" es esa señal.
+*/
+.loan-row.loan-tarde {
+  border-left: 3px solid var(--danger);
+}
+
+.loan-row.loan-pronto {
+  border-left: 3px solid var(--warning-text);
+}
+
+.loan-row-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  border-radius: var(--radius-sm);
+}
+
+.loan-row-cover {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.loan-row-nocover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset);
+  font-size: var(--text-md);
+}
+
+.loan-row-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.loan-row-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loan-row-artist {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.loan-row-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+}
+
+.loan-row-person {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.loan-row-dates {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+}
+
+.loan-tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-pill);
+}
+
+.loan-tag-ok {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.loan-tag-pronto {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.loan-tag-tarde {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+/* ==========================================================================
+   Ventanas angostas
+   ========================================================================== */
+
+/*
+  Por debajo de 900px el menú se queda pero pierde las etiquetas: los íconos
+  y el estado activo siguen bastando para saber dónde estás, y el contenido
+  recupera el ancho que necesita.
+*/
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 60px 1fr;
+  }
+
+  .sidebar {
+    padding: var(--space-3) var(--space-2);
+  }
+
+  .sidebar-label,
+  .profile-text,
+  .sidebar-search span,
+  .sidebar-kbd,
+  .collection-switch-name,
+  .collection-switch-chevron,
+  .sidebar-add span {
+    display: none;
+  }
+
+  .sidebar-item,
+  .sidebar-search,
+  .profile-block,
+  .collection-switch,
+  .sidebar-add {
+    justify-content: center;
+    padding-inline: var(--space-2);
+  }
+
+  .sidebar-badge {
+    display: none;
+  }
+
+  .app-main {
+    padding: var(--space-5) var(--space-5) 7rem;
   }
 }
