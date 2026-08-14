@@ -582,6 +582,25 @@ export function renameSmartList(db: Database, listId: number, name: string): voi
   db.run('UPDATE smart_lists SET name = ? WHERE id = ?', [name, listId])
 }
 
+/**
+ * Cambia QUÉ incluye la lista.
+ *
+ * Es la operación equivalente a "editar los discos" de una lista normal,
+ * pero aquí no se tocan discos: se cambia la pregunta. Si dejas de querer
+ * "vinilos de los 70" y pasas a querer "vinilos de los 70 en buen estado",
+ * los discos que entran y salen se recalculan solos.
+ */
+export function updateSmartListCriteria(
+  db: Database,
+  listId: number,
+  criteria: SmartCriteria
+): void {
+  db.run('UPDATE smart_lists SET criteria = ? WHERE id = ?', [
+    JSON.stringify(criteria),
+    listId
+  ])
+}
+
 export function deleteSmartList(db: Database, listId: number): void {
   db.run('DELETE FROM smart_lists WHERE id = ?', [listId])
 }

@@ -7,7 +7,7 @@ import type { ConditionId } from '@core/models/condition'
 import ExportDialog from './ExportDialog'
 import PageHeader from './PageHeader'
 import { IconClose, IconGrid, IconSearch, IconTable } from './Icons'
-import { suggestName, type SmartCriteria } from '@core/models/smartList'
+import { suggestName, type SmartCriteria, type SmartList } from '@core/models/smartList'
 
 interface CollectionScreenProps {
   albums: AlbumSummary[]
@@ -15,13 +15,15 @@ interface CollectionScreenProps {
   onOpen: (albumId: number) => void
   onAdd: () => void
   /**
-   * Filtros con los que entrar ya aplicados.
+   * La lista inteligente que se está viendo, si se entró desde una.
    *
-   * Es lo que hace que una lista inteligente lleve a algún sitio: al abrirla
-   * desde el inicio se entra aquí con sus condiciones puestas, en vez de
-   * mostrar otra pantalla parecida pero distinta.
+   * Se recibe entera y no solo sus condiciones porque desde aquí se puede
+   * renombrar, cambiar qué incluye y borrar: para eso hace falta saber a
+   * cuál se le aplican los cambios.
    */
-  initialFilters?: SmartCriteria | null
+  openList?: SmartList | null
+  /** Se llama al borrar la lista o al salir de ella. */
+  onListClosed?: () => void
 }
 
 type ViewMode = 'grid' | 'table'
@@ -112,6 +114,24 @@ function matchesFilters(album: AlbumSummary, filtros: Filtros): boolean {
   return true
 }
 
+/**
+ * Deja unos criterios en forma canónica para poder compararlos.
+ *
+ * Sin esto, `{formato: null}` y `{}` se verían distintos al comparar como
+ * texto y el botón de "actualizar" aparecería sin que nadie haya cambiado
+ * nada.
+ */
+function normalizar(c: SmartCriteria): SmartCriteria {
+  return {
+    texto: c.texto?.trim() || undefined,
+    formato: c.formato ?? null,
+    genero: c.genero ?? null,
+    decada: c.decada ?? null,
+    estado: c.estado ?? null,
+    etiqueta: c.etiqueta ?? null
+  }
+}
+
 /** Los criterios guardados de una lista, traducidos a los filtros de aquí. */
 function filtrosDesde(criteria: SmartCriteria | null | undefined): Filtros {
   if (!criteria) return SIN_FILTROS
@@ -129,13 +149,19 @@ function CollectionScreen({
   collectionId,
   onOpen,
   onAdd,
-  initialFilters
+  openList,
+  onListClosed
 }: CollectionScreenProps) {
+  const initialFilters = openList?.criteria ?? null
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [sortKey, setSortKey] = useState<SortKey>('title')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [search, setSearch] = useState(initialFilters?.texto ?? '')
   const [filtros, setFiltros] = useState<Filtros>(() => filtrosDesde(initialFilters))
+  /** Renombrar en el sitio, sin sacar a nadie de la pantalla. */
+  const [renombrando, setRenombrando] = useState(false)
+  const [nombreNuevo, setNombreNuevo] = useState('')
+  const [confirmarBorrado, setConfirmarBorrado] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [guardandoLista, setGuardandoLista] = useState(false)
   const [nombreLista, setNombreLista] = useState('')
@@ -251,6 +277,63 @@ function CollectionScreen({
     // ver que quedó guardado y dónde encontrarlo.
     setListaGuardada(nombre)
     setTimeout(() => setListaGuardada(null), 6000)
+  }
+
+  /* --- Gestionar la lista que se está viendo --- */
+
+  /**
+   * ¿Cambiaste los filtros desde que la abriste?
+   *
+   * Se compara contra las condiciones GUARDADAS de la lista. Si no hubiera
+   * esta comprobación, el botón de actualizar estaría siempre ahí ofreciendo
+   * guardar exactamente lo mismo que ya está guardado.
+   */
+  const criteriosCambiaron =
+    openList !== null &&
+    openList !== undefined &&
+    JSON.stringify(normalizar(openList.criteria)) !== JSON.stringify(normalizar(criteriosActuales))
+
+  async function renombrarLista() {
+    if (!openList) return
+    const nombre = nombreNuevo.trim()
+    if (!nombre) return
+    const result = await window.api.renameSmartList(openList.id, nombre)
+    if (!result.ok) {
+      setErrorLista(result.error)
+      return
+    }
+    // La lista abierta la tiene App, así que lo que se ve aquí se actualiza
+    // en el acto y App se entera la próxima vez que lea las listas.
+    openList.name = nombre
+    setRenombrando(false)
+    setListaGuardada(nombre)
+    setTimeout(() => setListaGuardada(null), 4000)
+  }
+
+  async function actualizarCriterios() {
+    if (!openList) return
+    const result = await window.api.updateSmartListCriteria(openList.id, criteriosActuales)
+    if (!result.ok) {
+      setErrorLista(result.error)
+      return
+    }
+    openList.criteria = criteriosActuales
+    setListaGuardada(openList.name)
+    setTimeout(() => setListaGuardada(null), 4000)
+  }
+
+  async function borrarLista() {
+    if (!openList) return
+    const result = await window.api.deleteSmartList(openList.id)
+    if (!result.ok) {
+      setErrorLista(result.error)
+      return
+    }
+    setConfirmarBorrado(false)
+    // Borrar la lista NO borra ningún disco: solo se deja de filtrar.
+    setFiltros(SIN_FILTROS)
+    setSearch('')
+    onListClosed?.()
   }
 
   return (
@@ -487,7 +570,7 @@ function CollectionScreen({
             aquí, junto a los filtros, y no en un menú aparte — lo que se
             guarda es exactamente esto.
           */}
-          {!guardandoLista && (
+          {!guardandoLista && !openList && (
             <button
               className="btn-link"
               onClick={() => {
@@ -500,6 +583,110 @@ function CollectionScreen({
               Guardar como lista
             </button>
           )}
+        </div>
+      )}
+
+      {/*
+        LA LISTA QUE SE ESTÁ VIENDO.
+
+        Va arriba del todo y no escondida en un menú: si estás mirando un
+        recorte de tu colección y no una colección entera, eso tiene que ser
+        lo primero que se lee. De aquí cuelga todo lo que se puede hacerle,
+        que antes no se podía hacer desde ningún sitio.
+      */}
+      {openList && (
+        <div className="lista-abierta">
+          <div className="lista-abierta-head">
+            <span className="overline">Viendo la lista</span>
+
+            {renombrando ? (
+              <div className="lista-renombrar">
+                <input
+                  value={nombreNuevo}
+                  onChange={(e) => setNombreNuevo(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') renombrarLista()
+                    if (e.key === 'Escape') setRenombrando(false)
+                  }}
+                  autoFocus
+                  spellCheck={false}
+                  aria-label="Nombre de la lista"
+                />
+                <button className="btn btn-ghost btn-sm" onClick={() => setRenombrando(false)}>
+                  Cancelar
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={renombrarLista}
+                  disabled={nombreNuevo.trim().length === 0}
+                >
+                  Guardar nombre
+                </button>
+              </div>
+            ) : (
+              <h3 className="lista-abierta-nombre">{openList.name}</h3>
+            )}
+          </div>
+
+          {!renombrando && (
+            <div className="lista-abierta-acciones">
+              <button
+                className="btn-link"
+                onClick={() => {
+                  setNombreNuevo(openList.name)
+                  setRenombrando(true)
+                }}
+              >
+                Cambiar el nombre
+              </button>
+
+              {/*
+                Cambiar QUÉ incluye. Solo aparece si de verdad tocaste los
+                filtros: ofrecer "actualizar" cuando no hay nada que
+                actualizar es ruido.
+              */}
+              {criteriosCambiaron && (
+                <button className="btn-link" onClick={actualizarCriterios}>
+                  Guardar estos filtros en la lista
+                </button>
+              )}
+
+              <button
+                className="btn-link"
+                onClick={() => {
+                  setFiltros(SIN_FILTROS)
+                  setSearch('')
+                  onListClosed?.()
+                }}
+              >
+                Ver toda la colección
+              </button>
+
+              {confirmarBorrado ? (
+                <span className="confirm-delete">
+                  <span>Se borra la lista. Tus discos no se tocan.</span>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setConfirmarBorrado(false)}
+                  >
+                    No
+                  </button>
+                  <button className="btn-danger" onClick={borrarLista}>
+                    Sí, borrar la lista
+                  </button>
+                </span>
+              ) : (
+                <button
+                  className="btn-link btn-link-danger"
+                  onClick={() => setConfirmarBorrado(true)}
+                >
+                  Borrar la lista
+                </button>
+              )}
+            </div>
+          )}
+
+          {errorLista && <p className="feedback-error">{errorLista}</p>}
         </div>
       )}
 

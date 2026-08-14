@@ -20,7 +20,7 @@ import SetlistsScreen from './components/SetlistsScreen'
 import CollectionBar from './components/CollectionBar'
 import ProfilePicker from './components/ProfilePicker'
 import type { Profile } from '@core/models/profile'
-import type { SmartCriteria } from '@core/models/smartList'
+import type { SmartList } from '@core/models/smartList'
 import ExploreScreen from './components/ExploreScreen'
 import WishlistScreen from './components/WishlistScreen'
 import HomeScreen from './components/HomeScreen'
@@ -176,13 +176,17 @@ function App() {
   const [paletteOpen, setPaletteOpen] = useState(false)
 
   /**
-   * Condiciones con las que entrar a la colección.
+   * La lista inteligente que se está viendo, entera y no solo sus condiciones.
    *
-   * Se pone al abrir una lista inteligente desde el inicio y se limpia al
-   * entrar a Colección por el menú: quien pulsa «Colección» espera verla
-   * entera, no la última lista que abrió hace media hora.
+   * Hace falta el objeto completo —con su id y su nombre— para poder
+   * renombrarla, cambiar qué incluye o borrarla desde la propia colección.
+   * Con solo los criterios no habría forma de saber a cuál se le aplican los
+   * cambios.
+   *
+   * Se limpia al entrar a Colección por el menú: quien pulsa «Colección»
+   * espera verla entera, no la última lista que abrió hace media hora.
    */
-  const [listaAbierta, setListaAbierta] = useState<SmartCriteria | null>(null)
+  const [listaAbierta, setListaAbierta] = useState<SmartList | null>(null)
 
 
   useEffect(() => {
@@ -758,8 +762,8 @@ function App() {
             }
             onOpenAlbum={handleOpenSaved}
             onOpenLoans={() => goToSection('loans')}
-            onOpenLista={(criteria) => {
-              setListaAbierta(criteria)
+            onOpenLista={(lista) => {
+              setListaAbierta(lista)
               goToSection('collection')
             }}
             onAdd={() => pushView('add')}
@@ -772,7 +776,8 @@ function App() {
             collectionId={activeCollectionId}
             onOpen={handleOpenSaved}
             onAdd={() => pushView('add')}
-            initialFilters={listaAbierta}
+            openList={listaAbierta}
+            onListClosed={() => setListaAbierta(null)}
           />
         )}
 

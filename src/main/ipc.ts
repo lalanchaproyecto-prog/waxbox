@@ -120,6 +120,7 @@ import {
   listSmartLists,
   createSmartList,
   renameSmartList,
+  updateSmartListCriteria,
   deleteSmartList,
   type DashboardData
 } from '../core/database/dashboard'
@@ -732,6 +733,15 @@ export function registerIpcHandlers(): void {
     (_event, listId: number, name: string): Result<void> =>
       attemptSync(() => {
         renameSmartList(getDatabase(), listId, name)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'smartlists:updateCriteria',
+    (_event, listId: number, criteria: SmartCriteria): Result<void> =>
+      attemptSync(() => {
+        updateSmartListCriteria(getDatabase(), listId, criteria)
         persist()
       })
   )

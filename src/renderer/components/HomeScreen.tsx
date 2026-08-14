@@ -5,15 +5,15 @@ import { getFormat } from '@core/models/formats'
 import { loanStatus, today } from '@core/models/loan'
 import { conditionLabel } from '@core/models/condition'
 import PageHeader from './PageHeader'
-import type { SmartCriteria } from '@core/models/smartList'
+import type { SmartCriteria, SmartList } from '@core/models/smartList'
 
 interface HomeScreenProps {
   collectionId: number
   collectionName: string
   onOpenAlbum: (albumId: number) => void
   onOpenLoans: () => void
-  /** Abre la colección con las condiciones de una lista ya aplicadas. */
-  onOpenLista: (criteria: SmartCriteria) => void
+  /** Abre la colección viendo esa lista, con sus condiciones aplicadas. */
+  onOpenLista: (lista: SmartList) => void
   onAdd: () => void
 }
 
@@ -486,7 +486,7 @@ function HomeScreen({
           <ul className="mini-list">
             {data.listas.map((lista) => (
               <li key={lista.id}>
-                <button className="mini-row" onClick={() => onOpenLista(lista.criteria)}>
+                <button className="mini-row" onClick={() => onOpenLista(lista)}>
                   <span className="mini-text">
                     <span className="mini-title">{lista.name}</span>
                     <span className="mini-sub">{describirCriterios(lista.criteria)}</span>

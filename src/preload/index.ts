@@ -206,6 +206,10 @@ const api = {
   renameSmartList: (listId: number, name: string): Promise<Result<void>> =>
     ipcRenderer.invoke('smartlists:rename', listId, name),
 
+  /** Cambia QUE incluye la lista: no toca discos, cambia la pregunta. */
+  updateSmartListCriteria: (listId: number, criteria: SmartCriteria): Promise<Result<void>> =>
+    ipcRenderer.invoke('smartlists:updateCriteria', listId, criteria),
+
   deleteSmartList: (listId: number): Promise<Result<void>> =>
     ipcRenderer.invoke('smartlists:delete', listId),
 
