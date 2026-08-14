@@ -5410,311 +5410,233 @@ body {
   gap: 0.5rem;
 }
 
-/* ---------- Pantalla de inicio (dashboard) ---------- */
+/* ==========================================================================
+   INICIO — el tablero de la colección
+   ========================================================================== */
 
-.home-screen {
-  width: 100%;
-  max-width: 720px;
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-}
+/*
+  Abre con el objeto, no con estadísticas.
 
-.home-hero {
-  text-align: center;
-}
+  Tres cifras enormes en tres tarjetas es la respuesta de plantilla para
+  cualquier tablero, y además ninguna de las tres es lo que trae a nadie
+  aquí. La pregunta real frente a un estante lleno es qué poner, y es la
+  única que una app puede contestar mejor que mirarlo. Los totales quedan en
+  el subtítulo, en la mono: son contexto, no titular.
+*/
 
-.home-collection-name {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--text-heading);
-  letter-spacing: var(--tracking-display);
-  margin-bottom: 1rem;
-}
-
-.home-stats-row {
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-}
-
-.home-stat {
-  display: flex;
-  flex-direction: column;
+.tonight {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) 1fr;
+  gap: var(--space-6);
   align-items: center;
-  gap: 0.2rem;
+  padding: var(--space-5);
   background: var(--bg-card);
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 55%),
-    var(--texture-paper);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2), var(--inset-top);
-  padding: 1.25rem 2rem;
-  min-width: 6.5rem;
 }
 
-.home-stat-number {
+.tonight-object {
+  position: relative;
+  /* Hueco reservado para el disco, igual que en la ficha: sin él, el disco
+     se mete bajo el texto de al lado y desaparece. */
+  padding-right: 30%;
+}
+
+.tonight-disc-wrap {
+  position: absolute;
+  z-index: 1;
+  top: 8%;
+  left: 40%;
+  width: 84%;
+  aspect-ratio: 1;
+}
+
+.tonight-disc-wrap .disc {
+  width: 100%;
+}
+
+.tonight-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.tonight-title {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
+  font-variation-settings: var(--width-display);
+  font-size: var(--text-lg);
   font-weight: 700;
   letter-spacing: var(--tracking-display);
   line-height: var(--leading-tight);
   color: var(--text-heading);
+  text-wrap: balance;
 }
 
-.home-stat-label {
+.tonight-artist {
+  font-size: var(--text-md);
+  color: var(--text-secondary);
+}
+
+.tonight-meta {
   font-size: var(--text-xs);
   color: var(--text-dimmed);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
 }
 
-.home-empty {
-  text-align: center;
+.tonight-actions {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  color: var(--text-muted);
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
 }
 
-/* --- Secciones del dashboard --- */
+/* --- Aviso: solo cuando hay algo que hacer --- */
+
+.home-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--dur-base) var(--ease);
+}
+
+.home-alert:hover {
+  border-color: var(--accent);
+}
+
+/* El color no va solo: el texto ya dice "llevan retraso". */
+.home-alert-warn {
+  background: var(--warning-bg);
+  border-left-color: var(--warning-text);
+}
+
+.home-alert-go {
+  color: var(--accent-link);
+  flex: none;
+}
+
+/* --- Secciones --- */
 
 .home-section {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-}
-
-.home-section-title {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-dimmed);
-}
-
-/* --- Ruleta: sugerencia aleatoria --- */
-
-.home-roulette {
-  align-items: center;
-}
-
-.roulette-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-  max-width: 28rem;
-  background: var(--bg-card);
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 50%),
-    var(--texture-paper);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2), var(--inset-top);
-  padding: 0.9rem 1.1rem;
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  transition: border-color var(--dur-base) var(--ease),
-    transform var(--dur-fast) var(--ease);
-}
-
-.roulette-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-}
-
-.roulette-cover {
-  width: 4.5rem;
-  height: 4.5rem;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  box-shadow: var(--shadow-1);
-}
-
-.roulette-no-cover {
-  background: var(--bg-inset);
-}
-
-.roulette-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--space-4);
   min-width: 0;
 }
 
-.roulette-title {
-  font-weight: 600;
-  font-size: 1rem;
-  color: var(--text-heading);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.roulette-artist {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.roulette-meta {
+.home-section-title {
+  font-family: var(--font-mono);
   font-size: var(--text-xs);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
   color: var(--text-dimmed);
 }
-
-/* --- Barras de formato --- */
-
-.home-format-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.format-bar-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.format-bar-label {
-  width: 7rem;
-  flex-shrink: 0;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  text-align: right;
-}
-
-.format-bar-track {
-  flex: 1;
-  height: 0.6rem;
-  background: var(--bg-inset);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-
-.format-bar-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: var(--radius-pill);
-  transition: width var(--dur-base) var(--ease);
-}
-
-.format-bar-count {
-  width: 2.5rem;
-  flex-shrink: 0;
-  font-size: var(--text-sm);
-  color: var(--text-dimmed);
-  text-align: right;
-}
-
-/* --- Chips de género en el dashboard --- */
-
-.home-genre-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-.home-genre-chips .genre-chip {
-  cursor: default;
-}
-
-.genre-chip-count {
-  font-size: var(--text-xs);
-  color: var(--text-faint);
-  margin-left: 0.2rem;
-}
-
-/* --- Últimas incorporaciones --- */
 
 .home-recent-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-5) var(--space-6);
 }
 
-.recent-card {
+/* --- Medidores --- */
+
+.home-meters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.meters {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  background: var(--polaroid-frame);
-  border: none;
-  border-radius: 4px;
-  padding: 0.4rem 0.4rem 0.15rem;
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
-  box-shadow: var(--polaroid-shadow);
-  transition: transform var(--dur-base) var(--ease),
-    box-shadow var(--dur-base) var(--ease);
+  gap: var(--space-3);
 }
 
-.recent-card:hover {
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: var(--shadow-3);
+.meter {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.recent-cover {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: 1px;
+.meter-label {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+  La pista es un paso claro del mismo azul del relleno, no un gris: así el
+  estado se lee a lo largo de toda la barra y no solo donde hay color.
+*/
+.meter-track {
+  height: 10px;
+  background: var(--halo-accent);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+/*
+  Un solo color para todas las barras. Pintar cada una de un tono distinto
+  según su tamaño repetiría en color lo que el largo ya dice, y gastaría el
+  único canal libre que queda sin aportar nada.
+
+  Cuadrada en el origen y redondeada en la punta: el extremo redondeado marca
+  dónde termina el dato; redondear también el arranque separaría la barra de
+  su línea de base.
+*/
+.meter-fill {
   display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
-.recent-no-cover {
-  background: #d8d0c4;
-}
-
-.recent-title {
-  font-weight: 600;
+/* El valor va en texto normal, nunca del color de la barra. */
+.meter-value {
   font-size: var(--text-xs);
-  color: #2a2118;
+  color: var(--text-secondary);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0.35rem 0.2rem 0;
+  text-align: right;
 }
 
-.recent-artist {
-  font-size: 0.7rem;
-  color: #6b5c4c;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 0.2rem 0.3rem;
-}
+/* --- Ventanas angostas --- */
 
-/* La navegación que había al final del dashboard se fue al menú lateral. */
-
-@media (max-width: 520px) {
-  .home-stats-row {
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
+@media (max-width: 720px) {
+  .tonight {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
   }
 
-  .home-stat {
-    width: 100%;
-    max-width: 14rem;
+  .tonight-object {
+    max-width: 240px;
   }
 
-  .format-bar-label {
-    width: 5rem;
-    font-size: var(--text-xs);
+  .meter {
+    grid-template-columns: 5rem 1fr auto;
   }
 
   .home-recent-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 0.6rem;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--space-4);
   }
 }
 

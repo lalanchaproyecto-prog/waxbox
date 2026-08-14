@@ -733,6 +733,7 @@ function App() {
               collections.find((c) => c.id === activeCollectionId)?.name ?? 'Mi colección'
             }
             onOpenAlbum={handleOpenSaved}
+            onOpenLoans={() => goToSection('loans')}
             onAdd={() => pushView('add')}
           />
         )}

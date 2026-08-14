@@ -3,11 +3,13 @@ import type { CollectionStats } from '@core/database/db'
 import { getFormat } from '@core/models/formats'
 import { loanStatus } from '@core/models/loan'
 import type { ActiveLoan } from '@core/database/db'
+import PageHeader from './PageHeader'
 
 interface HomeScreenProps {
   collectionId: number
   collectionName: string
   onOpenAlbum: (albumId: number) => void
+  onOpenLoans: () => void
   onAdd: () => void
 }
 
@@ -15,6 +17,7 @@ function HomeScreen({
   collectionId,
   collectionName,
   onOpenAlbum,
+  onOpenLoans,
   onAdd
 }: HomeScreenProps) {
   const [stats, setStats] = useState<CollectionStats | null>(null)
@@ -29,7 +32,9 @@ function HomeScreen({
     if (loansRes.ok) setLoans(loansRes.data)
   }, [collectionId])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+  }, [load])
 
   function spin() {
     window.api.collectionStats(collectionId).then((res) => {
@@ -39,180 +44,234 @@ function HomeScreen({
 
   if (!stats) return null
 
-  return (
-    <div className="home-screen">
-      <header className="home-hero">
-        <h2 className="home-collection-name">{collectionName}</h2>
-        <div className="home-stats-row">
-          <StatCard number={stats.totalAlbums} label="discos" />
-          <StatCard number={stats.totalTracks} label="canciones" />
-          <StatCard number={stats.totalPlays} label="escuchas" />
-        </div>
-      </header>
+  const numero = (valor: number) => valor.toLocaleString('es-CL')
 
-      {stats.totalAlbums === 0 ? (
-        <section className="home-empty">
-          <p>Tu colección está vacía. Agrega tu primer disco para empezar.</p>
-          <button className="btn btn-primary" onClick={onAdd}>
-            + Agregar disco
+  if (stats.totalAlbums === 0) {
+    return (
+      <div className="screen">
+        <PageHeader title={collectionName} />
+        <div className="empty-state">
+          <p className="empty-state-title">Esta colección está vacía.</p>
+          <p className="empty-state-help">
+            Agrega tu primer disco, casete o CD. Waxbox completa el año, el sello y el
+            tracklist por ti.
+          </p>
+          <button className="btn btn-primary" onClick={onAdd} style={{ alignSelf: 'flex-start' }}>
+            Agregar disco
           </button>
-        </section>
-      ) : (
-        <>
-          {/* Ruleta */}
-          {stats.randomAlbum && (
-            <section className="home-section home-roulette">
-              <h3 className="home-section-title">¿Qué escucho hoy?</h3>
+        </div>
+      </div>
+    )
+  }
+
+  const atrasados = loans.filter((loan) => loanStatus(loan).tone === 'tarde').length
+
+  return (
+    <div className="screen">
+      {/*
+        Los tres totales van en el subtítulo, en la mono, y no en tres
+        tarjetas con números gigantes. Un dashboard que abre con tres cifras
+        enormes es la respuesta de plantilla, y además ninguna de las tres es
+        lo que trae a nadie aquí: lo que se viene a resolver es qué poner.
+      */}
+      <PageHeader
+        title={collectionName}
+        subtitle={`${numero(stats.totalAlbums)} discos · ${numero(stats.totalTracks)} canciones · ${numero(stats.totalPlays)} escuchas`}
+        actions={
+          <button className="btn btn-primary" onClick={onAdd}>
+            Agregar disco
+          </button>
+        }
+      />
+
+      {/*
+        LA PIEZA PRINCIPAL: qué escuchar hoy.
+
+        Es la pregunta que uno se hace de verdad frente a un estante lleno, y
+        la única que una app puede contestar mejor que mirarlo. Por eso abre
+        la pantalla con el objeto —portada y disco— y no con estadísticas.
+      */}
+      {stats.randomAlbum && (
+        <section className="tonight">
+          <div className="tonight-object">
+            <div className="ficha-sleeve">
+              {stats.randomAlbum.format !== 'casete' && (
+                <span className="tonight-disc-wrap" aria-hidden="true">
+                  <span
+                    className={`disc${stats.randomAlbum.format === 'cd' ? ' disc-cd' : ''}`}
+                  />
+                </span>
+              )}
+              {coverSrc(stats.randomAlbum) ? (
+                <img
+                  className="ficha-cover"
+                  src={coverSrc(stats.randomAlbum)!}
+                  alt={`Portada de ${stats.randomAlbum.title}`}
+                />
+              ) : (
+                <div className="ficha-cover ficha-cover-missing">
+                  <span>Sin portada</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="tonight-info">
+            <span className="overline">¿Qué escucho hoy?</span>
+            <h3 className="tonight-title">{stats.randomAlbum.title}</h3>
+            <p className="tonight-artist">{stats.randomAlbum.artists}</p>
+            <p className="tonight-meta numeric">
+              {getFormat(stats.randomAlbum.format)?.label ?? stats.randomAlbum.format}
+              {stats.randomAlbum.year ? ` · ${stats.randomAlbum.year}` : ''}
+              {` · ${stats.randomAlbum.trackCount} ${
+                stats.randomAlbum.trackCount === 1 ? 'canción' : 'canciones'
+              }`}
+            </p>
+            <div className="tonight-actions">
               <button
-                className="roulette-card"
+                className="btn btn-primary"
                 onClick={() => onOpenAlbum(stats.randomAlbum!.id)}
               >
-                {coverSrc(stats.randomAlbum) ? (
-                  <img
-                    className="roulette-cover"
-                    src={coverSrc(stats.randomAlbum)!}
-                    alt=""
-                  />
-                ) : (
-                  <div className="roulette-cover roulette-no-cover" />
-                )}
-                <div className="roulette-info">
-                  <span className="roulette-title">{stats.randomAlbum.title}</span>
-                  <span className="roulette-artist">{stats.randomAlbum.artists}</span>
-                  <span className="roulette-meta">
-                    {getFormat(stats.randomAlbum.format)?.label}
-                    {stats.randomAlbum.year ? ` · ${stats.randomAlbum.year}` : ''}
-                  </span>
-                </div>
+                Abrir la ficha
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={spin}>
+              <button className="btn btn-ghost" onClick={spin}>
                 Otra sugerencia
               </button>
-            </section>
-          )}
-
-          {/* Formatos */}
-          {stats.byFormat.length > 0 && (
-            <section className="home-section">
-              <h3 className="home-section-title">Por formato</h3>
-              <div className="home-format-bars">
-                {stats.byFormat.map(({ format, count }) => {
-                  const fmt = getFormat(format)
-                  const pct = (count / stats.totalAlbums) * 100
-                  return (
-                    <div key={format} className="format-bar-row">
-                      <span className="format-bar-label">
-                        {fmt?.icon} {fmt?.label ?? format}
-                      </span>
-                      <div className="format-bar-track">
-                        <div
-                          className="format-bar-fill"
-                          style={{ width: `${Math.max(pct, 2)}%` }}
-                        />
-                      </div>
-                      <span className="format-bar-count numeric">{count}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          )}
-
-          {/* Géneros */}
-          {stats.topGenres.length > 0 && (
-            <section className="home-section">
-              <h3 className="home-section-title">Géneros más frecuentes</h3>
-              <div className="home-genre-chips">
-                {stats.topGenres.map(({ genre, count }) => (
-                  <span key={genre} className="genre-chip">
-                    {genre} <span className="genre-chip-count">{count}</span>
-                  </span>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Préstamos activos */}
-          {loans.length > 0 && (
-            <section className="home-section">
-              <h3 className="home-section-title">
-                Discos prestados ({loans.length})
-              </h3>
-              <ul className="active-loans-list">
-                {loans.map((loan) => {
-                  const status = loanStatus(loan)
-                  const cover = loan.userCoverFront
-                    ? `waxbox-photo://${loan.userCoverFront}`
-                    : loan.canonicalCover
-                  return (
-                    <li key={loan.id} className={`active-loan-item loan-${status.tone}`}>
-                      <button className="active-loan-card" onClick={() => onOpenAlbum(loan.albumId)}>
-                        {cover ? (
-                          <img className="active-loan-cover" src={cover} alt="" />
-                        ) : (
-                          <div className="active-loan-cover variant-no-cover" />
-                        )}
-                        <div className="active-loan-info">
-                          <span className="active-loan-title">
-                            {loan.albumArtists} — {loan.albumTitle}
-                          </span>
-                          <span className="active-loan-status">{status.text}</span>
-                        </div>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
-          )}
-
-          {/* Últimas incorporaciones */}
-          {stats.recentAlbums.length > 0 && (
-            <section className="home-section">
-              <h3 className="home-section-title">Últimas incorporaciones</h3>
-              <div className="home-recent-grid">
-                {stats.recentAlbums.map((album) => (
-                  <button
-                    key={album.id}
-                    className="recent-card"
-                    onClick={() => onOpenAlbum(album.id)}
-                  >
-                    {coverSrc(album) ? (
-                      <img className="recent-cover" src={coverSrc(album)!} alt="" />
-                    ) : (
-                      <div className="recent-cover recent-no-cover" />
-                    )}
-                    <span className="recent-title">{album.title}</span>
-                    <span className="recent-artist">{album.artists}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/*
-            Aquí había una fila de cuatro botones —Colección, Setlists,
-            Deseos, Agregar— que era el menú principal de la app escondido al
-            final del scroll del inicio. Ahora esas cuatro cosas viven en el
-            menú lateral, visibles desde cualquier pantalla, así que repetirlas
-            aquí solo daría dos caminos para lo mismo.
-          */}
-        </>
+            </div>
+          </div>
+        </section>
       )}
+
+      {/*
+        Avisa solo cuando hay algo que hacer, y manda a la pantalla que lo
+        resuelve en vez de repetirla aquí. Préstamos ya tiene su sitio en el
+        menú desde que existe la sección.
+      */}
+      {loans.length > 0 && (
+        <button
+          className={`home-alert${atrasados > 0 ? ' home-alert-warn' : ''}`}
+          onClick={onOpenLoans}
+        >
+          <span className="home-alert-text">
+            {loans.length === 1
+              ? 'Tienes 1 disco prestado'
+              : `Tienes ${loans.length} discos prestados`}
+            {atrasados > 0 &&
+              ` · ${atrasados === 1 ? '1 lleva retraso' : `${atrasados} llevan retraso`}`}
+          </span>
+          <span className="home-alert-go">Ver préstamos →</span>
+        </button>
+      )}
+
+      {stats.recentAlbums.length > 0 && (
+        <section className="home-section">
+          <h3 className="home-section-title">Últimas incorporaciones</h3>
+          <div className="home-recent-grid">
+            {stats.recentAlbums.map((album) => (
+              <button
+                key={album.id}
+                className="album-card"
+                onClick={() => onOpenAlbum(album.id)}
+                data-format={album.format}
+              >
+                <span className="album-card-sleeve">
+                  <span className="album-card-disc" aria-hidden="true" />
+                  <span className="album-card-cover">
+                    {coverSrc(album) ? (
+                      <img src={coverSrc(album)!} alt={`Portada de ${album.title}`} loading="lazy" />
+                    ) : (
+                      <span className="album-card-placeholder" aria-hidden="true">
+                        {getFormat(album.format)?.icon ?? '🎵'}
+                      </span>
+                    )}
+                  </span>
+                </span>
+                <span className="album-card-info">
+                  <span className="album-card-title">{album.title}</span>
+                  <span className="album-card-artist">{album.artists}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="home-meters">
+        {stats.byFormat.length > 0 && (
+          <section className="home-section">
+            <h3 className="home-section-title">Por formato</h3>
+            {/*
+              El formato SÍ reparte el total: cada disco tiene uno y solo uno,
+              así que el porcentaje sobre la colección entera dice algo cierto.
+            */}
+            <ul className="meters">
+              {stats.byFormat.map(({ format, count }) => {
+                const pct = (count / stats.totalAlbums) * 100
+                return (
+                  <Meter
+                    key={format}
+                    label={getFormat(format)?.label ?? format}
+                    fill={pct}
+                    value={`${numero(count)} · ${Math.round(pct)}%`}
+                  />
+                )
+              })}
+            </ul>
+          </section>
+        )}
+
+        {stats.topGenres.length > 0 && (
+          <section className="home-section">
+            <h3 className="home-section-title">Géneros más frecuentes</h3>
+            {/*
+              El género NO reparte el total: un disco puede tener varios, así
+              que los porcentajes sumarían más de cien y serían una mentira.
+              Las barras se miden contra el género más frecuente, y el número
+              que se lee es el conteo de discos.
+            */}
+            <ul className="meters">
+              {stats.topGenres.map(({ genre, count }) => (
+                <Meter
+                  key={genre}
+                  label={genre}
+                  fill={(count / stats.topGenres[0].count) * 100}
+                  value={`${numero(count)} ${count === 1 ? 'disco' : 'discos'}`}
+                />
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
     </div>
   )
 }
 
-function StatCard({ number, label }: { number: number; label: string }) {
+/**
+ * Una barra de una sola serie.
+ *
+ * Un solo color para todas: pintar cada barra de un tono distinto según su
+ * tamaño repetiría en color lo que el largo ya dice, y gastaría el único
+ * canal libre que queda en no decir nada nuevo.
+ *
+ * El valor va en texto normal al lado, nunca del color de la barra: un color
+ * de relleno no tiene contraste suficiente para leerse como letra.
+ */
+function Meter({ label, fill, value }: { label: string; fill: number; value: string }) {
   return (
-    <div className="home-stat">
-      <span className="home-stat-number numeric">{number.toLocaleString('es-CL')}</span>
-      <span className="home-stat-label">{label}</span>
-    </div>
+    <li className="meter">
+      <span className="meter-label">{label}</span>
+      <span className="meter-track">
+        <span className="meter-fill" style={{ width: `${Math.max(fill, 2)}%` }} />
+      </span>
+      <span className="meter-value numeric">{value}</span>
+    </li>
   )
 }
 
-function coverSrc(album: { userCoverFront: string | null; canonicalCover: string | null }): string | null {
+function coverSrc(album: {
+  userCoverFront: string | null
+  canonicalCover: string | null
+}): string | null {
   if (album.userCoverFront) return `waxbox-photo://${album.userCoverFront}`
   return album.canonicalCover
 }
