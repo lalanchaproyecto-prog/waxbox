@@ -93,58 +93,95 @@ function AlbumReview({
   knownTags = [],
   onOpenAlbum
 }: AlbumReviewProps) {
-  const [editingSaved, setEditingSaved] = useState(false)
+  /*
+    EDITAR ES UN DIÁLOGO, NO UN MODO DE LA PANTALLA.
+
+    Antes, pulsar "Editar" convertía la ficha entera en un formulario: la
+    portada seguía ahí pero debajo aparecían de golpe los campos del álbum,
+    los del estado, los de la compra, las notas y el editor de etiquetas,
+    todo a la vez y mezclado con lo que solo se lee. Encontrar el campo que
+    ibas a cambiar costaba más que el cambio en sí.
+
+    Ahora la ficha se lee siempre igual y editar abre un diálogo con los
+    campos agrupados como en la pantalla: primero los datos del catálogo,
+    después los tuyos.
+  */
+  const [editing, setEditing] = useState(false)
+  const [form, setForm] = useState<EditableAlbum>(album)
+
+  /*
+    Editar el tracklist SÍ se queda en la página: agregar, quitar y reordenar
+    canciones se hace sobre la lista misma, y meterla en un diálogo obligaría
+    a mirarla dos veces. Solo aplica a los discos cargados a mano — en uno
+    traído de MusicBrainz el tracklist es el de la edición elegida, y tocarlo
+    sería apartarse de la edición que la persona dijo tener.
+  */
+  const [editingTracks, setEditingTracks] = useState(false)
   const [workingCopy, setWorkingCopy] = useState<EditableAlbum>(album)
 
   useEffect(() => {
     setWorkingCopy(album)
   }, [album])
 
-  const active = editingSaved ? workingCopy : album
-  const canEdit = editingSaved || !savedMode
+  const active = editingTracks ? workingCopy : album
 
-  /*
-    Solo el álbum cargado a mano deja agregar y quitar canciones. En uno traído
-    de MusicBrainz el tracklist es el de la edición elegida, y tocarlo sería
-    apartarse de la edición que la persona dijo tener.
-  */
   const isManualAlbum = active.source === 'manual'
-  const canEditTracks = isManualAlbum && canEdit
+  const canEditTracks = isManualAlbum && (editingTracks || !savedMode)
 
   function handleChange(updated: EditableAlbum) {
-    if (editingSaved) {
+    if (editingTracks) {
       setWorkingCopy(updated)
     } else {
       onChange(updated)
     }
   }
 
-  function startEditingSaved() {
+  /** Abre el diálogo de edición con una copia de lo que hay ahora. */
+  function openEditor() {
+    setForm({
+      ...active,
+      tracks: active.tracks.map((t) => ({ ...t, credits: [...t.credits] }))
+    })
+    setEditing(true)
+  }
+
+  /**
+   * Guarda lo del diálogo.
+   *
+   * En un disco ya guardado escribe directo en la base; en uno que todavía
+   * se está revisando, actualiza el borrador que se guardará al final.
+   */
+  function applyEditor() {
+    if (savedMode) {
+      if (onUpdate) onUpdate(form)
+    } else {
+      onChange(form)
+    }
+    setEditing(false)
+  }
+
+  function startEditingTracks() {
     setWorkingCopy({
       ...album,
       tracks: album.tracks.map((t) => ({ ...t, credits: [...t.credits] }))
     })
-    setEditingSaved(true)
+    setEditingTracks(true)
   }
 
-  function cancelEditingSaved() {
-    setEditingSaved(false)
-    setEditingAlbum(false)
+  function cancelEditingTracks() {
+    setEditingTracks(false)
     setWorkingCopy(album)
   }
 
-  function saveEditedSaved() {
+  function saveEditedTracks() {
     if (onUpdate) onUpdate(workingCopy)
-    setEditingSaved(false)
-    setEditingAlbum(false)
+    setEditingTracks(false)
   }
 
   const format = getFormat(active.format)
   const usesSides = format?.usesSides ?? false
   const groups = groupBySide(active.tracks)
 
-  const [editingAlbum, setEditingAlbum] = useState(false)
-  const [form, setForm] = useState<EditableAlbum>(active)
   const [openTrack, setOpenTrack] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   /** Índice de la canción que está esperando confirmación para ser quitada. */
@@ -178,9 +215,9 @@ function AlbumReview({
     }))
   }
 
-  function saveAlbumEdits() {
-    handleChange(form)
-    setEditingAlbum(false)
+  /** Cambia un campo del diálogo que no es del catálogo, sin marcarlo como corregido. */
+  function updateMine<K extends keyof EditableAlbum>(field: K, value: EditableAlbum[K]) {
+    setForm((current) => ({ ...current, [field]: value }))
   }
 
   /**
@@ -420,42 +457,40 @@ function AlbumReview({
             {editedMark('artists')}
           </p>
 
-          {!editingAlbum && (
-            <dl className="ficha-facts">
-              <div className="ficha-fact">
-                <dt>Año</dt>
-                <dd className="numeric">
-                  {active.year ?? '—'}
-                  {editedMark('year')}
-                </dd>
-              </div>
-              <div className="ficha-fact">
-                <dt>Formato</dt>
-                <dd className="numeric">
-                  {format?.label ?? active.format}
-                  {editedMark('format')}
-                </dd>
-              </div>
-              <div className="ficha-fact">
-                <dt>Sello</dt>
-                <dd className="numeric">
-                  {active.label ?? '—'}
-                  {editedMark('label')}
-                </dd>
-              </div>
-              <div className="ficha-fact">
-                <dt>Canciones</dt>
-                <dd className="numeric">{active.tracks.length}</dd>
-              </div>
-              <div className="ficha-fact ficha-fact-wide">
-                <dt>Género</dt>
-                <dd className="numeric">
-                  {active.genres.length > 0 ? active.genres.join(' · ') : '—'}
-                  {editedMark('genres')}
-                </dd>
-              </div>
-            </dl>
-          )}
+          <dl className="ficha-facts">
+            <div className="ficha-fact">
+              <dt>Año</dt>
+              <dd className="numeric">
+                {active.year ?? '—'}
+                {editedMark('year')}
+              </dd>
+            </div>
+            <div className="ficha-fact">
+              <dt>Formato</dt>
+              <dd className="numeric">
+                {format?.label ?? active.format}
+                {editedMark('format')}
+              </dd>
+            </div>
+            <div className="ficha-fact">
+              <dt>Sello</dt>
+              <dd className="numeric">
+                {active.label ?? '—'}
+                {editedMark('label')}
+              </dd>
+            </div>
+            <div className="ficha-fact">
+              <dt>Canciones</dt>
+              <dd className="numeric">{active.tracks.length}</dd>
+            </div>
+            <div className="ficha-fact ficha-fact-wide">
+              <dt>Género</dt>
+              <dd className="numeric">
+                {active.genres.length > 0 ? active.genres.join(' · ') : '—'}
+                {editedMark('genres')}
+              </dd>
+            </div>
+          </dl>
 
           <div className="ficha-hero-meta">
             {isManualAlbum && (
@@ -463,17 +498,9 @@ function AlbumReview({
                 Cargado a mano
               </span>
             )}
-            {canEdit && !editingAlbum && (
-              <button
-                className="btn-link"
-                onClick={() => {
-                  setForm(active)
-                  setEditingAlbum(true)
-                }}
-              >
-                Corregir estos datos
-              </button>
-            )}
+            <button className="btn-link" onClick={openEditor}>
+              Corregir estos datos
+            </button>
           </div>
 
           {features.artistLinks && active.artistLinks.length > 0 && (
@@ -489,16 +516,35 @@ function AlbumReview({
       </header>
 
       {/*
-        Corregir los datos del catálogo.
+        EL DIÁLOGO DE EDICIÓN.
 
-        Ya no hay una sección "Datos del álbum" permanente: los datos viven
-        arriba, en la ficha, junto a la portada. Esto aparece solo mientras
-        se están corrigiendo, justo donde estaban.
+        Los campos van agrupados igual que la pantalla: primero lo que dice
+        el catálogo, después lo tuyo. Es la misma distinción que organiza la
+        ficha, así que quien la entendió leyendo ya sabe dónde buscar.
       */}
-      {editingAlbum && (
-        <section className="review-block">
-          <h3 className="section-title">Corregir los datos del álbum</h3>
-          <>
+      {editing && (
+        <div className="modal-backdrop" onClick={() => setEditing(false)}>
+          <div
+            className="modal editor-modal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-label={`Editar ${active.title}`}
+          >
+            <header className="modal-header">
+              <div>
+                <h2>Editar la ficha</h2>
+                <p className="modal-subtitle">{active.title}</p>
+              </div>
+              <button className="modal-close" onClick={() => setEditing(false)} title="Cerrar">
+                ✕
+              </button>
+            </header>
+
+            <section className="editor-group">
+              <h3 className="editor-group-title">Datos del álbum</h3>
+              <p className="setting-description">
+                Lo que dicen los catálogos. Corrígelo si tu edición no coincide.
+              </p>
             <div className="edit-grid">
               <div className="field field-wide">
                 <span className="field-label">Formato</span>
@@ -580,22 +626,125 @@ function AlbumReview({
                 />
               </label>
             </div>
-            <div className="edit-actions">
-              <button className="btn btn-ghost" onClick={() => setEditingAlbum(false)}>
+            </section>
+
+            <section className="editor-group">
+              <h3 className="editor-group-title">Tu copia</h3>
+              <p className="setting-description">
+                Lo que solo tú sabes de este disco. Todo es opcional.
+              </p>
+
+              <div className="field">
+                <span className="field-label">Estado de conservación</span>
+                <div
+                  className="condition-options"
+                  role="radiogroup"
+                  aria-label="Estado de conservación"
+                >
+                  {CONDITIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={form.condition === opt.id}
+                      className={`condition-chip${form.condition === opt.id ? ' selected' : ''}`}
+                      onClick={() => updateMine('condition', opt.id)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                  {form.condition && (
+                    <button
+                      type="button"
+                      className="btn-link"
+                      onClick={() => updateMine('condition', null)}
+                    >
+                      Sin evaluar
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="edit-grid">
+                <label className="field">
+                  <span className="field-label">Dónde la conseguiste</span>
+                  <input
+                    value={form.purchase.place ?? ''}
+                    placeholder="Ej: Feria del Disco"
+                    spellCheck={false}
+                    onChange={(e) =>
+                      updateMine('purchase', {
+                        ...form.purchase,
+                        place: e.target.value || null
+                      })
+                    }
+                  />
+                </label>
+                <label className="field">
+                  <span className="field-label">Cuándo</span>
+                  <input
+                    type="date"
+                    value={form.purchase.date ?? ''}
+                    onChange={(e) =>
+                      updateMine('purchase', {
+                        ...form.purchase,
+                        date: e.target.value || null
+                      })
+                    }
+                  />
+                </label>
+                <label className="field">
+                  <span className="field-label">Cuánto pagaste</span>
+                  <input
+                    value={form.purchase.price ?? ''}
+                    placeholder="Ej: $12.000, me lo regalaron"
+                    spellCheck={false}
+                    onChange={(e) =>
+                      updateMine('purchase', {
+                        ...form.purchase,
+                        price: e.target.value || null
+                      })
+                    }
+                  />
+                </label>
+                <label className="field field-wide">
+                  <span className="field-label">Tus notas</span>
+                  <textarea
+                    className="notes-textarea"
+                    rows={3}
+                    value={form.notes ?? ''}
+                    placeholder="Ej: edición original de 1982, la encontré en Valparaíso"
+                    spellCheck
+                    onChange={(e) => updateMine('notes', e.target.value || null)}
+                  />
+                </label>
+                <div className="field field-wide">
+                  <span className="field-label">Tus etiquetas</span>
+                  <TagEditor
+                    tags={form.tags}
+                    suggestions={knownTags}
+                    onChange={(tags) => updateMine('tags', tags)}
+                  />
+                </div>
+              </div>
+            </section>
+
+            <footer className="modal-footer">
+              <button className="btn btn-ghost" onClick={() => setEditing(false)}>
                 Cancelar
               </button>
-              <button className="btn btn-primary" onClick={saveAlbumEdits}>
-                Aplicar
+              <button className="btn btn-primary" onClick={applyEditor}>
+                Guardar cambios
               </button>
-            </div>
-          </>
-        </section>
+            </footer>
+          </div>
+        </div>
       )}
 
       <div className="ficha-body">
         <div className="ficha-main">
 
-      {features.review && active.description && !editingAlbum && (
+      {features.review && active.description && (
         <section className="excerpt">
           <h3 className="section-title">Sobre el álbum</h3>
           <p className="excerpt-text">{active.description}</p>
@@ -613,17 +762,37 @@ function AlbumReview({
       )}
 
       <section className="tracklist">
-        <h3 className="section-title">Tracklist ({active.tracks.length})</h3>
+        <div className="tracklist-head">
+          <h3 className="section-title">Tracklist ({active.tracks.length})</h3>
+
+          {/*
+            Agregar y quitar canciones se hace sobre la lista, no en un
+            diálogo: es la lista misma lo que se está reordenando. Solo
+            aparece en los discos cargados a mano.
+          */}
+          {savedMode && isManualAlbum && !editingTracks && (
+            <button className="btn-link" onClick={startEditingTracks}>
+              Editar las canciones
+            </button>
+          )}
+          {editingTracks && (
+            <div className="tracklist-edit-actions">
+              <button className="btn btn-ghost btn-sm" onClick={cancelEditingTracks}>
+                Cancelar
+              </button>
+              <button className="btn btn-primary btn-sm" onClick={saveEditedTracks}>
+                Guardar canciones
+              </button>
+            </div>
+          )}
+        </div>
 
         <p className="tracklist-note">
-          {canEdit &&
-            (features.credits
-              ? 'Haz clic en una canción para ver sus créditos y corregirlos.'
-              : 'Haz clic en una canción para corregir sus datos.')}
-          {savedMode &&
-            !editingSaved &&
-            features.credits &&
-            'Haz clic en una canción para ver sus créditos.'}
+          {canEditTracks
+            ? 'Haz clic en una canción para corregir sus datos.'
+            : features.credits
+              ? 'Haz clic en una canción para ver sus créditos.'
+              : 'Haz clic en una canción para ver sus datos.'}
         </p>
 
         {/*
@@ -808,7 +977,12 @@ function AlbumReview({
           ===================================================================
         */}
         <aside className="ficha-aside">
-          <h3 className="ficha-aside-title">Tu copia</h3>
+          <div className="ficha-aside-head">
+            <h3 className="ficha-aside-title">Tu copia</h3>
+            <button className="btn-link" onClick={openEditor}>
+              Editar
+            </button>
+          </div>
 
           {savedMode && active.userCoverBack && (
             <section className="mine-block">
@@ -821,144 +995,43 @@ function AlbumReview({
             </section>
           )}
 
-      {/* Condition + purchase: editable pre-save or when editing saved */}
-      {(editingSaved || (!savedMode && onSave)) && (
-        <section className="mine-block">
-          <h4 className="mine-title">Estado y compra</h4>
-          <p className="setting-description">
-            ¿En qué estado está tu disco, casete o CD? Es opcional — si no lo sabes
-            ahora, puedes dejarlo sin evaluar.
-          </p>
-          <div className="condition-options" role="radiogroup" aria-label="Estado de conservación">
-            {CONDITIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                role="radio"
-                aria-checked={active.condition === opt.id}
-                className={`condition-chip${active.condition === opt.id ? ' selected' : ''}`}
-                onClick={() => handleChange({ ...active, condition: opt.id })}
-              >
-                {opt.label}
-              </button>
-            ))}
-            {active.condition && (
-              <button
-                type="button"
-                className="btn-link"
-                onClick={() => handleChange({ ...active, condition: null })}
-              >
-                Sin evaluar
-              </button>
-            )}
+      {/*
+        Todo lo tuyo, siempre de solo lectura aquí. Editar abre el diálogo.
+      */}
+      <section className="mine-block">
+        <h4 className="mine-title">Estado y compra</h4>
+        <dl className="mine-facts">
+          <div>
+            <dt>Estado</dt>
+            <dd>{conditionLabel(active.condition)}</dd>
           </div>
-
-          <h4 className="subsection-title">Registro de compra</h4>
-          <p className="setting-description">
-            Dónde la conseguiste, cuándo y cuánto pagaste. Todo es opcional.
-          </p>
-          <div className="edit-grid">
-            <label className="field">
-              <span className="field-label">Lugar</span>
-              <input
-                value={active.purchase.place ?? ''}
-                placeholder="Ej: Feria del Disco, Mercado Libre"
-                spellCheck={false}
-                onChange={(e) =>
-                  handleChange({
-                    ...active,
-                    purchase: { ...active.purchase, place: e.target.value || null }
-                  })
-                }
-              />
-            </label>
-            <label className="field">
-              <span className="field-label">Fecha</span>
-              <input
-                type="date"
-                value={active.purchase.date ?? ''}
-                onChange={(e) =>
-                  handleChange({
-                    ...active,
-                    purchase: { ...active.purchase, date: e.target.value || null }
-                  })
-                }
-              />
-            </label>
-            <label className="field">
-              <span className="field-label">Precio</span>
-              <input
-                value={active.purchase.price ?? ''}
-                placeholder="Ej: $12.000, me lo regalaron"
-                spellCheck={false}
-                onChange={(e) =>
-                  handleChange({
-                    ...active,
-                    purchase: { ...active.purchase, price: e.target.value || null }
-                  })
-                }
-              />
-            </label>
-          </div>
-        </section>
-      )}
-
-      {/* Condition + purchase: read-only when viewing saved */}
-      {savedMode && !editingSaved && (
-        <section className="mine-block">
-          <h4 className="mine-title">Estado y compra</h4>
-          <dl className="mine-facts">
+          {active.purchase.place && (
             <div>
-              <dt>Estado</dt>
-              <dd>{conditionLabel(active.condition)}</dd>
+              <dt>Comprada en</dt>
+              <dd>{active.purchase.place}</dd>
             </div>
-            {hasPurchase(active.purchase) && (
-              <>
-                {active.purchase.place && (
-                  <div>
-                    <dt>Comprada en</dt>
-                    <dd>{active.purchase.place}</dd>
-                  </div>
-                )}
-                {active.purchase.date && (
-                  <div>
-                    <dt>Fecha de compra</dt>
-                    <dd>{formatPurchaseDate(active.purchase.date) ?? active.purchase.date}</dd>
-                  </div>
-                )}
-                {active.purchase.price && (
-                  <div>
-                    <dt>Precio</dt>
-                    <dd>{active.purchase.price}</dd>
-                  </div>
-                )}
-              </>
-            )}
-          </dl>
-        </section>
-      )}
-
-      {/* Notes: editable when editing saved */}
-      {editingSaved && (
-        <section className="mine-block">
-          <h4 className="mine-title">Tus notas</h4>
-          <p className="setting-description">
-            Lo que quieras recordar de esta copia: un detalle de la edición, de
-            quién venía, por qué la buscabas.
+          )}
+          {active.purchase.date && (
+            <div>
+              <dt>Fecha de compra</dt>
+              <dd>{formatPurchaseDate(active.purchase.date) ?? active.purchase.date}</dd>
+            </div>
+          )}
+          {active.purchase.price && (
+            <div>
+              <dt>Precio</dt>
+              <dd>{active.purchase.price}</dd>
+            </div>
+          )}
+        </dl>
+        {!hasPurchase(active.purchase) && (
+          <p className="mine-empty">
+            Sin registro de compra. Puedes anotar dónde la conseguiste desde «Editar».
           </p>
-          <textarea
-            className="notes-textarea"
-            rows={4}
-            value={active.notes ?? ''}
-            placeholder="Ej: edición original de 1982, la encontré en Valparaíso"
-            spellCheck
-            onChange={(e) => handleChange({ ...active, notes: e.target.value || null })}
-          />
-        </section>
-      )}
+        )}
+      </section>
 
-      {/* Notes: read-only when viewing saved */}
-      {savedMode && !editingSaved && active.notes && (
+      {active.notes && (
         <section className="mine-block">
           <h4 className="mine-title">Tus notas</h4>
           <p className="notes-text">{active.notes}</p>
@@ -971,31 +1044,16 @@ function AlbumReview({
         fuente y no se parecen al género: el género describe la música, la
         etiqueta describe la copia.
       */}
-      {(canEdit || (savedMode && active.tags.length > 0)) && (
+      {active.tags.length > 0 && (
         <section className="mine-block">
           <h4 className="mine-title">Tus etiquetas</h4>
-
-          {canEdit ? (
-            <>
-              <p className="setting-description">
-                Palabras tuyas para encontrarlo después. Se combinan con los demás
-                filtros de la colección.
-              </p>
-              <TagEditor
-                tags={active.tags}
-                suggestions={knownTags}
-                onChange={(tags) => handleChange({ ...active, tags })}
-              />
-            </>
-          ) : (
-            <div className="tag-chips">
-              {active.tags.map((tag) => (
-                <span className="tag-chip" key={tag}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
+          <div className="tag-chips">
+            {active.tags.map((tag) => (
+              <span className="tag-chip" key={tag}>
+                {tag}
+              </span>
+            ))}
+          </div>
         </section>
       )}
 
@@ -1014,22 +1072,14 @@ function AlbumReview({
       </div>
 
       <footer className="preview-footer">
-        {savedMode && editingSaved ? (
+        {savedMode ? (
           <>
-            <button className="btn btn-ghost" onClick={cancelEditingSaved}>
-              Cancelar edición
-            </button>
-            <button className="btn btn-primary" onClick={saveEditedSaved}>
-              Guardar cambios
-            </button>
-          </>
-        ) : savedMode ? (
-          <>
-            {/* Volver ya está arriba a la izquierda, como en toda sub-página
-                de la app: repetirlo aquí daba dos salidas para lo mismo. */}
-            <button className="btn btn-primary" onClick={startEditingSaved}>
-              Editar esta ficha
-            </button>
+            {/*
+              Volver ya está arriba a la izquierda y Editar está en el panel
+              de "Tu copia" y en el encabezado, junto a lo que cada uno
+              cambia. Aquí abajo solo queda lo irreversible, separado del
+              resto para que no se pulse sin querer.
+            */}
             {!confirmDelete ? (
               <button className="btn btn-danger" onClick={askDelete}>
                 Borrar de mi colección
@@ -1100,7 +1150,7 @@ function AlbumReview({
           sideLabel={sideHeading(openTrackData.side, usesSides)}
           onChange={(updated) => updateTrack(openTrack, updated)}
           onClose={() => setOpenTrack(null)}
-          readOnly={savedMode && !editingSaved}
+          readOnly={!canEditTracks}
           showCredits={features.credits}
           sideOptions={canEditTracks ? sideOptionsFor(active.format) : undefined}
         />
