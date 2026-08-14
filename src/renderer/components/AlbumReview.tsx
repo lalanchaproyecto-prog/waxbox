@@ -17,6 +17,7 @@ import type { ConditionId } from '@core/models/condition'
 import { hasPurchase, formatPurchaseDate, EMPTY_PURCHASE } from '@core/models/purchase'
 import TrackDetail from './TrackDetail'
 import AddToSetlistButton from './AddToSetlistButton'
+import { IconBack } from './Icons'
 import VariantsSection from './VariantsSection'
 import LoansSection from './LoansSection'
 import type { SetlistUsage, DuplicateCandidate } from '@core/database/db'
@@ -343,37 +344,138 @@ function AlbumReview({
   */
   const dominant = useDominantColor(coverToShow)
 
+  /*
+    ¿Está sonando ESTE disco ahora mismo?
+
+    Es lo que hace que el disco de la ficha gire y el brazo baje. El
+    movimiento no es adorno: es la única señal de que lo que suena es este
+    disco y no otro que quedó puesto desde antes.
+  */
+  const sonandoEsteAlbum =
+    player.current !== null &&
+    active.tracks.some(
+      (track) => track.id !== undefined && track.id === player.current?.trackId
+    )
+
   return (
-    <div className="preview tinted" style={tintStyle(dominant)}>
-      <header className="preview-header">
-        <div className="cover-slot">
-          {coverToShow ? (
-            <img
-              className="cover-image"
-              src={coverToShow}
-              alt={`Portada de ${active.title}`}
-            />
-          ) : (
-            <div className="cover-missing">
-              <span>Sin portada</span>
-              <span>en el catálogo</span>
-            </div>
-          )}
+    <div className="screen ficha tinted" style={tintStyle(dominant)}>
+      {savedMode && (
+        <button className="page-back" onClick={onBack}>
+          <IconBack size={16} />
+          <span>Colección</span>
+        </button>
+      )}
+
+      <header className="ficha-hero">
+        {/*
+          EL OBJETO. La portada dentro de su funda, con el disco asomando por
+          detrás. Es el único sitio de la app con volumen y movimiento, y aquí
+          se lo gana: la ficha describe una cosa que existe y está en un
+          estante.
+        */}
+        <div className={`ficha-object${sonandoEsteAlbum ? ' sonando' : ''}`}>
+          <div className="ficha-sleeve">
+            {format?.id !== 'casete' && (
+              <span className="ficha-disc-wrap" aria-hidden="true">
+                <span
+                  className={`disc${format?.id === 'cd' ? ' disc-cd' : ''}${
+                    sonandoEsteAlbum ? ' disc-spinning' : ''
+                  }`}
+                />
+                {/*
+                  El brazo solo existe mientras suena. Un brazo apoyado sobre
+                  un disco que está a medias dentro de su funda no es una
+                  imagen de nada: el disco guardado no tiene brazo encima.
+                */}
+                {sonandoEsteAlbum && <span className="tonearm tonearm-down" />}
+              </span>
+            )}
+
+            {coverToShow ? (
+              <img
+                className="ficha-cover"
+                src={coverToShow}
+                alt={`Portada de ${active.title}`}
+              />
+            ) : (
+              <div className="ficha-cover ficha-cover-missing">
+                <span>Sin portada</span>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="preview-titles">
-          <h2>
+
+        {/*
+          LA FICHA DEL CATÁLOGO. Lo que dicen las fuentes públicas sobre este
+          álbum: título, artista, año, formato, sello, géneros. Los datos van
+          en la mono, como en una ficha impresa.
+        */}
+        <div className="ficha-identity">
+          <h2 className="ficha-title">
             {active.title}
             {editedMark('title')}
           </h2>
-          <p className="preview-artist">
+          <p className="ficha-artist">
             {active.artists}
             {editedMark('artists')}
           </p>
-          {isManualAlbum && (
-            <p className="manual-badge" title="Este disco no salió de ningún catálogo">
-              ✎ Cargado a mano
-            </p>
+
+          {!editingAlbum && (
+            <dl className="ficha-facts">
+              <div className="ficha-fact">
+                <dt>Año</dt>
+                <dd className="numeric">
+                  {active.year ?? '—'}
+                  {editedMark('year')}
+                </dd>
+              </div>
+              <div className="ficha-fact">
+                <dt>Formato</dt>
+                <dd className="numeric">
+                  {format?.label ?? active.format}
+                  {editedMark('format')}
+                </dd>
+              </div>
+              <div className="ficha-fact">
+                <dt>Sello</dt>
+                <dd className="numeric">
+                  {active.label ?? '—'}
+                  {editedMark('label')}
+                </dd>
+              </div>
+              <div className="ficha-fact">
+                <dt>Canciones</dt>
+                <dd className="numeric">{active.tracks.length}</dd>
+              </div>
+              <div className="ficha-fact ficha-fact-wide">
+                <dt>Género</dt>
+                <dd className="numeric">
+                  {active.genres.length > 0 ? active.genres.join(' · ') : '—'}
+                  {editedMark('genres')}
+                </dd>
+              </div>
+            </dl>
           )}
+
+          <div className="ficha-hero-meta">
+            {isManualAlbum && (
+              <span className="manual-badge" title="Este disco no salió de ningún catálogo">
+                Cargado a mano
+              </span>
+            )}
+            {canEdit && !editingAlbum && (
+              <button
+                className="btn-link"
+                onClick={() => {
+                  setForm(active)
+                  setEditingAlbum(true)
+                }}
+              >
+                Corregir estos datos
+              </button>
+            )}
+          </div>
+
           {features.artistLinks && active.artistLinks.length > 0 && (
             <div className="artist-links">
               {active.artistLinks.map((link) => (
@@ -386,34 +488,16 @@ function AlbumReview({
         </div>
       </header>
 
-      {savedMode && active.userCoverBack && (
-        <section className="review-block user-photos">
-          <h3 className="section-title">Tu contraportada</h3>
-          <img
-            className="user-photo-back"
-            src={active.userCoverBack}
-            alt="Contraportada de tu copia"
-          />
-        </section>
-      )}
+      {/*
+        Corregir los datos del catálogo.
 
-      <section className="review-block">
-        <div className="review-block-head">
-          <h3 className="section-title">Datos del álbum</h3>
-          {canEdit && !editingAlbum && (
-            <button
-              className="btn-link"
-              onClick={() => {
-                setForm(active)
-                setEditingAlbum(true)
-              }}
-            >
-              ✎ Corregir
-            </button>
-          )}
-        </div>
-
-        {editingAlbum ? (
+        Ya no hay una sección "Datos del álbum" permanente: los datos viven
+        arriba, en la ficha, junto a la portada. Esto aparece solo mientras
+        se están corrigiendo, justo donde estaban.
+      */}
+      {editingAlbum && (
+        <section className="review-block">
+          <h3 className="section-title">Corregir los datos del álbum</h3>
           <>
             <div className="edit-grid">
               <div className="field field-wide">
@@ -505,39 +589,11 @@ function AlbumReview({
               </button>
             </div>
           </>
-        ) : (
-          <dl className="preview-facts">
-            <div>
-              <dt>Año</dt>
-              <dd>
-                {active.year ?? 'Sin dato'}
-                {editedMark('year')}
-              </dd>
-            </div>
-            <div>
-              <dt>Formato</dt>
-              <dd>
-                {format?.label ?? active.format}
-                {editedMark('format')}
-              </dd>
-            </div>
-            <div>
-              <dt>Sello</dt>
-              <dd>
-                {active.label ?? 'Sin dato'}
-                {editedMark('label')}
-              </dd>
-            </div>
-            <div>
-              <dt>Género</dt>
-              <dd>
-                {active.genres.length > 0 ? active.genres.join(', ') : 'Sin dato'}
-                {editedMark('genres')}
-              </dd>
-            </div>
-          </dl>
-        )}
-      </section>
+        </section>
+      )}
+
+      <div className="ficha-body">
+        <div className="ficha-main">
 
       {features.review && active.description && !editingAlbum && (
         <section className="excerpt">
@@ -730,11 +786,45 @@ function AlbumReview({
           </div>
         )}
       </section>
+        </div>
+
+        {/*
+          ===================================================================
+          TU COPIA — el elemento firma de Waxbox.
+
+          Todo lo que esta app sabe y ningún catálogo público sabe: en qué
+          estado está TU disco, dónde lo compraste, a quién se lo prestaste,
+          qué anotaste, cómo lo etiquetaste, qué otras copias tienes.
+
+          Antes esto estaba repartido en cinco secciones sueltas ("Tu copia",
+          "Tus notas", "Tus etiquetas", variantes, préstamos) intercaladas
+          entre los datos del catálogo y con exactamente la misma pinta que
+          ellos. Nunca quedaba claro qué había escrito la persona y qué venía
+          de MusicBrainz.
+
+          Ahora es un solo panel hundido, con los rótulos en la mono y el
+          azul del acento. La regla, aplicable a toda la app: lo tuyo va aquí
+          dentro; lo del catálogo, fuera.
+          ===================================================================
+        */}
+        <aside className="ficha-aside">
+          <h3 className="ficha-aside-title">Tu copia</h3>
+
+          {savedMode && active.userCoverBack && (
+            <section className="mine-block">
+              <h4 className="mine-title">Tu contraportada</h4>
+              <img
+                className="user-photo-back"
+                src={active.userCoverBack}
+                alt="Contraportada de tu copia"
+              />
+            </section>
+          )}
 
       {/* Condition + purchase: editable pre-save or when editing saved */}
       {(editingSaved || (!savedMode && onSave)) && (
-        <section className="review-block your-copy">
-          <h3 className="section-title">Tu copia</h3>
+        <section className="mine-block">
+          <h4 className="mine-title">Estado y compra</h4>
           <p className="setting-description">
             ¿En qué estado está tu disco, casete o CD? Es opcional — si no lo sabes
             ahora, puedes dejarlo sin evaluar.
@@ -815,9 +905,9 @@ function AlbumReview({
 
       {/* Condition + purchase: read-only when viewing saved */}
       {savedMode && !editingSaved && (
-        <section className="review-block">
-          <h3 className="section-title">Tu copia</h3>
-          <dl className="preview-facts">
+        <section className="mine-block">
+          <h4 className="mine-title">Estado y compra</h4>
+          <dl className="mine-facts">
             <div>
               <dt>Estado</dt>
               <dd>{conditionLabel(active.condition)}</dd>
@@ -850,17 +940,17 @@ function AlbumReview({
 
       {/* Notes: editable when editing saved */}
       {editingSaved && (
-        <section className="review-block">
-          <h3 className="section-title">Tus notas</h3>
+        <section className="mine-block">
+          <h4 className="mine-title">Tus notas</h4>
           <p className="setting-description">
-            Escribe lo que quieras recordar sobre esta copia: dónde la compraste,
-            cuánto pagaste, algún detalle especial.
+            Lo que quieras recordar de esta copia: un detalle de la edición, de
+            quién venía, por qué la buscabas.
           </p>
           <textarea
             className="notes-textarea"
             rows={4}
             value={active.notes ?? ''}
-            placeholder="Ej: Comprado en Feria del Disco, edición original de 1982..."
+            placeholder="Ej: edición original de 1982, la encontré en Valparaíso"
             spellCheck
             onChange={(e) => handleChange({ ...active, notes: e.target.value || null })}
           />
@@ -869,8 +959,8 @@ function AlbumReview({
 
       {/* Notes: read-only when viewing saved */}
       {savedMode && !editingSaved && active.notes && (
-        <section className="review-block">
-          <h3 className="section-title">Tus notas</h3>
+        <section className="mine-block">
+          <h4 className="mine-title">Tus notas</h4>
           <p className="notes-text">{active.notes}</p>
         </section>
       )}
@@ -882,14 +972,14 @@ function AlbumReview({
         etiqueta describe la copia.
       */}
       {(canEdit || (savedMode && active.tags.length > 0)) && (
-        <section className="review-block">
-          <h3 className="section-title">Tus etiquetas</h3>
+        <section className="mine-block">
+          <h4 className="mine-title">Tus etiquetas</h4>
 
           {canEdit ? (
             <>
               <p className="setting-description">
-                Palabras tuyas para encontrarlo después. Se pueden combinar con los
-                demás filtros de la colección.
+                Palabras tuyas para encontrarlo después. Se combinan con los demás
+                filtros de la colección.
               </p>
               <TagEditor
                 tags={active.tags}
@@ -920,6 +1010,8 @@ function AlbumReview({
       {savedMode && albumId !== undefined && (
         <LoansSection albumId={albumId} />
       )}
+        </aside>
+      </div>
 
       <footer className="preview-footer">
         {savedMode && editingSaved ? (
@@ -933,11 +1025,10 @@ function AlbumReview({
           </>
         ) : savedMode ? (
           <>
-            <button className="btn btn-ghost" onClick={onBack}>
-              Volver a la colección
-            </button>
-            <button className="btn btn-ghost" onClick={startEditingSaved}>
-              ✎ Editar
+            {/* Volver ya está arriba a la izquierda, como en toda sub-página
+                de la app: repetirlo aquí daba dos salidas para lo mismo. */}
+            <button className="btn btn-primary" onClick={startEditingSaved}>
+              Editar esta ficha
             </button>
             {!confirmDelete ? (
               <button className="btn btn-danger" onClick={askDelete}>

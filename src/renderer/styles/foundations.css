@@ -148,6 +148,12 @@
   vinilo sobre un objeto que no lo es.
 */
 .disc {
+  /*
+    `display: block` explícito porque el primitivo se usa sobre <span>, y a un
+    elemento en línea no se le aplican ni `width` ni `aspect-ratio`: el disco
+    salía con ancho cero y no se veía nada.
+  */
+  display: block;
   position: relative;
   aspect-ratio: 1;
   border-radius: 50%;
