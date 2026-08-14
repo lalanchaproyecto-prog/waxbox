@@ -1,44 +1,35 @@
 /*
   FUNDAMENTOS — las piezas visuales que se repiten en toda la app.
 
-  Aquí viven los "materiales": una superficie con volumen, un panel de vidrio,
-  un marco de foto. Los componentes concretos (una tarjeta de álbum, el
-  reproductor) se apoyan en estas clases en vez de repetir los mismos degradados
-  y sombras una y otra vez.
+  Aquí viven los materiales compartidos: una tarjeta, un panel de vidrio, el
+  marco de una foto. Los componentes concretos se apoyan en estas clases en
+  vez de repetir los mismos valores una y otra vez.
 
   Todo lee de tokens.css. Si algo de aquí tiene un color escrito a mano, es un
   error.
 */
 
 /* ==========================================================================
-   Superficies con volumen
+   Superficies
    ========================================================================== */
 
 /*
-  El material base: una tarjeta que parece tener grosor.
-
-  El truco del skeuomorfismo del iPhone clásico son tres capas a la vez —
-  un degradado de claro a oscuro (la luz cae desde arriba), una línea clara en
-  el borde superior (el canto que refleja) y una sombra hacia abajo (el objeto
-  está sobre algo). Cualquiera de las tres por separado se ve plana.
+  El material base: una tarjeta plana, con un borde de 1px y nada de
+  degradado ni brillo simulando volumen. La jerarquía la da el color, el
+  tamaño de letra y el espacio — no el relieve falso.
 */
 .surface {
   background-color: var(--bg-card);
-  background-image: var(--texture-paper);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-1), var(--inset-top);
 }
 
-/* Un escalón más de relieve, para lo que flota sobre el resto. */
+/* Un escalón más de énfasis, para lo que flota sobre el resto. */
 .surface-raised {
   background-color: var(--bg-card);
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 55%),
-    var(--texture-paper);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2), var(--inset-top), var(--inset-bottom);
+  box-shadow: var(--shadow-2);
 }
 
 /* Lo contrario: hundido, como una ranura. Para campos y listas embutidas. */
@@ -46,72 +37,27 @@
   background-color: var(--bg-inset);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.28);
 }
 
 /* ==========================================================================
-   Texturas
-   ========================================================================== */
-
-.texture-leather {
-  background-color: var(--bg-inset);
-  background-image: var(--texture-leather);
-}
-
-.texture-metal {
-  background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 60%),
-    var(--texture-metal);
-}
-
-.texture-grooves {
-  background-image: var(--texture-grooves);
-}
-
-/*
-  Grano de película por encima de todo.
-
-  Va como pseudo-elemento y con `pointer-events: none` para que no se coma los
-  clics de lo que tiene debajo. `mix-blend-mode: overlay` hace que oscurezca las
-  zonas claras y aclare las oscuras, que es como se comporta el grano de verdad,
-  en vez de ser una niebla gris encima.
-*/
-.grained {
-  position: relative;
-  isolation: isolate;
-}
-
-.grained::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: var(--grain);
-  opacity: var(--grain-opacity);
-  mix-blend-mode: overlay;
-  pointer-events: none;
-  border-radius: inherit;
-  z-index: 1;
-}
-
-/* ==========================================================================
-   Vidrio esmerilado
+   Paneles flotantes
    ========================================================================== */
 
 /*
-  Para lo que flota sobre contenido que se sigue viendo: el reproductor, las
-  barras de herramientas, los diálogos.
+  Para lo que flota sobre contenido que se sigue viendo: el reproductor y los
+  diálogos.
 
-  `backdrop-filter` es lo que desenfoca lo de atrás. Si el sistema no lo
-  soporta, el color de respaldo ya es bastante opaco como para que el texto se
-  siga leyendo — el efecto se pierde, la legibilidad no.
+  La clase se sigue llamando `.glass` porque así la nombran los componentes
+  que la usan, pero ya no es vidrio: es un panel sólido con borde. El
+  desenfoque difuminaba el límite entre el panel y lo de abajo, y eso es
+  justo lo contrario de lo que esta app necesita — que cada pieza tenga un
+  borde definido y un sitio claro. La separación la dan el borde y la sombra.
 */
 .glass {
   background-color: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-3), var(--inset-top);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
 }
 
 /* ==========================================================================
@@ -119,19 +65,16 @@
    ========================================================================== */
 
 /*
-  El tratamiento de las fotos que sube la persona: marco blanco más ancho abajo,
-  como una Polaroid de verdad, con una inclinación mínima.
-
-  La inclinación se pone desde la interfaz con la variable --tilt, calculada a
-  partir de la posición de la foto en la cuadrícula. No se usa un valor al azar
-  en cada dibujado: si cambiara en cada re-render, la cuadrícula entera
-  temblaría cada vez que alguien escribe en el buscador.
+  El tratamiento de las fotos que sube la persona: marco más ancho abajo,
+  como una Polaroid, con una inclinación mínima calculada desde la posición
+  en la cuadrícula — no un valor al azar en cada dibujado, que haría temblar
+  la cuadrícula entera con cada tecla que alguien escribe en el buscador.
 */
 .polaroid {
   --tilt: 0deg;
   background: var(--polaroid-frame);
-  padding: 0.55rem 0.55rem 1.5rem;
-  border-radius: 3px;
+  padding: var(--space-2) var(--space-2) var(--space-5);
+  border-radius: var(--radius-sm);
   box-shadow: var(--polaroid-shadow);
   transform: rotate(var(--tilt));
   transition: transform var(--dur-base) var(--ease),
@@ -139,7 +82,7 @@
 }
 
 .polaroid:hover {
-  transform: rotate(0deg) translateY(-3px) scale(1.02);
+  transform: rotate(0deg) translateY(-2px);
   box-shadow: var(--shadow-3);
 }
 
@@ -151,37 +94,15 @@
   border-radius: 1px;
 }
 
-/*
-  Viraje cálido, el filtro del Instagram de 2010. Es opcional: se aplica solo
-  donde se pida la clase, para que nadie pierda el color real de su portada sin
-  haberlo elegido.
-*/
-.warm-tone img,
-img.warm-tone {
-  filter: sepia(0.18) saturate(1.12) contrast(1.04);
-}
-
 /* ==========================================================================
    Tinte sacado de la portada
    ========================================================================== */
 
 /*
-  El fondo teñido con el color dominante del disco que se está viendo, como en
-  Apple Music.
-
-  El color entra por la variable --tint, que escribe en vivo el extractor. El
+  El fondo teñido con el color dominante del disco que se está viendo, en la
+  ficha. El color entra por --tint, que escribe en vivo el extractor. El
   degradado se desvanece antes de la mitad de la pantalla para que el tinte
   ambiente la zona superior sin teñir el texto de abajo.
-*/
-/*
-  El tinte va DETRÁS del contenido con z-index negativo, e `isolation: isolate`
-  lo encierra en esta caja para que no se escape por debajo del fondo de la app.
-
-  Esta es la razón de hacerlo así y no empujando los hijos hacia adelante con
-  `.tinted > * { position: relative; z-index: 1 }`: esa regla le pisaría el
-  `position: fixed` a cualquier diálogo que sea hijo directo, y los diálogos
-  dejarían de cubrir la pantalla. Con z-index negativo no hace falta tocar
-  ningún hijo.
 */
 .tinted {
   position: relative;
@@ -200,30 +121,212 @@ img.warm-tone {
 }
 
 /* ==========================================================================
+   El objeto físico: el disco
+   ========================================================================== */
+
+/*
+  EL ELEMENTO FIRMA DE LA APP.
+
+  Waxbox cataloga objetos que existen. En toda la interfaz —plana, contenida,
+  de bordes definidos— este es el único sitio donde se permite volumen,
+  materia y movimiento, y se lo permite porque aquí el volumen NO es adorno:
+  es el objeto del que trata la ficha.
+
+  Se dibuja entero con CSS: ni una imagen que cargar, que pese en el
+  instalador o que se vea borrosa en una pantalla de alta densidad.
+
+  Dónde aparece, y en ningún otro sitio:
+    - la ficha del disco (Fase D), saliendo de la funda
+    - el reproductor persistente (Fase H), girando mientras suena
+    - la pantalla de carga (Fase H)
+
+  Deliberadamente NO aparece en la cuadrícula de la colección: 250 discos
+  girando a la vez son ruido visual y trabajo de GPU a cambio de nada.
+
+  El formato manda: un casete no tiene surcos. `data-format` elige el
+  material, y el casete se resuelve aparte en la Fase D — no forzando el
+  vinilo sobre un objeto que no lo es.
+*/
+.disc {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: var(--disc-shadow);
+  background-color: var(--disc-vinyl);
+  background-image:
+    /* el brillo del canto, que es lo que delata que es una superficie curva */
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.1), transparent 42%),
+    /* los surcos */
+    repeating-radial-gradient(
+      circle at center,
+      var(--disc-groove) 0px,
+      var(--disc-groove) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    radial-gradient(circle at center, var(--disc-vinyl-edge), var(--disc-vinyl) 72%);
+}
+
+/* La etiqueta de papel del centro, y el agujero. */
+.disc::after {
+  content: '';
+  position: absolute;
+  inset: 34%;
+  border-radius: 50%;
+  background: var(--disc-label);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+
+.disc::before {
+  content: '';
+  position: absolute;
+  inset: 47.5%;
+  border-radius: 50%;
+  background: var(--bg-body);
+  z-index: 1;
+}
+
+/* Un prensaje en rojo. El color del objeto, nunca un acento de interfaz. */
+.disc-red {
+  background-color: var(--disc-red);
+  background-image:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.14), transparent 42%),
+    repeating-radial-gradient(
+      circle at center,
+      var(--disc-groove) 0px,
+      var(--disc-groove) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    radial-gradient(circle at center, #a32629, var(--disc-red) 72%);
+}
+
+/* El CD es aluminio: sin surcos, etiqueta impresa y agujero más grande. */
+.disc-cd {
+  background-color: var(--disc-cd);
+  background-image:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.55), transparent 46%),
+    repeating-radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.28) 0px,
+      rgba(255, 255, 255, 0.28) 1px,
+      transparent 1px,
+      transparent 7px
+    ),
+    radial-gradient(circle at center, var(--disc-cd), var(--disc-cd-edge) 78%);
+}
+
+.disc-cd::after {
+  inset: 38%;
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.disc-cd::before {
+  inset: 44%;
+}
+
+/*
+  Gira como un tocadiscos de verdad: 33⅓ vueltas por minuto son 1,8 s por
+  vuelta. No es un número decorativo — es la velocidad a la que gira el
+  objeto que la app está describiendo.
+*/
+.disc-spinning {
+  animation: disc-spin 1.8s linear infinite;
+}
+
+@keyframes disc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+  El brazo. Baja sobre el disco cuando algo está sonando y se levanta cuando
+  no: el movimiento comunica el estado de reproducción, que es la única razón
+  por la que está aquí.
+*/
+.tonearm {
+  position: absolute;
+  top: 4%;
+  right: 2%;
+  width: 6%;
+  height: 62%;
+  transform-origin: 50% 8%;
+  transform: rotate(-26deg);
+  transition: transform var(--dur-slow) var(--ease);
+  pointer-events: none;
+}
+
+.tonearm::before {
+  content: '';
+  position: absolute;
+  inset: 0 38%;
+  background: var(--tonearm);
+  border-radius: var(--radius-pill);
+}
+
+/* El cabezal, en el extremo que toca el surco. */
+.tonearm::after {
+  content: '';
+  position: absolute;
+  bottom: -2%;
+  left: 8%;
+  right: 8%;
+  height: 14%;
+  background: var(--tonearm-head);
+  border-radius: 2px;
+}
+
+/* Apoyado en el surco. */
+.tonearm-down {
+  transform: rotate(-4deg);
+}
+
+/*
+  Sin movimiento: el disco no gira y el brazo salta a su posición en vez de
+  deslizarse. El estado se sigue viendo — brazo arriba o abajo — porque la
+  información no puede depender de la animación.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .disc-spinning {
+    animation: none;
+  }
+
+  .tonearm {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
    Tipografía
    ========================================================================== */
 
-/* Título grande y audaz, con el texto apretado. La referencia es un afiche. */
+/* Título grande, ensanchado y apretado — el titular de una pantalla. */
 .display {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: 700;
+  font-variation-settings: var(--width-display);
   letter-spacing: var(--tracking-display);
   line-height: var(--leading-tight);
   color: var(--text-heading);
 }
 
-/* Etiqueta chica en versalitas, para encabezados de sección. */
+/* Etiqueta chica en versalitas, para encabezados de sección y datos. */
 .overline {
+  font-family: var(--font-mono);
   font-size: var(--text-xs);
-  font-weight: 700;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
   color: var(--text-dimmed);
 }
 
-/* Números que tienen que alinearse en columna: duraciones, años, contadores. */
+/* Números que tienen que alinearse en columna: duraciones, años, contadores.
+   Van en la mono — es la marca tipográfica del dato de catálogo. */
 .numeric {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }

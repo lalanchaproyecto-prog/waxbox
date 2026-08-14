@@ -9,3 +9,6 @@ dist/
 
 # Referencias visuales de terceros: material de consulta, no del proyecto.
 Documentos base/
+
+# Skills de terceros instaladas localmente (no son codigo del proyecto)
+.claude/skills/

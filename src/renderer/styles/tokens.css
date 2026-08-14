@@ -1,340 +1,369 @@
 /*
   TOKENS — el vocabulario visual de Waxbox.
 
-  Este archivo es la única fuente de la paleta, la tipografía, las sombras y las
-  texturas. Ningún componente escribe un color a mano: todos leen de aquí. Por
-  eso cambiar la identidad de la app entera es cambiar este archivo, y no salir
-  a cazar valores por 3.000 líneas de estilos.
+  Este archivo es la única fuente de la paleta, la tipografía, el espaciado y
+  los radios. Ningún componente escribe un valor a mano: todos leen de aquí.
 
-  LA DIRECCIÓN ESTÉTICA, EN UNA FRASE:
-  el pasado vive en las texturas y en el color; la tipografía y el espaciado son
-  de hoy. Cuero, latón y papel para las superficies; letra grande, limpia y con
-  aire para el texto. Nada de tipografías "antiguas".
+  SISTEMA "BANDEJA" — EN UNA FRASE:
+  Waxbox no es un reproductor, es un catálogo de objetos. El vocabulario sale
+  del objeto impreso y del cajón donde se guarda — cartón, funda, ficha — no
+  del equipo de sonido. Un solo acento de imprenta; el resto es neutro.
 
-  De dónde sale cada cosa:
-  - Cuero, latón y volumen  → el iPhone de 2007-2012.
-  - Marco blanco y grano    → el primer Instagram.
-  - Vidrio esmerilado, tinte
-    sacado de la portada y
-    letra grande             → Apple Music de hoy.
+  Diagnóstico completo, muestrario y razones en el documento de rediseño
+  ("Bandeja") que aprobó el equipo antes de tocar este archivo.
 */
+
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 400 700;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url('./fonts/Archivo-Variable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/IBMPlexMono-Regular.woff2') format('woff2');
+}
 
 :root {
   /*
-    ---------- Superficies: grafito ----------
-    Grises de verdad, con apenas una pizca de calidez para que no se vean
-    azulados. La primera versión de esta paleta era marrón hasta en los grises y
-    la app entera terminaba beige; lo vintage tiene que venir de los acentos y
-    las texturas, no de teñir de café cada superficie.
+    ---------- Superficies: cartón y funda ----------
+    Gris cálido con sesgo de cartón, no gris azulado de SaaS. El fondo de la
+    app es el cajón (--bg-body); las tarjetas son la funda (--bg-card), un
+    escalón más clara.
   */
-  --bg-body: #131316;
-  --bg-card: #1b1b1f;
-  --bg-input: #202025;
-  --bg-inset: #161619;
-  --bg-hover: #26262c;
-  --bg-active: #303038;
-  --bg-subtle: #2a2a31;
-
-  --border: #2c2c33;
-  --border-input: #3a3a43;
-  --border-strong: #474751;
-  --border-subtle: #232329;
-  --border-separator: #26262d;
-  --border-accent: #4d3227;
-
-  /* ---------- Texto ---------- */
-  --text-heading: #f4f3f1;
-  --text-primary: #e2e0dd;
-  --text-body: #cbc8c4;
-  --text-secondary: #b0aca7;
-  --text-muted: #8e8a85;
-  --text-dimmed: #75716c;
-  --text-faint: #545150;
+  --bg-body: #dfdbd2;
+  --bg-card: #f6f4ef;
+  --bg-input: #efece5;
+  --bg-inset: #e4e0d8;
+  --bg-hover: #ebe8e1;
+  --bg-active: #e4e0d8;
+  --bg-subtle: #ebe8e1;
 
   /*
-    ---------- Acento: bermellón ----------
-    El naranja rojizo de un equipo de sonido de los setenta — la aguja del
-    medidor, el botón de grabar. Es deliberadamente atrevido: sobre grafito, un
-    color apagado desaparece, y era justo lo que le pasaba al latón.
-
-    El tono es lo bastante profundo como para llevar texto blanco encima con
-    contraste suficiente para leerse.
+    Bordes con presencia. Cada tarjeta tiene que leerse como una pieza
+    contenida, con su sitio: si el borde apenas se insinúa, las cosas se
+    funden con lo de al lado y vuelve el problema de "no se entiende nada a
+    simple vista".
   */
-  --accent: #d1481c;
-  --accent-hover: #e35a2c;
-  --accent-soft: #f29a72;
-  --accent-link: #f08054;
+  --border: #c2bcb1;
+  --border-input: #b0aa9d;
+  --border-strong: #948e82;
+  --border-subtle: #d4cfc4;
+  --border-separator: #cec9bd;
+  --border-accent: #c2bcb1;
+
+  /* ---------- Texto ----------
+     Todos llegan como mínimo a 4.5:1 sobre el CARTÓN, que es el fondo más
+     oscuro de los dos: calibrar contra la funda no basta, porque hay texto
+     que va directo sobre el fondo de la app y ahí el contraste es menor.
+
+     El rango útil de grises es por eso más estrecho que de costumbre
+     (5.8:1 a 4.6:1). La jerarquía por debajo de "secundario" NO se hace
+     aclarando más el gris — se hace con el tamaño y con la mono. Un gris
+     ilegible no es jerarquía, es texto que nadie puede leer. */
+  --text-heading: #16181a;
+  --text-primary: #24262a;
+  --text-body: #3a3d42;
+  --text-secondary: #4d5055;
+  --text-muted: #55585d;
+  --text-dimmed: #5a5d62;
+  --text-faint: #5d6065;
+
+  /*
+    ---------- Acento: azul de imprenta ----------
+    Un solo acento en toda la app. Nunca decorativo: solo lo interactivo —
+    botones, foco, enlaces, lo que tú anotaste — lo usa.
+  */
+  --accent: #1b4fa0;
+  --accent-hover: #163f80;
+  --accent-soft: #6a8fc4;
+  --accent-link: #1b4fa0;
   --on-accent: #ffffff;
 
-  /* Mostaza para halos y detalles: el latón sigue, pero de reparto. */
-  --accent-warm: #d9a521;
-
   /*
-    Turquesa para los setlists. Frente al bermellón es el contraste más fuerte
-    posible sin salirse de la paleta de un equipo de audio antiguo, y deja claro
-    que los setlists son otra sección y no otra acción sobre los discos.
+    Antes había un segundo acento (mostaza) y un tercero (turquesa, solo para
+    setlists). Bandeja usa uno solo: una sección se distingue por dónde vive
+    en la navegación, no por tener su propio color. Estos dos quedan
+    apuntando al mismo acento para que nada que todavía los use desentone.
   */
-  --accent-cool: #137c71;
+  --accent-warm: #1b4fa0;
+  --accent-cool: #1b4fa0;
   --on-accent-cool: #ffffff;
 
-  /* ---------- Estados ----------
-     El rojo de error se distingue del bermellón del acento yéndose a carmesí:
-     si fueran vecinos, un aviso de error parecería un botón principal. */
-  --error-bg: #251518;
-  --error-border: #522a30;
-  --error-text: #f2aeb4;
-  --warning-bg: #26200f;
-  --warning-text: #e0c077;
-  --success-bg: #12271f;
-  --success-text: #6fd3a5;
-  --danger: #d33b52;
-  --danger-hover: #e85068;
+  /* ---------- Estados ---------- */
+  --error-bg: #f7e6e5;
+  --error-border: #e3bcba;
+  --error-text: #8f2f34;
+  --warning-bg: #f3ecd9;
+  --warning-text: #7a5a10;
+  --success-bg: #e3ede6;
+  --success-text: #2b5f42;
+  --danger: #9c2f3a;
+  --danger-hover: #832530;
+  --danger-bg: rgba(156, 47, 58, 0.08);
 
-  --overlay: rgba(8, 8, 10, 0.74);
-  --halo-accent: rgba(209, 72, 28, 0.24);
-  --halo-warm: rgba(217, 165, 33, 0.10);
+  --overlay: rgba(22, 24, 26, 0.5);
+  --halo-accent: rgba(27, 79, 160, 0.12);
+  --halo-warm: rgba(27, 79, 160, 0);
 
   /* ---------- Tinte dinámico ----------
-     Lo reescribe en vivo el extractor de color de la portada. Estos valores son
-     el respaldo para cuando no hay portada o todavía no se analizó. */
-  --tint: #d1481c;
-  --tint-soft: rgba(209, 72, 28, 0.18);
-  --tint-text: #f4f3f1;
+     Lo reescribe en vivo el extractor de color de la portada, en la ficha del
+     disco. Estos valores son el respaldo antes de que eso ocurra. */
+  --tint: #1b4fa0;
+  --tint-soft: rgba(27, 79, 160, 0.1);
+  --tint-text: #16181a;
 
   /* ---------- Tipografía ----------
-     Fuente del sistema, sin archivos que descargar: en Windows 11 se usa Segoe
-     UI Variable, en Windows 10 Segoe UI. Las dos son neutras y modernas, que es
-     justo lo que pide la dirección. */
-  --font-ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system,
-    BlinkMacSystemFont, Roboto, sans-serif;
-  --font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui,
-    -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-  /* Para números que tienen que alinearse: duraciones, años, contadores. */
-  --font-mono: 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+     Archivo para todo el texto de la interfaz — variable de peso y ancho, así
+     que un título ensanchado y un cuerpo normal son la misma familia, no dos
+     fuentes distintas. IBM Plex Mono solo para datos de catálogo: años,
+     duraciones, contadores, y todo lo que anotas tú sobre tu copia. */
+  --font-ui: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Cascadia Mono', Consolas, ui-monospace, monospace;
 
-  --text-xs: 0.75rem;
-  --text-sm: 0.85rem;
-  --text-base: 0.95rem;
-  --text-md: 1.05rem;
-  --text-lg: 1.35rem;
-  --text-xl: 1.85rem;
-  --text-2xl: 2.6rem;
-  --text-3xl: 3.6rem;
+  /* Ancho variable de Archivo: normal para texto corrido, ensanchado para
+     titulares. Se aplica junto con --font-display. */
+  --width-text: 'wdth' 100;
+  --width-display: 'wdth' 116;
 
-  /* Los títulos grandes se aprietan; el texto chico se abre. Así se lee bien
-     en los dos extremos. */
-  --tracking-display: -0.035em;
-  --tracking-tight: -0.015em;
-  --tracking-wide: 0.08em;
+  /*
+    Siete tamaños, ninguno fuera de la escala. Antes había 43 valores
+    distintos entre 11 y 17px y nada destacaba; ahora hay un salto real entre
+    un dato (12px) y una cifra (48px).
+  */
+  --text-xs: 0.75rem;   /* 12 — dato de catálogo */
+  --text-sm: 0.875rem;  /* 14 — texto secundario */
+  --text-base: 1rem;    /* 16 — cuerpo */
+  --text-md: 1.25rem;   /* 20 — subtítulo */
+  --text-lg: 1.625rem;  /* 26 — título */
+  --text-xl: 2.125rem;  /* 34 — título de pantalla */
+  --text-2xl: 3rem;     /* 48 — cifra grande */
 
-  --leading-tight: 1.1;
+  --tracking-display: -0.02em;
+  --tracking-tight: -0.008em;
+  --tracking-wide: 0.09em;
+
+  --leading-tight: 1.12;
   --leading-normal: 1.5;
   --leading-loose: 1.65;
 
+  /* ---------- Espaciado ----------
+     Base 4, ocho pasos. El token que faltaba por completo: sin esto, cada
+     tarjeta respiraba distinto y el ojo no encontraba un ritmo. Todo el
+     espaciado sale de aquí y se aplica con `gap`, no con márgenes sueltos. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
   /* ---------- Bordes redondeados ----------
-     Generosos, como pide la referencia del iPhone clásico. */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 26px;
+     Cuatro valores. Los botones dejan de ser píldoras: una píldora dice
+     "etiqueta", no "acción", y hoy todos los botones tenían esa forma. */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
   --radius-pill: 999px;
 
-  /* ---------- Sombras y volumen ----------
-     La sombra da profundidad hacia abajo; el brillo interior de arriba simula
-     la luz cayendo sobre una superficie curva. Es la combinación que hace que
-     un botón plano parezca un objeto. */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.4);
-  --shadow-3: 0 14px 40px rgba(0, 0, 0, 0.5);
+  /* ---------- Sombras ----------
+     Planas. Se acabó el degradado + brillo interior + sombra que simulaba un
+     botón con volumen: la profundidad ahora la da el color y la jerarquía,
+     no el relieve falso. Solo queda una sombra discreta para lo que
+     realmente flota sobre el contenido (diálogos, el reproductor). */
+  --shadow-1: 0 1px 2px rgba(22, 24, 26, 0.08);
+  --shadow-2: 0 4px 14px rgba(22, 24, 26, 0.12);
+  --shadow-3: 0 16px 40px rgba(22, 24, 26, 0.18);
   --shadow-glow: 0 0 0 1px var(--halo-accent);
-  --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  --inset-bottom: inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  /*
+    Cero, no `none`: estas dos se combinan con --shadow-2 en una lista de
+    box-shadow separada por comas en CSS todavía no tocado por esta fase,
+    y `none` ahí invalidaría la lista entera. Un shadow transparente de
+    tamaño cero no dibuja nada y mantiene la lista válida.
+  */
+  --inset-top: 0 0 transparent;
+  --inset-bottom: 0 0 transparent;
 
   /* ---------- Movimiento ----------
      Una sola curva para toda la app: entra rápido y frena suave. */
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --dur-fast: 120ms;
-  --dur-base: 220ms;
-  --dur-slow: 420ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
 
-  /* ---------- Texturas ----------
-     Todas se dibujan con CSS: ni una sola imagen que cargar, que pese en el
-     instalador o que se vea borrosa en una pantalla de alta densidad. */
+  /*
+    ---------- Texturas ----------
+    Bandeja es plano: cartón y funda son color liso, no cuero ni papel
+    granulado. Estos tokens quedan definidos como "nada" en vez de borrarse,
+    para que ninguna pantalla que todavía los use se rompa antes de que le
+    llegue su turno en el plan de fases — solo pierden el dibujo, no la
+    superficie de abajo.
+  */
+  --texture-leather: none;
+  --texture-metal: none;
+  --texture-paper: none;
 
-  /* Cuero: manchas suaves e irregulares, como el grano de la piel. */
-  --texture-leather:
-    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.035), transparent 42%),
-    radial-gradient(circle at 78% 68%, rgba(255, 255, 255, 0.025), transparent 38%),
-    radial-gradient(circle at 45% 88%, rgba(0, 0, 0, 0.28), transparent 45%);
-
-  /* Metal cepillado: líneas finísimas en una sola dirección. */
-  --texture-metal:
-    repeating-linear-gradient(
-      92deg,
-      rgba(255, 255, 255, 0.05) 0px,
-      rgba(255, 255, 255, 0.05) 1px,
-      transparent 1px,
-      transparent 3px
-    );
-
-  /* Papel: trama diagonal muy tenue. */
-  --texture-paper:
-    repeating-linear-gradient(
-      45deg,
-      rgba(255, 255, 255, 0.014) 0px,
-      rgba(255, 255, 255, 0.014) 1px,
-      transparent 1px,
-      transparent 4px
-    );
-
-  /* Surco de vinilo: anillos concéntricos. Se usa detrás de las portadas. */
+  /* Surco de vinilo: se mantiene con tono neutro para el disco que gira en
+     la pantalla de carga, hasta que esa pantalla tenga su propia pasada. */
   --texture-grooves:
     repeating-radial-gradient(
       circle at center,
-      rgba(255, 255, 255, 0.05) 0px,
-      rgba(255, 255, 255, 0.05) 1px,
+      rgba(22, 24, 26, 0.06) 0px,
+      rgba(22, 24, 26, 0.06) 1px,
       transparent 1px,
       transparent 4px
     );
 
+  --grain: none;
+  --grain-opacity: 0;
+
+  /* ---------- Paneles flotantes ----------
+     El reproductor y los diálogos. Ya NO son vidrio esmerilado: son paneles
+     sólidos con borde. El desenfoque difumina el límite entre el panel y lo
+     que hay debajo, y lo que esta app necesita es exactamente lo contrario —
+     que cada pieza tenga un borde definido y un sitio claro. La separación
+     la dan el borde, la sombra y el velo de fondo, no el blur. */
+  --glass-bg: #f6f4ef;
+  --glass-border: #c2bcb1;
+  --glass-blur: 0px;
+
+  /* Marco de las fotos que sube la persona. */
+  --polaroid-frame: #f8f6f2;
+  --polaroid-shadow: 0 8px 20px rgba(22, 24, 26, 0.16);
+
   /*
-    Grano de película, el de las fotos del primer Instagram.
-    Es ruido generado por el propio navegador con un filtro SVG, así que no hay
-    ningún archivo de imagen detrás.
+    ---------- El objeto físico ----------
+    El único lugar donde Waxbox se permite volumen y movimiento: el disco.
+
+    No es decoración. Es el contenido — cada ficha de esta app describe un
+    objeto que existe, y el disco es ese objeto. Por eso el rojo del vinilo
+    vive AQUÍ y no en la interfaz: es el color de un prensaje, no un acento
+    de UI. La app sigue teniendo un solo acento, el azul.
   */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  --grain-opacity: 0.05;
-
-  /* ---------- Vidrio esmerilado ---------- */
-  --glass-bg: rgba(27, 27, 32, 0.64);
-  --glass-border: rgba(255, 255, 255, 0.10);
-  --glass-blur: 22px;
-
-  /* Marco de las fotos tipo Polaroid. */
-  --polaroid-frame: #f6f1e6;
-  --polaroid-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  --disc-vinyl: #191617;
+  --disc-vinyl-edge: #2c2729;
+  --disc-red: #8e1f22;
+  --disc-cd: #cfd3d8;
+  --disc-cd-edge: #9aa1a9;
+  --disc-label: #d9d0c1;
+  --disc-groove: rgba(255, 255, 255, 0.07);
+  --disc-shadow: 0 10px 28px rgba(22, 24, 26, 0.28);
+  --tonearm: #a8a294;
+  --tonearm-head: #55504a;
 }
 
 /*
-  ---------- Tema claro: papel ----------
-  No es el tema oscuro invertido. Es papel de verdad: crema cálido en vez de
-  gris azulado, que es lo que hace que las mismas texturas sigan funcionando.
+  ---------- Tema oscuro ----------
+  Explícito y opcional: Bandeja es una app de catálogo, pensada primero para
+  leerse sobre cartón claro. El oscuro sigue completo y cuidado, pero ya no
+  es el que manda — se activa solo cuando el sistema o la persona lo piden.
 */
-:root[data-theme='light'] {
-  /*
-    Papel gris, no papel crema. Antes esto era casi amarillo y hacía que la app
-    entera se viera beige; ahora es el gris cálido de una carátula impresa, que
-    deja que el bermellón y el turquesa sean lo único con color de verdad.
-  */
-  --bg-body: #e8e7e3;
-  --bg-card: #f8f7f5;
-  --bg-input: #f0efec;
-  --bg-inset: #dedcd7;
-  --bg-hover: #edebe7;
-  --bg-active: #dbd9d3;
-  --bg-subtle: #e3e1dc;
+:root[data-theme='dark'] {
+  --bg-body: #15171a;
+  --bg-card: #1d2024;
+  --bg-input: #22262b;
+  --bg-inset: #2b2f35;
+  --bg-hover: #24272c;
+  --bg-active: #2b2f35;
+  --bg-subtle: #24272c;
 
-  --border: #d2d0ca;
-  --border-input: #bfbcb5;
-  --border-strong: #a9a69f;
-  --border-subtle: #e2e0db;
-  --border-separator: #dedcd6;
-  --border-accent: #c8ab9c;
+  --border: #343841;
+  --border-input: #3d424c;
+  --border-strong: #4c525d;
+  --border-subtle: #2a2e34;
+  --border-separator: #2e323a;
+  --border-accent: #343841;
 
-  --text-heading: #1b1b1d;
-  --text-primary: #2e2e31;
-  --text-body: #3f3f43;
-  --text-secondary: #55555a;
-  --text-muted: #70706f;
-  --text-dimmed: #85857f;
-  --text-faint: #a3a29c;
+  /* Mismo criterio que en claro: ninguno baja de 4.5:1 sobre la funda
+     oscura. Un gris apagado sobre fondo oscuro se vuelve ilegible mucho
+     antes de lo que parece al ojo. */
+  --text-heading: #ecedef;
+  --text-primary: #dfe1e4;
+  --text-body: #c7cace;
+  --text-secondary: #a4aab2;
+  --text-muted: #949aa2;
+  --text-dimmed: #878d95;
+  --text-faint: #8a9098;
 
-  /* Sobre papel el bermellón se profundiza para que el blanco encima se lea. */
-  --accent: #b23c12;
-  --accent-hover: #9a330d;
-  --accent-soft: #c25a2e;
-  --accent-link: #a8380f;
-  --on-accent: #ffffff;
+  --accent: #79adee;
+  --accent-hover: #93bdf2;
+  --accent-soft: #4d739f;
+  --accent-link: #79adee;
+  --on-accent: #0e1a2b;
 
-  --accent-warm: #9a7410;
+  --accent-warm: #79adee;
+  --accent-cool: #79adee;
+  --on-accent-cool: #0e1a2b;
 
-  --accent-cool: #12695f;
-  --on-accent-cool: #ffffff;
+  --error-bg: #2c1a1c;
+  --error-border: #5a2f34;
+  --error-text: #ec7f8b;
+  --warning-bg: #2b2313;
+  --warning-text: #ddae55;
+  --success-bg: #17271e;
+  --success-text: #6dc79b;
+  --danger: #ec7f8b;
+  --danger-hover: #f29aa3;
+  --danger-bg: rgba(236, 127, 139, 0.1);
 
-  --error-bg: #fdeff1;
-  --error-border: #e8bfc6;
-  --error-text: #a02338;
-  --warning-bg: #fbf5e4;
-  --warning-text: #7d6112;
-  --success-bg: #ebf6f1;
-  --success-text: #146049;
-  --danger: #bc2f45;
-  --danger-hover: #a3253a;
+  --overlay: rgba(8, 9, 10, 0.6);
+  --halo-accent: rgba(121, 173, 238, 0.14);
+  --halo-warm: rgba(121, 173, 238, 0);
 
-  --overlay: rgba(40, 40, 44, 0.34);
-  --halo-accent: rgba(178, 60, 18, 0.14);
-  --halo-warm: rgba(154, 116, 16, 0.07);
+  --tint: #79adee;
+  --tint-soft: rgba(121, 173, 238, 0.12);
+  --tint-text: #ecedef;
 
-  --tint: #b23c12;
-  --tint-soft: rgba(178, 60, 18, 0.13);
-  --tint-text: #1b1b1d;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-3: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --inset-top: 0 0 transparent;
+  --inset-bottom: 0 0 transparent;
 
-  --shadow-1: 0 1px 2px rgba(40, 38, 34, 0.13);
-  --shadow-2: 0 4px 14px rgba(40, 38, 34, 0.15);
-  --shadow-3: 0 14px 40px rgba(40, 38, 34, 0.19);
-  --inset-top: inset 0 1px 0 rgba(255, 255, 255, 0.75);
-  --inset-bottom: inset 0 -1px 0 rgba(60, 58, 54, 0.14);
-
-  --texture-leather:
-    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.5), transparent 42%),
-    radial-gradient(circle at 78% 68%, rgba(255, 255, 255, 0.35), transparent 38%),
-    radial-gradient(circle at 45% 88%, rgba(90, 88, 84, 0.09), transparent 45%);
-
-  --texture-metal:
-    repeating-linear-gradient(
-      92deg,
-      rgba(255, 255, 255, 0.55) 0px,
-      rgba(255, 255, 255, 0.55) 1px,
-      transparent 1px,
-      transparent 3px
-    );
-
-  --texture-paper:
-    repeating-linear-gradient(
-      45deg,
-      rgba(70, 68, 64, 0.03) 0px,
-      rgba(70, 68, 64, 0.03) 1px,
-      transparent 1px,
-      transparent 4px
-    );
-
+  --texture-leather: none;
+  --texture-metal: none;
+  --texture-paper: none;
   --texture-grooves:
     repeating-radial-gradient(
       circle at center,
-      rgba(70, 68, 64, 0.06) 0px,
-      rgba(70, 68, 64, 0.06) 1px,
+      rgba(255, 255, 255, 0.06) 0px,
+      rgba(255, 255, 255, 0.06) 1px,
       transparent 1px,
       transparent 4px
     );
+  --grain: none;
+  --grain-opacity: 0;
 
-  --grain-opacity: 0.035;
+  --glass-bg: #1d2024;
+  --glass-border: #343841;
 
-  --glass-bg: rgba(248, 247, 245, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.85);
+  --polaroid-frame: #23262b;
+  --polaroid-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 
   /*
-    El marco de la Polaroid se queda cálido a propósito, en los dos temas: es la
-    única pieza que cita al primer Instagram, y un marco gris perdería la
-    referencia. Es el contrapunto tibio de una paleta que ahora es fría.
+    El objeto no cambia con el tema: un vinilo es negro en una habitación
+    iluminada y en una a oscuras. Solo se ajusta la sombra que proyecta y el
+    brillo del surco, que sí dependen de la luz de la escena.
   */
-  --polaroid-frame: #fdfbf6;
-  --polaroid-shadow: 0 8px 22px rgba(40, 38, 34, 0.2);
+  --disc-groove: rgba(255, 255, 255, 0.09);
+  --disc-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  --tonearm: #8e8a80;
+  --tonearm-head: #45413c;
 }
 
 /*
   Quien pidió menos movimiento en su sistema operativo recibe la app sin
-  animaciones. Es una preferencia de accesibilidad, no un gusto: hay personas a
-  las que el movimiento les provoca mareo.
+  animaciones. Es una preferencia de accesibilidad, no un gusto: hay personas
+  a las que el movimiento les provoca mareo.
 */
 @media (prefers-reduced-motion: reduce) {
   :root {

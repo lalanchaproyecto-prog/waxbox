@@ -221,7 +221,7 @@ function CollectionScreen({
             </button>
           )}
           {onOpenSetlists && (
-            <button className="btn btn-setlists" onClick={onOpenSetlists}>
+            <button className="btn btn-ghost" onClick={onOpenSetlists}>
               Setlists
             </button>
           )}

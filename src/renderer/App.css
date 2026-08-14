@@ -18,35 +18,34 @@
 }
 
 /*
-  El fondo de la app no es un color plano: es cuero.
-
-  Van tres capas superpuestas — las manchas del cuero, la trama del papel y un
-  degradado que aclara arriba. Juntas hacen que la pantalla tenga materia en vez
-  de ser un rectángulo pintado.
+  El fondo de la app es cartón liso: el color del cajón donde vive la
+  colección. Bandeja es un sistema plano — sin cuero, sin grano de película —
+  así que la superficie es solo color, y toda la materia de la pantalla sale
+  de la tipografía y el espacio, no de una textura dibujada encima.
 */
 body {
   font-family: var(--font-ui);
+  font-variation-settings: var(--width-text);
   background-color: var(--bg-body);
-  background-image:
-    radial-gradient(ellipse 120% 60% at 50% 0%, var(--halo-warm), transparent 70%),
-    var(--texture-leather),
-    var(--texture-paper);
-  background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-/* El grano de película sobre toda la app, muy tenue. */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: var(--grain);
-  opacity: var(--grain-opacity);
-  mix-blend-mode: overlay;
-  pointer-events: none;
-  z-index: 9999;
+/*
+  Foco de teclado visible en TODO lo interactivo, no solo en los botones.
+  Antes solo `.btn` lo tenía, así que los enlaces, los campos, las filas de
+  la tabla y los chips de filtro se podían recorrer con el tabulador sin que
+  se viera dónde estabas parado.
+*/
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .app {
@@ -130,14 +129,14 @@ body::after {
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 55%),
     var(--texture-paper);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-2), var(--inset-top), var(--inset-bottom);
   padding: 2.25rem 3.25rem;
 }
 
 .stat-number {
   font-family: var(--font-display);
-  font-size: var(--text-3xl);
+  font-size: var(--text-2xl);
   font-weight: 700;
   letter-spacing: var(--tracking-display);
   line-height: var(--leading-tight);
@@ -162,30 +161,22 @@ body::after {
 /* ---------- Botones ---------- */
 
 /*
-  Los botones tienen volumen, no son rectángulos de color.
-
-  Son tres capas a la vez: el degradado (la luz cae desde arriba), la línea
-  clara del borde superior (el canto que refleja) y la sombra hacia abajo (está
-  apoyado sobre algo). Al presionarlo se hunde de verdad — baja un píxel y la
-  sombra se achica.
+  Botones planos. La afordancia sale del color, el borde y el estado de
+  hover/foco — no de un degradado y una sombra simulando que el botón tiene
+  volumen físico. Un solo acento en toda la app: ya no hay un color de marca
+  distinto por sección.
 */
 .btn {
-  padding: 0.7rem 1.75rem;
+  padding: var(--space-3) var(--space-5);
   border: 1px solid transparent;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: 600;
   letter-spacing: var(--tracking-tight);
   cursor: pointer;
-  transition: transform var(--dur-fast) var(--ease),
-    box-shadow var(--dur-fast) var(--ease), filter var(--dur-base) var(--ease),
-    background-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
-}
-
-.btn:active:not(:disabled) {
-  transform: translateY(1px);
-  box-shadow: var(--shadow-1);
+  transition: background-color var(--dur-base) var(--ease),
+    border-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
 }
 
 /* El foco por teclado tiene que verse siempre, en cualquier botón. */
@@ -195,49 +186,27 @@ body::after {
 }
 
 .btn:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .btn-primary {
   background-color: var(--accent);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 60%);
   color: var(--on-accent);
-  border-color: rgba(0, 0, 0, 0.22);
-  box-shadow: var(--shadow-2), var(--inset-top);
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--accent-hover);
-  filter: brightness(1.04);
-}
-
-/*
-  Setlists va en jade y no en el latón de la app: no es una acción sobre la
-  colección de discos sino la entrada a otra sección, y necesita un color frío
-  para leerse distinto ahora que el acento principal es cálido.
-*/
-.btn-setlists {
-  background-color: var(--accent-cool);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 60%);
-  color: var(--on-accent-cool);
-  border-color: rgba(0, 0, 0, 0.22);
-  box-shadow: var(--shadow-2), var(--inset-top);
-}
-
-.btn-setlists:hover:not(:disabled) {
-  filter: brightness(1.08);
 }
 
 .btn-ghost {
   background-color: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
 
 .btn-ghost:hover:not(:disabled) {
   background-color: var(--bg-hover);
-  color: var(--text-primary);
   border-color: var(--accent);
 }
 
@@ -245,10 +214,17 @@ body::after {
   background: none;
   border: none;
   color: var(--accent-link);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   cursor: pointer;
   padding: 0;
   text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.btn-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* ---------- Formulario ---------- */
@@ -1301,7 +1277,7 @@ body::after {
   gap: 1.25rem;
   background-color: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-3), var(--inset-top);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
@@ -1935,20 +1911,36 @@ body::after {
 
 /* ---------- Botón danger ---------- */
 
+/*
+  Perfilado, no relleno. Borrar un disco no puede ser lo más llamativo de la
+  pantalla — el color rojo ya dice "cuidado", y el relleno lo convertía en el
+  botón que más peso visual tenía de todos. Además el relleno obligaba a
+  texto blanco encima, que sobre el rojo claro del tema oscuro no llegaba a
+  contraste legible.
+*/
 .btn-danger {
-  background: var(--danger);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 0.6rem 1.2rem;
-  font-size: 0.9rem;
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
+  font-weight: 600;
   font-family: inherit;
+  letter-spacing: var(--tracking-tight);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background-color var(--dur-base) var(--ease),
+    color var(--dur-base) var(--ease);
 }
 
 .btn-danger:hover {
-  background: var(--danger-hover);
+  background: var(--danger-bg);
+  color: var(--danger-hover);
+}
+
+.btn-danger:focus-visible {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
 }
 
 .confirm-delete {
@@ -4434,13 +4426,13 @@ body::after {
 .variant-cover {
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-xs, 3px);
+  border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;
 }
 
 .variant-no-cover {
-  background: var(--bg-raised);
+  background: var(--bg-card);
 }
 
 .variant-info {
@@ -4463,7 +4455,7 @@ body::after {
 }
 
 .btn-sm {
-  padding: 0.3rem 0.7rem;
+  padding: var(--space-2) var(--space-3);
   font-size: var(--text-xs);
 }
 
@@ -4667,7 +4659,7 @@ body::after {
 .active-loan-cover {
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-xs, 3px);
+  border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -4746,7 +4738,7 @@ body::after {
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 55%),
     var(--texture-paper);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-2), var(--inset-top);
   padding: 1.25rem 2rem;
   min-width: 6.5rem;
@@ -4810,7 +4802,7 @@ body::after {
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 50%),
     var(--texture-paper);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-2), var(--inset-top);
   padding: 0.9rem 1.1rem;
   cursor: pointer;
