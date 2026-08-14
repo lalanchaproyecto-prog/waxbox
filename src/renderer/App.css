@@ -78,6 +78,16 @@ body {
   padding: var(--space-6) var(--space-7) var(--space-8);
   /* Sitio para que el reproductor no tape la última fila de contenido. */
   padding-bottom: 7rem;
+  /*
+    El disco que sale de la funda en la última columna sobresale unos pocos
+    píxeles del borde, y eso bastaba para aparecer una barra de scroll
+    horizontal en toda la app.
+
+    `clip` y no `hidden` a propósito: `hidden` en un eje obliga al otro a
+    volverse un contenedor de scroll, y eso rompería la cabecera pegajosa de
+    la tabla de la colección. `clip` solo recorta.
+  */
+  overflow-x: clip;
 }
 
 /* La pantalla, con un ancho máximo para que el texto no cruce el monitor. */
@@ -1919,10 +1929,20 @@ body {
 
 /* --- La bandeja: las portadas --- */
 
+/*
+  El hueco entre columnas es más ancho que el de filas a propósito: es el
+  sitio por donde sale el disco al pasar por encima. Con el hueco justo, el
+  disco asomaba dentro del espacio de la tarjeta vecina y no se apreciaba.
+
+  El tamaño de las portadas lo limita el ancho máximo de `.screen`, no un
+  máximo por columna: poner un máximo aquí hace que `auto-fill` cuente las
+  columnas con ese máximo y deje media columna de aire desperdiciada al
+  borde derecho.
+*/
 .collection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-  gap: var(--space-5) var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
+  gap: var(--space-5) var(--space-6);
 }
 
 /*
@@ -1938,6 +1958,7 @@ body {
   debajo, sobre el fondo de la app.
 */
 .album-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -1948,6 +1969,20 @@ body {
   text-align: left;
   font-family: inherit;
   border-radius: var(--radius-md);
+}
+
+/*
+  La tarjeta que se está mirando se pone por delante de sus vecinas.
+
+  Sin esto el disco no se veía: cada funda abre su propio contexto de
+  apilamiento, así que el disco que sale de una tarjeta quedaba pintado por
+  DEBAJO de la portada de la siguiente, que va después en el documento. Es
+  exactamente lo que pasa al sacar un disco de un cajón de tienda — se monta
+  sobre el de al lado — y aquí hay que decírselo al navegador.
+*/
+.album-card:hover,
+.album-card:focus-visible {
+  z-index: 5;
 }
 
 /* La funda: contiene la portada y el disco que asoma por detrás. */
@@ -2013,13 +2048,49 @@ body {
       transparent 3px
     ),
     radial-gradient(circle at center, var(--disc-vinyl-edge), var(--disc-vinyl) 70%);
-  transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease);
+  /* La sombra lo despega de la portada: sin ella, a contraluz de una funda
+     oscura, el disco se leía como una sombra y no como un objeto. */
+  box-shadow: var(--shadow-2);
+  /* Un pelo más lento que el resto de la app. Es el único gesto de la
+     pantalla que la persona provoca para mirarlo, no para seguir de largo. */
+  transition: transform var(--dur-slow) var(--ease), opacity var(--dur-base) var(--ease);
   pointer-events: none;
+}
+
+/*
+  La etiqueta de papel del centro y el agujero.
+
+  Sin ellos, lo que asoma es medio círculo negro con rayas, que a este tamaño
+  se lee como una sombra mal hecha. La etiqueta es lo que hace que el ojo
+  reconozca un disco al instante.
+*/
+.album-card-disc::after {
+  content: '';
+  position: absolute;
+  inset: 33%;
+  border-radius: 50%;
+  background: var(--disc-label);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.album-card-disc::before {
+  content: '';
+  position: absolute;
+  inset: 47%;
+  z-index: 1;
+  border-radius: 50%;
+  background: var(--bg-body);
 }
 
 .album-card[data-format='cd'] .album-card-disc {
   background-color: var(--disc-cd);
-  background-image: radial-gradient(circle at center, var(--disc-cd), var(--disc-cd-edge) 76%);
+  background-image:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.6), transparent 44%),
+    radial-gradient(circle at center, var(--disc-cd), var(--disc-cd-edge) 76%);
+}
+
+.album-card[data-format='cd'] .album-card-disc::after {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 /* Los formatos que no son un disco no sacan nada de la funda. */
@@ -2027,10 +2098,16 @@ body {
   display: none;
 }
 
+/*
+  Sale bastante más que antes: con un asomo corto, entre el hueco estrecho y
+  la portada grande, el gesto no se alcanzaba a apreciar. Ahora sobresale
+  como una cuarta parte del ancho de la tarjeta, que a cualquier tamaño de
+  portada se lee como medio disco fuera de la funda.
+*/
 .album-card:hover .album-card-disc,
 .album-card:focus-visible .album-card-disc {
   opacity: 1;
-  transform: translateX(28%);
+  transform: translateX(42%);
 }
 
 /*
@@ -2085,8 +2162,22 @@ body {
 
 /* --- Tabla de datos --- */
 
+/*
+  La tabla desplaza por dentro, no arrastrando la página entera.
+
+  Es lo que hace falta para que la cabecera se quede pegada: `overflow-x`
+  convierte esta caja en el contenedor de desplazamiento, y un elemento
+  `sticky` se pega a su contenedor de desplazamiento más cercano. Sin una
+  altura acotada aquí no hay desplazamiento vertical al que pegarse, y la
+  cabecera se iba hacia arriba con las filas.
+
+  De paso resuelve lo de siempre en una tabla larga: con 250 discos, saber
+  qué columna es cuál obligaba a subir hasta arriba del todo.
+*/
 .collection-table-wrap {
-  overflow-x: auto;
+  overflow: auto;
+  max-height: calc(100vh - 21rem);
+  min-height: 16rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--bg-card);
@@ -2323,9 +2414,12 @@ body {
 }
 
 @media (max-width: 520px) {
+  /* En una ventana muy angosta el hueco se aprieta, pero el de las columnas
+     se mantiene más ancho que el de las filas: sigue siendo por donde sale
+     el disco. */
   .collection-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.75rem;
+    gap: var(--space-4) var(--space-5);
   }
 
   .collection-toolbar {
