@@ -115,6 +115,7 @@ import {
   type ActiveLoan,
   type CollectionStats
 } from '../core/database/db'
+import { dashboardData, type DashboardData } from '../core/database/dashboard'
 import type { Loan } from '../core/models/loan'
 import type { EditableAlbum } from '../core/albumDraft'
 
@@ -679,6 +680,20 @@ export function registerIpcHandlers(): void {
     'collections:stats',
     (_event, collectionId: number): Result<CollectionStats> =>
       attemptSync(() => collectionStats(getDatabase(), collectionId))
+  )
+
+  /*
+    Los paneles del inicio, todos en una sola llamada.
+
+    La fecha y el año los pone el renderer y no el proceso principal: son la
+    fecha LOCAL de quien está usando la app, y calcularla aquí con
+    `new Date()` daría la del sistema, que en la práctica es la misma pero
+    deja el cálculo del "hoy" repartido en dos sitios.
+  */
+  ipcMain.handle(
+    'collections:dashboard',
+    (_event, collectionId: number, hoy: string, anoActual: number): Result<DashboardData> =>
+      attemptSync(() => dashboardData(getDatabase(), collectionId, hoy, anoActual))
   )
 
   // --- Setlists ----------------------------------------------------------

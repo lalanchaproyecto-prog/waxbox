@@ -35,6 +35,7 @@ import type {
   ActiveLoan,
   CollectionStats
 } from '../core/database/db'
+import type { DashboardData } from '../core/database/dashboard'
 import type { Loan } from '../core/models/loan'
 import type { DeezerTrackRef } from '../core/services/deezer'
 import type { PlaybackSource } from '../core/player/queue'
@@ -181,6 +182,14 @@ const api = {
 
   collectionStats: (collectionId: number): Promise<Result<CollectionStats>> =>
     ipcRenderer.invoke('collections:stats', collectionId),
+
+  /** Los paneles del inicio. La fecha va desde aquí: es la local de quien usa la app. */
+  dashboardData: (
+    collectionId: number,
+    hoy: string,
+    anoActual: number
+  ): Promise<Result<DashboardData>> =>
+    ipcRenderer.invoke('collections:dashboard', collectionId, hoy, anoActual),
 
   listAlbumTracks: (albumId: number): Promise<Result<BrowsableTrack[]>> =>
     ipcRenderer.invoke('collection:albumTracks', albumId),

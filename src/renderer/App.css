@@ -5415,30 +5415,123 @@ body {
    ========================================================================== */
 
 /*
-  Abre con el objeto, no con estadísticas.
+  Todo el inicio está hecho de tarjetas iguales.
 
-  Tres cifras enormes en tres tarjetas es la respuesta de plantilla para
-  cualquier tablero, y además ninguna de las tres es lo que trae a nadie
-  aquí. La pregunta real frente a un estante lleno es qué poner, y es la
-  única que una app puede contestar mejor que mirarlo. Los totales quedan en
-  el subtítulo, en la mono: son contexto, no titular.
+  Antes "¿Qué escucho hoy?" tenía caja propia y el resto quedaba suelto sobre
+  el fondo, así que parecían cosas de distinta importancia cuando son todas
+  lo mismo: un panel que mira un aspecto de la colección. Lo que distingue a
+  uno de otro es cuánto ocupa y qué contiene, no si tiene marco.
+
+  Los totales van en el subtítulo de la cabecera, en la mono. Tres cifras
+  gigantes en tres cajas es la respuesta de plantilla de cualquier tablero, y
+  ninguna de las tres es lo que trae a nadie aquí.
 */
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+}
+
+/* Lo que necesita sitio: la portada de la sugerencia, la grilla, el tiempo. */
+.home-card-ancha {
+  grid-column: 1 / -1;
+}
+
+.home-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.home-card-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-dimmed);
+}
+
+.home-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.card-nota {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+
+/* --- Reordenar paneles --- */
+
+.orden-aviso {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.orden-controles {
+  display: flex;
+  gap: var(--space-1);
+  flex: none;
+}
+
+.orden-controles button {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.orden-controles button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.orden-controles button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* --- ¿Qué escucho hoy? --- */
 
 .tonight {
   display: grid;
   grid-template-columns: minmax(180px, 260px) 1fr;
   gap: var(--space-6);
   align-items: center;
-  padding: var(--space-5);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
 }
 
 .tonight-object {
   position: relative;
-  /* Hueco reservado para el disco, igual que en la ficha: sin él, el disco
-     se mete bajo el texto de al lado y desaparece. */
+  /* Hueco reservado para el disco: sin él se mete bajo el texto de al lado
+     y, como ese texto va después en el documento, lo tapa. */
   padding-right: 30%;
 }
 
@@ -5460,6 +5553,14 @@ body {
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
+}
+
+.tonight-hora {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--accent);
 }
 
 .tonight-title {
@@ -5490,7 +5591,7 @@ body {
   margin-top: var(--space-2);
 }
 
-/* --- Aviso: solo cuando hay algo que hacer --- */
+/* --- Aviso de préstamos --- */
 
 .home-alert {
   display: flex;
@@ -5526,23 +5627,7 @@ body {
   flex: none;
 }
 
-/* --- Secciones --- */
-
-.home-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  min-width: 0;
-}
-
-.home-section-title {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  color: var(--text-dimmed);
-}
+/* --- Últimas incorporaciones --- */
 
 .home-recent-grid {
   display: grid;
@@ -5551,13 +5636,6 @@ body {
 }
 
 /* --- Medidores --- */
-
-.home-meters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--space-6);
-  align-items: start;
-}
 
 .meters {
   list-style: none;
@@ -5583,10 +5661,8 @@ body {
   text-overflow: ellipsis;
 }
 
-/*
-  La pista es un paso claro del mismo azul del relleno, no un gris: así el
-  estado se lee a lo largo de toda la barra y no solo donde hay color.
-*/
+/* La pista es un paso claro del mismo azul, no un gris: así el estado se lee
+   a lo largo de toda la barra y no solo donde hay color. */
 .meter-track {
   height: 10px;
   background: var(--halo-accent);
@@ -5595,13 +5671,11 @@ body {
 }
 
 /*
-  Un solo color para todas las barras. Pintar cada una de un tono distinto
-  según su tamaño repetiría en color lo que el largo ya dice, y gastaría el
-  único canal libre que queda sin aportar nada.
+  Un solo color para todas. Pintar cada barra de un tono distinto según su
+  tamaño repetiría en color lo que el largo ya dice.
 
   Cuadrada en el origen y redondeada en la punta: el extremo redondeado marca
-  dónde termina el dato; redondear también el arranque separaría la barra de
-  su línea de base.
+  dónde termina el dato; redondear el arranque la separaría de su base.
 */
 .meter-fill {
   display: block;
@@ -5618,7 +5692,256 @@ body {
   text-align: right;
 }
 
+/* --- Línea de tiempo por década --- */
+
+/*
+  Columnas y no barras horizontales porque el eje es el tiempo, y el tiempo
+  se lee de izquierda a derecha. Las décadas sin discos se dibujan igual,
+  vacías: el hueco es parte de la forma de una colección.
+*/
+.decadas {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  min-height: 9rem;
+}
+
+.decada {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.decada-valor {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  height: 1rem;
+}
+
+.decada-track {
+  width: 100%;
+  max-width: 3rem;
+  height: 6rem;
+  display: flex;
+  align-items: flex-end;
+  background: var(--halo-accent);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.decada-fill {
+  width: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.decada-label {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+}
+
+.decada-label::before {
+  content: "'";
+}
+
+/* --- Racha --- */
+
+/*
+  La cifra grande de esta tarjeta va en la tipografía de texto, no en la
+  display: una cifra suelta con letra de titular se lee como decoración de
+  marca en vez de como un dato.
+*/
+.racha-cifra {
+  font-size: var(--text-xl);
+  color: var(--text-heading);
+  line-height: 1;
+}
+
+.racha-nota {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.racha-mejor {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+}
+
+/* --- Listas compactas: olvidados, aniversarios --- */
+
+.mini-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.mini-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.mini-row:hover {
+  background: var(--bg-hover);
+}
+
+.mini-cover {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.mini-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset);
+}
+
+.mini-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.mini-title {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-sub {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-tag {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+  flex: none;
+}
+
+/* Los años que cumple un disco: el dato es el número, así que va grande. */
+.efemeride-anos {
+  flex: none;
+  width: 2.75rem;
+  font-size: var(--text-md);
+  color: var(--accent);
+  text-align: right;
+}
+
+/* --- Hitos --- */
+
+.hitos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hito {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--accent);
+}
+
+/* Lo que todavía no llega se ve distinto por la forma, no solo por el color. */
+.hito-pendiente {
+  border-left-style: dashed;
+  border-left-color: var(--border-strong);
+}
+
+.hito-titulo {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.hito-detalle {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* --- Salud --- */
+
+.salud-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.salud-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.salud-list li:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.salud-label {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.salud-count {
+  font-size: var(--text-sm);
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+.salud-ejemplos {
+  grid-column: 1 / -1;
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+  line-height: var(--leading-normal);
+}
+
+.salud-ejemplos .btn-link {
+  font-size: var(--text-xs);
+}
+
 /* --- Ventanas angostas --- */
+
+@media (max-width: 900px) {
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 @media (max-width: 720px) {
   .tonight {
