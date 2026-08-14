@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { AlbumSummary, BrowsableTrack } from '@core/database/db'
 import { getFormat } from '@core/models/formats'
 import AddToSetlistButton from './AddToSetlistButton'
+import PageHeader from './PageHeader'
+import { IconChevron, IconClose, IconSearch } from './Icons'
 
 interface ExploreScreenProps {
   albums: AlbumSummary[]
@@ -62,25 +64,55 @@ function ExploreScreen({ albums, collectionId, target, onBack }: ExploreScreenPr
     : albums
 
   return (
-    <div className="explore">
-      <header className="collection-header">
-        <div>
-          <h2>Explorar mi colección</h2>
-          <p className="collection-count">
-            {target
-              ? `Agregando a "${target.name}" — haz clic en + para sumar una canción`
-              : 'Haz clic en un disco para ver sus canciones'}
+    <div className="screen explore-screen">
+      {/*
+        Explorar es una sub-página de verdad —se llega desde un setlist o desde
+        la colección y se vuelve— así que lleva "volver" arriba, como la ficha
+        de un disco. Antes tenía una cabecera propia con un botón "Volver" a la
+        derecha que era distinto al de todas las demás pantallas.
+      */}
+      <PageHeader
+        title="Explorar mi colección"
+        subtitle={
+          query
+            ? `${filtered.length} de ${albums.length} discos`
+            : filtered.length === 1
+              ? '1 disco'
+              : `${filtered.length} discos`
+        }
+        onBack={onBack}
+        backLabel={target ? 'Volver al setlist' : 'Volver'}
+        actions={
+          target && (
+            <button className="btn btn-primary" onClick={onBack}>
+              Terminar
+            </button>
+          )
+        }
+      />
+
+      {/*
+        A dónde están yendo las canciones.
+
+        Es la misma franja que marca "estás viendo una lista" en la colección:
+        cuando la pantalla no hace lo de siempre sino que forma parte de una
+        tarea, eso tiene que leerse antes que nada.
+      */}
+      {target && (
+        <div className="explore-destino">
+          <span className="overline">Sumando canciones a</span>
+          <h3 className="explore-destino-nombre">{target.name}</h3>
+          <p className="card-nota">
+            Abre un disco y pulsa + en cada canción que quieras. Puedes tomar temas de
+            discos distintos sin salir de aquí.
           </p>
         </div>
-        <button className="btn btn-ghost" onClick={onBack}>
-          {target ? 'Terminar' : 'Volver'}
-        </button>
-      </header>
+      )}
 
       <div className="collection-toolbar">
         <div className="search-box">
           <span className="search-icon" aria-hidden="true">
-            &#128269;
+            <IconSearch size={16} />
           </span>
           <input
             type="text"
@@ -88,11 +120,17 @@ function ExploreScreen({ albums, collectionId, target, onBack }: ExploreScreenPr
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Filtrar por artista, álbum o género..."
             className="search-input"
+            aria-label="Filtrar discos"
             spellCheck={false}
           />
           {search && (
-            <button className="search-clear" onClick={() => setSearch('')} title="Limpiar">
-              ✕
+            <button
+              className="search-clear"
+              onClick={() => setSearch('')}
+              title="Limpiar"
+              aria-label="Limpiar el filtro"
+            >
+              <IconClose size={16} />
             </button>
           )}
         </div>
@@ -128,18 +166,20 @@ function ExploreScreen({ albums, collectionId, target, onBack }: ExploreScreenPr
 
                 <span className="explore-album-body">
                   <span className="explore-album-title">{album.title}</span>
-                  <span className="explore-album-sub">
+                  {/* Los datos de catálogo en mono: es lo que se compara de una
+                      fila a la siguiente, igual que en las ediciones. */}
+                  <span className="explore-album-sub numeric">
                     {album.artists} · {album.year ?? '—'} · {format?.label ?? album.format}
                     {album.genres.length > 0 && ` · ${album.genres.join(', ')}`}
                   </span>
                 </span>
 
-                <span className="explore-album-count">
+                <span className="explore-album-count numeric">
                   {album.trackCount === 1 ? '1 canción' : `${album.trackCount} canciones`}
                 </span>
 
                 <span className="explore-album-chevron" aria-hidden="true">
-                  {isOpen ? '▾' : '▸'}
+                  <IconChevron size={16} />
                 </span>
               </button>
 
@@ -155,11 +195,11 @@ function ExploreScreen({ albums, collectionId, target, onBack }: ExploreScreenPr
                     <ol className="explore-track-rows">
                       {tracks.map((track) => (
                         <li className="explore-track-row" key={track.id}>
-                          <span className="explore-track-number">
+                          <span className="explore-track-number numeric">
                             {track.side !== 'N/A' ? `${track.side}${track.number}` : track.number}
                           </span>
                           <span className="explore-track-title">{track.title}</span>
-                          <span className="explore-track-duration">
+                          <span className="explore-track-duration numeric">
                             {track.duration ?? '—'}
                           </span>
                           <AddToSetlistButton

@@ -498,6 +498,11 @@ body {
   text-underline-offset: 2px;
 }
 
+/* El enlace que borra algo. Va en rojo porque no se deshace. */
+.btn-link-danger {
+  color: var(--danger);
+}
+
 .btn-link:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -3055,13 +3060,6 @@ body {
 
 /* ---------- Diálogo de exportación ---------- */
 
-.collection-header-actions,
-.setlist-detail-actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
 .export-modal {
   max-width: 34rem;
 }
@@ -3935,118 +3933,208 @@ body {
 
 /* ---------- Pantalla de setlists ---------- */
 
-.setlists {
+/*
+  Un setlist es un objeto del cajón, no una fila de una tabla: tiene nombre,
+  tiene imagen y se reconoce de un vistazo. Por eso la lista es una cuadrícula
+  de fundas, igual que la colección.
+
+  Antes cada setlist era una fila de texto con "Renombrar" y "Borrar" colgando
+  a la derecha —tres cosas que pulsar por tarjeta, ninguna clara— y la imagen,
+  que se puede elegir, no se veía por ningún sitio hasta entrar. Ahora la
+  tarjeta entera es UN botón que abre, y todo lo que se le puede hacer vive
+  dentro, que es donde se sabe a cuál se le está haciendo.
+*/
+
+.setlist-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-5);
+}
+
+.setlist-card {
   width: 100%;
-  max-width: 900px;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-3);
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-md);
 }
 
-.setlist-create-row,
-.setlist-rename {
+.setlist-card-cover {
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--dur-base) var(--ease);
+}
+
+.setlist-card:hover .setlist-card-cover,
+.setlist-card:focus-visible .setlist-card-cover {
+  border-color: var(--accent);
+}
+
+.setlist-card-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Sin imagen no se inventa una portada: se deja la funda vacía con su ícono. */
+.setlist-card-cover-vacia {
+  width: 100%;
+  height: 100%;
   display: flex;
-  gap: 0.6rem;
   align-items: center;
+  justify-content: center;
+  color: var(--text-dimmed);
 }
 
-.setlist-create-row input,
-.setlist-rename input {
+.setlist-card-name {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-heading);
+  line-height: var(--leading-tight);
+}
+
+.setlist-card-meta {
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
+}
+
+/* --- Crear uno nuevo --- */
+
+.setlist-crear {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+}
+
+.setlist-crear-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.setlist-crear-fila input,
+.setlist-renombrar input {
   flex: 1;
-  background: var(--bg-input);
+  min-width: 14rem;
+  background: var(--bg-card);
   border: 1px solid var(--border-input);
-  border-radius: 8px;
-  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
 }
 
-.setlist-create-row input:focus,
-.setlist-rename input:focus {
+.setlist-crear-fila input:focus,
+.setlist-renombrar input:focus {
   outline: none;
   border-color: var(--accent);
 }
 
-.setlist-create-row .btn,
-.setlist-rename .btn {
-  padding: 0.6rem 1.1rem;
-  font-size: 0.9rem;
-}
-
-.setlist-cards {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.setlist-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.9rem 1.1rem;
-}
-
-.setlist-card-main {
-  flex: 1;
-  min-width: 12rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  background: none;
-  border: none;
-  text-align: left;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.setlist-card-name {
-  color: var(--text-heading);
-  font-size: 1.02rem;
-  font-weight: 600;
-}
-
-.setlist-card-meta {
-  color: var(--text-dimmed);
-  font-size: 0.82rem;
-}
-
-.setlist-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-}
-
-.btn-link-danger {
-  color: var(--danger);
-}
-
 /* ---------- Detalle de un setlist ---------- */
 
-.setlist-detail-header {
+/*
+  La franja de gestión: la imagen del setlist y todo lo que se le puede
+  cambiar, en el mismo sitio.
+
+  Es la misma pieza que marca "estás viendo una lista" en la colección —panel
+  hundido con filete de acento a la izquierda— porque es la misma idea: esto
+  no es una pantalla más, es un objeto tuyo abierto.
+*/
+.setlist-gestion {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
   align-items: flex-start;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-4);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
 }
 
-.setlist-detail-title {
+/* La imagen es el botón de cambiarla: verla y tocarla son la misma cosa. */
+.setlist-portada {
+  width: 72px;
+  aspect-ratio: 1;
+  flex: none;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease);
+}
+
+.setlist-portada:hover {
+  border-color: var(--accent);
+}
+
+.setlist-portada img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.setlist-portada-vacia {
+  width: 100%;
+  height: 100%;
   display: flex;
-  align-items: baseline;
-  gap: 0.85rem;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dimmed);
+}
+
+.setlist-gestion-cuerpo {
+  flex: 1;
+  min-width: 16rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.gestion-acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
   flex-wrap: wrap;
 }
 
-.setlist-detail-meta {
-  color: var(--text-dimmed);
-  font-size: 0.85rem;
+/* El ícono acompaña a la palabra, nunca la sustituye. */
+.gestion-acciones .btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
 }
+
+.setlist-renombrar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* --- Las canciones, en el orden que decidiste --- */
 
 .setlist-track-rows {
   list-style: none;
@@ -4057,28 +4145,34 @@ body {
 .setlist-track-row {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.55rem 0.25rem;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2);
   border-bottom: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.setlist-track-row:hover {
+  background: var(--bg-hover);
 }
 
 .setlist-track-position {
-  color: var(--text-dimmed);
-  font-size: 0.85rem;
-  min-width: 1.5rem;
+  min-width: 2rem;
   text-align: right;
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
 }
 
 .setlist-track-cover {
-  width: 2.4rem;
-  height: 2.4rem;
-  flex-shrink: 0;
-  border-radius: 4px;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
   overflow: hidden;
-  background: var(--bg-inset);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
 }
 
 .setlist-track-cover img {
@@ -4087,93 +4181,68 @@ body {
   object-fit: cover;
 }
 
-.setlist-track-cover-empty {
-  font-size: 1rem;
-}
-
 .setlist-track-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
   min-width: 0;
 }
 
 .setlist-track-title {
+  font-size: var(--text-sm);
   color: var(--text-primary);
-  font-size: 0.94rem;
 }
 
 .setlist-track-sub {
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  font-size: 0.78rem;
 }
 
 .setlist-track-duration {
+  flex: none;
+  font-size: var(--text-xs);
   color: var(--text-dimmed);
-  font-size: 0.82rem;
-  flex-shrink: 0;
 }
 
 .setlist-track-actions {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  flex-shrink: 0;
-}
-
-.setlist-move-btn,
-.setlist-remove-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  width: 1.7rem;
-  height: 1.7rem;
-  color: var(--text-muted);
-  font-size: 0.7rem;
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
-}
-
-.setlist-move-btn:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--text-primary);
-}
-
-.setlist-move-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.setlist-remove-btn:hover {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-.setlist-detail-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  border-top: 1px solid var(--border-separator);
-  padding-top: 1.25rem;
+  gap: var(--space-1);
+  flex: none;
 }
 
 /* ---------- Explorar la colección ---------- */
-
-.explore {
-  width: 100%;
-  max-width: 900px;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
 
 .explore-albums {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
+}
+
+/*
+  A dónde van las canciones que vayas pulsando. Misma pieza que la franja de
+  gestión del setlist: cuando la pantalla forma parte de una tarea y no está
+  haciendo lo de siempre, eso se lee antes que nada.
+*/
+.explore-destino {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+}
+
+.explore-destino-nombre {
+  font-family: var(--font-display);
+  font-variation-settings: var(--width-display);
+  font-size: var(--text-md);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-heading);
 }
 
 /*
@@ -4183,30 +4252,30 @@ body {
 .explore-album {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .explore-album.open {
-  border-color: var(--border-accent);
+  border-color: var(--border-strong);
 }
 
 .explore-album-head {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  gap: var(--space-3);
   background: none;
   border: none;
-  border-radius: 9px;
-  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
   text-align: left;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background-color var(--dur-base) var(--ease);
 }
 
 .explore-album.open .explore-album-head {
-  border-radius: 9px 9px 0 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
 .explore-album-head:hover {
@@ -4216,13 +4285,14 @@ body {
 .explore-album-cover {
   width: 2.8rem;
   height: 2.8rem;
-  flex-shrink: 0;
-  border-radius: 5px;
+  flex: none;
   overflow: hidden;
-  background: var(--bg-inset);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
 }
 
 .explore-album-cover img {
@@ -4231,50 +4301,66 @@ body {
   object-fit: cover;
 }
 
-.explore-album-cover-empty {
-  font-size: 1.2rem;
+/*
+  El emoji del formato cuando no hay portada. Lleva color explícito porque en
+  los equipos donde la fuente de emoji es monocroma el glifo se pinta con el
+  color del texto, y aquí heredaba el del botón: sobre el hueco hundido se
+  quedaba en 1.5:1, o sea invisible.
+*/
+.explore-album-cover-empty,
+.setlist-track-cover-empty {
+  font-size: var(--text-md);
+  color: var(--text-muted);
 }
 
 .explore-album-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
   min-width: 0;
 }
 
 .explore-album-title {
-  color: var(--text-heading);
-  font-size: 0.97rem;
+  font-size: var(--text-sm);
   font-weight: 600;
+  color: var(--text-heading);
 }
 
 .explore-album-sub {
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  font-size: 0.79rem;
 }
 
 .explore-album-count {
+  flex: none;
+  font-size: var(--text-xs);
   color: var(--text-dimmed);
-  font-size: 0.79rem;
-  flex-shrink: 0;
 }
 
+/*
+  El mismo triángulo en los dos estados, girando. Cambiar el dibujo obligaría
+  al ojo a reconocer una forma nueva en vez de seguir un movimiento.
+*/
 .explore-album-chevron {
+  display: flex;
+  flex: none;
   color: var(--text-dimmed);
-  font-size: 0.8rem;
-  flex-shrink: 0;
+  transition: transform var(--dur-base) var(--ease);
+}
+
+.explore-album.open .explore-album-chevron {
+  transform: rotate(90deg);
 }
 
 .explore-tracks {
   border-top: 1px solid var(--border-subtle);
-  padding: 0.5rem 0.9rem 0.7rem;
+  padding: var(--space-2) var(--space-4) var(--space-3);
 }
 
 .explore-loading {
+  font-size: var(--text-sm);
   color: var(--text-dimmed);
-  font-size: 0.83rem;
-  padding: 0.4rem 0;
+  padding: var(--space-2) 0;
 }
 
 .explore-track-rows {
@@ -4284,8 +4370,8 @@ body {
 .explore-track-row {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.4rem 0;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -4294,25 +4380,26 @@ body {
 }
 
 .explore-track-number {
-  color: var(--text-dimmed);
-  font-size: 0.8rem;
-  min-width: 2rem;
+  min-width: 2.4rem;
   text-align: right;
-  flex-shrink: 0;
+  flex: none;
+  font-size: var(--text-xs);
+  color: var(--text-dimmed);
 }
 
 .explore-track-title {
   flex: 1;
-  color: var(--text-primary);
-  font-size: 0.9rem;
   min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
 }
 
 .explore-track-duration {
+  flex: none;
+  font-size: var(--text-xs);
   color: var(--text-dimmed);
-  font-size: 0.8rem;
-  flex-shrink: 0;
 }
+
 
 /* ---------- Sin resultados en MusicBrainz ---------- */
 
@@ -4494,16 +4581,25 @@ body {
   margin-left: auto;
 }
 
+/* Botón cuadrado de un solo ícono: subir, bajar, quitar. Centrado con flex
+   porque ahora lleva un SVG dentro y no un carácter. */
 .icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
   background: transparent;
   border: 1px solid var(--border-input);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
   width: 1.9rem;
   height: 1.9rem;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   line-height: 1;
+  transition: border-color var(--dur-base) var(--ease),
+    color var(--dur-base) var(--ease),
+    background-color var(--dur-base) var(--ease);
 }
 
 .icon-btn:hover:not(:disabled) {
@@ -5126,14 +5222,6 @@ body {
   box-shadow: var(--shadow-1);
 }
 
-.setlist-detail-image {
-  width: 2.8rem;
-  height: 2.8rem;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  box-shadow: var(--shadow-1);
-}
-
 /* ---------- Etiquetas propias ---------- */
 
 .tag-editor {
@@ -5392,67 +5480,69 @@ body {
 
 /* ---------- Lista de deseos ---------- */
 
-.wishlist-screen {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 1.5rem;
-}
-
-.wishlist-form {
-  margin-bottom: 1.5rem;
-}
+/*
+  Los deseos vienen ordenados por prioridad desde la base, así que la lista ya
+  se lee de arriba abajo como "qué buscar primero". El filete de la izquierda
+  refuerza ese orden, pero quien manda es la palabra: ALTA, MEDIA o BAJA
+  escrita en la ficha. Antes eran "!!!", "!!" y "!" en tres colores, que
+  obligaban a adivinar la escala y dejaban fuera a quien no distingue el rojo
+  del azul.
+*/
 
 .wishlist-items {
   list-style: none;
-  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-3);
 }
 
 .wishlist-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.65rem 0.9rem;
-  background: var(--bg-input);
-  border: 1px solid var(--border-input);
-  border-radius: var(--radius-sm);
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius-md);
 }
 
-.wishlist-item-main {
+.wishlist-item[data-priority='1'] {
+  border-left-color: var(--accent);
+}
+
+.wishlist-item[data-priority='3'] {
+  border-left-color: var(--border);
+}
+
+.wishlist-item-info {
   display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
+  flex-direction: column;
+  gap: var(--space-1);
   min-width: 0;
   flex: 1;
 }
 
 .wishlist-priority {
-  font-weight: 700;
-  font-size: var(--text-xs);
-  flex-shrink: 0;
-  width: 1.6em;
-  text-align: center;
+  color: var(--text-dimmed);
 }
 
-.wishlist-priority[data-priority="1"] { color: var(--danger); }
-.wishlist-priority[data-priority="2"] { color: var(--accent); }
-.wishlist-priority[data-priority="3"] { color: var(--text-dimmed); }
-
-.wishlist-item-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-}
-
+/*
+  El título manda sobre el artista: en una lista de deseos lo que se busca es
+  un disco concreto, y de un mismo artista puedes querer tres.
+*/
 .wishlist-item-title {
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-heading);
+  line-height: var(--leading-tight);
+}
+
+.wishlist-item-artist {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .wishlist-item-meta {
@@ -5461,16 +5551,19 @@ body {
 }
 
 .wishlist-item-notes {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  font-style: italic;
+  font-size: var(--text-sm);
+  color: var(--text-body);
+  line-height: var(--leading-normal);
 }
 
 .wishlist-item-actions {
   display: flex;
-  gap: 0.3rem;
-  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  flex-wrap: wrap;
 }
+
 
 /* ---------- Panel de préstamos activos ---------- */
 
@@ -6819,6 +6912,9 @@ body {
 */
 .lista-abierta .overline,
 .guardar-lista .overline,
-.ficha-aside .overline {
+.ficha-aside .overline,
+.setlist-gestion .overline,
+.setlist-crear .overline,
+.explore-destino .overline {
   color: var(--text-muted);
 }

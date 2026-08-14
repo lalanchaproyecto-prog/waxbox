@@ -6,6 +6,7 @@ import ExportDialog from './ExportDialog'
 import GenerateSetlistDialog from './GenerateSetlistDialog'
 import ImagePicker from './ImagePicker'
 import PageHeader from './PageHeader'
+import { IconClose, IconDown, IconEdit, IconImage, IconTrash, IconUp } from './Icons'
 import { imageSrc, type ImageRef } from '@core/models/imageRef'
 
 interface SetlistsScreenProps {
@@ -17,6 +18,22 @@ interface SetlistsScreenProps {
   onExplore: (setlist: { id: number; name: string }) => void
   /** Setlist que debe abrirse al entrar, si se viene de vuelta del modo explorar. */
   initialSetlistId?: number | null
+}
+
+/** «12 canciones · 48 min», con el aviso de lo que no se puede sumar. */
+function describeSetlist(
+  trackCount: number,
+  totalSeconds: number,
+  withoutDuration: number
+): string {
+  const partes = [trackCount === 1 ? '1 canción' : `${trackCount} canciones`]
+  if (totalSeconds > 0) partes.push(formatTotalDuration(totalSeconds))
+  if (withoutDuration > 0) {
+    partes.push(
+      withoutDuration === 1 ? '1 sin duración' : `${withoutDuration} sin duración`
+    )
+  }
+  return partes.join(' · ')
 }
 
 function SetlistsScreen({
@@ -32,13 +49,13 @@ function SetlistsScreen({
 
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
-  const [renamingId, setRenamingId] = useState<number | null>(null)
+  const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState('')
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
-  const [exportingId, setExportingId] = useState<number | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [generating, setGenerating] = useState(false)
-  /** Setlist al que se le está eligiendo imagen. */
-  const [imagenDe, setImagenDe] = useState<SetlistSummary | SetlistDetail | null>(null)
+  /** Setlist al que se le está eligiendo imagen: siempre el que está abierto. */
+  const [imagenDe, setImagenDe] = useState<SetlistDetail | null>(null)
 
   const allGenres = useMemo(() => {
     const set = new Set<string>()
@@ -72,6 +89,14 @@ function SetlistsScreen({
     else loadDetail(openId)
   }, [openId, loadDetail])
 
+  /** Al cerrar un setlist se olvida todo lo que se estaba haciendo con él. */
+  function closeDetail() {
+    setOpenId(null)
+    setRenaming(false)
+    setConfirmDelete(false)
+    setExporting(false)
+  }
+
   async function handleCreate() {
     const name = newName.trim()
     if (!name) return
@@ -98,7 +123,7 @@ function SetlistsScreen({
       return
     }
 
-    setRenamingId(null)
+    setRenaming(false)
     setRenameValue('')
     await refreshList()
     if (openId === setlistId) await loadDetail(setlistId)
@@ -111,8 +136,8 @@ function SetlistsScreen({
       return
     }
 
-    setConfirmDeleteId(null)
-    if (openId === setlistId) setOpenId(null)
+    setConfirmDelete(false)
+    if (openId === setlistId) closeDetail()
     await refreshList()
   }
 
@@ -149,73 +174,160 @@ function SetlistsScreen({
 
   // --- Detalle de un setlist ---------------------------------------------
 
+  /*
+    TODO lo que se le puede hacer a un setlist vive AQUÍ dentro, y no repartido
+    entre la lista y el detalle.
+
+    Antes cada tarjeta de la lista llevaba colgando "Renombrar" y "Borrar", así
+    que la lista era una cuadrícula de tarjetas con tres cosas que pulsar y
+    ninguna clara. Abrir un setlist es la manera de decir "quiero trabajar con
+    este", y es ahí donde tiene sentido ofrecer todo lo demás — el mismo
+    criterio que en las listas inteligentes de la colección.
+  */
   if (openId !== null && detail) {
     const seconds = detail.tracks.map((track) => durationToSeconds(track.duration))
     const missing = seconds.filter((value) => value === null).length
     const totalSeconds = seconds.reduce<number>((sum, value) => sum + (value ?? 0), 0)
+    const portada = imageSrc(detail.image)
 
     return (
-      <div className="setlists">
-        <header className="setlist-detail-header">
-          <button className="btn-link" onClick={() => setOpenId(null)}>
-            ← Todos mis setlists
+      <div className="screen setlist-detail">
+        <PageHeader
+          title={detail.name}
+          subtitle={describeSetlist(detail.tracks.length, totalSeconds, missing)}
+          onBack={closeDetail}
+          backLabel="Todos mis setlists"
+          actions={
+            <>
+              {detail.tracks.length > 0 && (
+                <button className="btn btn-ghost" onClick={() => setExporting(true)}>
+                  Exportar
+                </button>
+              )}
+              <button
+                className="btn btn-primary"
+                onClick={() => onExplore({ id: detail.id, name: detail.name })}
+              >
+                Agregar canciones
+              </button>
+            </>
+          }
+        />
+
+        {/*
+          La franja del objeto: su imagen y lo que se le puede cambiar.
+
+          La imagen va pegada a "Cambiar la imagen" porque es la misma cosa
+          vista y editada; separarlas obligaría a buscar en dos sitios.
+        */}
+        <div className="setlist-gestion">
+          <button
+            className="setlist-portada"
+            onClick={() => setImagenDe(detail)}
+            title={portada ? 'Cambiar la imagen' : 'Poner una imagen'}
+          >
+            {portada ? (
+              <img src={portada} alt="" />
+            ) : (
+              <span className="setlist-portada-vacia" aria-hidden="true">
+                <IconImage size={22} />
+              </span>
+            )}
           </button>
 
-          {renamingId === detail.id ? (
-            <div className="setlist-rename">
-              <input
-                type="text"
-                value={renameValue}
-                onChange={(event) => setRenameValue(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') handleRename(detail.id)
-                  if (event.key === 'Escape') setRenamingId(null)
-                }}
-                autoFocus
-              />
-              <button className="btn btn-ghost" onClick={() => setRenamingId(null)}>
-                Cancelar
-              </button>
-              <button className="btn btn-primary" onClick={() => handleRename(detail.id)}>
-                Guardar
-              </button>
-            </div>
-          ) : (
-            <div className="setlist-detail-title">
-              {imageSrc(detail.image) && (
-                <img className="setlist-detail-image" src={imageSrc(detail.image)!} alt="" />
-              )}
-              <h2>{detail.name}</h2>
-              <button
-                className="btn-link"
-                onClick={() => {
-                  setRenamingId(detail.id)
-                  setRenameValue(detail.name)
-                }}
-              >
-                ✎ Renombrar
-              </button>
-              <button className="btn-link" onClick={() => setImagenDe(detail)}>
-                🖼 Imagen
-              </button>
-            </div>
-          )}
+          <div className="setlist-gestion-cuerpo">
+            <span className="overline">Este setlist</span>
 
-          <p className="setlist-detail-meta">
-            {detail.tracks.length === 1
-              ? '1 canción'
-              : `${detail.tracks.length} canciones`}
-            {totalSeconds > 0 && ` · ${formatTotalDuration(totalSeconds)}`}
-            {missing > 0 && ` (${missing} sin duración conocida)`}
-          </p>
-        </header>
+            {renaming ? (
+              <div className="setlist-renombrar">
+                <input
+                  value={renameValue}
+                  onChange={(event) => setRenameValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') handleRename(detail.id)
+                    if (event.key === 'Escape') setRenaming(false)
+                  }}
+                  autoFocus
+                  spellCheck={false}
+                  aria-label="Nombre del setlist"
+                />
+                <button className="btn btn-ghost btn-sm" onClick={() => setRenaming(false)}>
+                  Cancelar
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => handleRename(detail.id)}
+                  disabled={renameValue.trim().length === 0}
+                >
+                  Guardar nombre
+                </button>
+              </div>
+            ) : (
+              <div className="gestion-acciones">
+                <button
+                  className="btn-link"
+                  onClick={() => {
+                    setRenameValue(detail.name)
+                    setRenaming(true)
+                  }}
+                >
+                  <IconEdit size={15} />
+                  Cambiar el nombre
+                </button>
+
+                <button className="btn-link" onClick={() => setImagenDe(detail)}>
+                  <IconImage size={15} />
+                  {portada ? 'Cambiar la imagen' : 'Poner una imagen'}
+                </button>
+
+                {/*
+                  La confirmación dice qué se pierde y qué no: un setlist son
+                  canciones tomadas de discos que siguen en la colección, y
+                  quien borra necesita saberlo antes y no después.
+                */}
+                {confirmDelete ? (
+                  <span className="confirm-delete">
+                    <span>Se borra el setlist. Tus discos no se tocan.</span>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setConfirmDelete(false)}
+                    >
+                      No
+                    </button>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(detail.id)}>
+                      Sí, borrar
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    className="btn-link btn-link-danger"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    <IconTrash size={15} />
+                    Borrar el setlist
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
         {error && <p className="feedback-error">{error}</p>}
 
         {detail.tracks.length === 0 ? (
-          <p className="empty-note">
-            Este setlist está vacío. Explora tu colección para agregarle canciones.
-          </p>
+          <div className="empty-state">
+            <p className="empty-state-title">Todavía no tiene canciones</p>
+            <p className="empty-state-help">
+              Un setlist se arma tomando temas sueltos de discos distintos. Recorre tu
+              colección y ve sumando los que quieras: el orden lo decides tú.
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={() => onExplore({ id: detail.id, name: detail.name })}
+            >
+              Agregar canciones
+            </button>
+          </div>
         ) : (
           <ol className="setlist-track-rows">
             {detail.tracks.map((track, index) => {
@@ -225,7 +337,7 @@ function SetlistsScreen({
                 : track.canonicalCover
               return (
                 <li className="setlist-track-row" key={track.trackId}>
-                  <span className="setlist-track-position">{index + 1}</span>
+                  <span className="setlist-track-position numeric">{index + 1}</span>
 
                   <span className="setlist-track-cover">
                     {cover ? (
@@ -244,31 +356,40 @@ function SetlistsScreen({
                     </span>
                   </span>
 
-                  <span className="setlist-track-duration">{track.duration ?? '—'}</span>
+                  <span className="setlist-track-duration numeric">
+                    {track.duration ?? '—'}
+                  </span>
 
+                  {/*
+                    El orden es la razón de ser de un setlist, así que subir y
+                    bajar no se esconden detrás de un menú: están en cada fila.
+                  */}
                   <span className="setlist-track-actions">
                     <button
-                      className="setlist-move-btn"
+                      className="icon-btn"
                       onClick={() => handleMove(index, -1)}
                       disabled={index === 0}
                       title="Subir"
+                      aria-label={`Subir «${track.title}»`}
                     >
-                      ▲
+                      <IconUp size={15} />
                     </button>
                     <button
-                      className="setlist-move-btn"
+                      className="icon-btn"
                       onClick={() => handleMove(index, 1)}
                       disabled={index === detail.tracks.length - 1}
                       title="Bajar"
+                      aria-label={`Bajar «${track.title}»`}
                     >
-                      ▼
+                      <IconDown size={15} />
                     </button>
                     <button
-                      className="setlist-remove-btn"
+                      className="icon-btn danger"
                       onClick={() => handleRemoveTrack(track.trackId)}
                       title="Quitar de este setlist"
+                      aria-label={`Quitar «${track.title}» del setlist`}
                     >
-                      ✕
+                      <IconClose size={15} />
                     </button>
                   </span>
                 </li>
@@ -277,29 +398,33 @@ function SetlistsScreen({
           </ol>
         )}
 
-        <footer className="setlist-detail-footer">
-          <div className="setlist-detail-actions">
-            {detail.tracks.length > 0 && (
-              <button className="btn btn-ghost" onClick={() => setExportingId(detail.id)}>
-                Exportar
-              </button>
-            )}
-            <button
-              className="btn btn-primary"
-              onClick={() => onExplore({ id: detail.id, name: detail.name })}
-            >
-              + Agregar canciones
-            </button>
-          </div>
-        </footer>
-
-        {exportingId === detail.id && (
+        {exporting && (
           <ExportDialog
             kind="setlist"
             collectionId={collectionId}
             setlistId={detail.id}
             title={`Exportar «${detail.name}»`}
-            onClose={() => setExportingId(null)}
+            onClose={() => setExporting(false)}
+          />
+        )}
+
+        {imagenDe && (
+          <ImagePicker
+            title={imagenDe.name}
+            current={imagenDe.image}
+            destino="archivo"
+            sugerencia={imagenDe.name}
+            generos={allGenres}
+            onChange={async (image: ImageRef | null) => {
+              const result = await window.api.setSetlistImage(imagenDe.id, image)
+              if (!result.ok) {
+                setError(result.error)
+                return
+              }
+              refreshList()
+              loadDetail(imagenDe.id)
+            }}
+            onClose={() => setImagenDe(null)}
           />
         )}
       </div>
@@ -309,7 +434,7 @@ function SetlistsScreen({
   // --- Lista de setlists --------------------------------------------------
 
   return (
-    <div className="screen setlists">
+    <div className="screen setlists-screen">
       <PageHeader
         title="Setlists"
         subtitle={
@@ -349,147 +474,92 @@ function SetlistsScreen({
       {error && <p className="feedback-error">{error}</p>}
 
       {creating && (
-        <div className="setlist-create-row">
-          <input
-            type="text"
-            value={newName}
-            onChange={(event) => setNewName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') handleCreate()
-              if (event.key === 'Escape') {
+        <div className="setlist-crear">
+          <span className="overline">Nombre del setlist</span>
+          <div className="setlist-crear-fila">
+            <input
+              type="text"
+              value={newName}
+              onChange={(event) => setNewName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') handleCreate()
+                if (event.key === 'Escape') {
+                  setCreating(false)
+                  setNewName('')
+                }
+              }}
+              placeholder="Ej: Fiesta años 80"
+              aria-label="Nombre del setlist"
+              autoFocus
+            />
+            <button
+              className="btn btn-ghost"
+              onClick={() => {
                 setCreating(false)
                 setNewName('')
-              }
-            }}
-            placeholder="Ej: Fiesta años 80"
-            autoFocus
-          />
-          <button
-            className="btn btn-ghost"
-            onClick={() => {
-              setCreating(false)
-              setNewName('')
-            }}
-          >
-            Cancelar
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={handleCreate}
-            disabled={newName.trim().length === 0}
-          >
-            Crear
-          </button>
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={handleCreate}
+              disabled={newName.trim().length === 0}
+            >
+              Crear
+            </button>
+          </div>
         </div>
       )}
 
       {setlists.length === 0 && !creating && (
-        <p className="empty-note">
-          Un setlist es una lista de canciones armada por ti, tomando temas de
-          distintos discos de tu colección. Crea el primero para empezar.
-        </p>
+        <div className="empty-state">
+          <p className="empty-state-title">Ningún setlist todavía</p>
+          <p className="empty-state-help">
+            Un setlist es una lista de canciones armada por ti, tomando temas de discos
+            distintos de tu colección. A diferencia de una lista inteligente, aquí eliges
+            canción por canción y el orden importa: sirve para una fiesta, un viaje o una
+            grabación concreta.
+          </p>
+          <button className="btn btn-primary" onClick={() => setCreating(true)}>
+            Crear el primero
+          </button>
+        </div>
       )}
-
-      <ul className="setlist-cards">
-        {setlists.map((setlist) => (
-          <li className="setlist-card" key={setlist.id}>
-            {renamingId === setlist.id ? (
-              <div className="setlist-rename">
-                <input
-                  type="text"
-                  value={renameValue}
-                  onChange={(event) => setRenameValue(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') handleRename(setlist.id)
-                    if (event.key === 'Escape') setRenamingId(null)
-                  }}
-                  autoFocus
-                />
-                <button className="btn btn-ghost" onClick={() => setRenamingId(null)}>
-                  Cancelar
-                </button>
-                <button className="btn btn-primary" onClick={() => handleRename(setlist.id)}>
-                  Guardar
-                </button>
-              </div>
-            ) : (
-              <>
-                <button className="setlist-card-main" onClick={() => setOpenId(setlist.id)}>
-                  <span className="setlist-card-name">{setlist.name}</span>
-                  <span className="setlist-card-meta">
-                    {setlist.trackCount === 1
-                      ? '1 canción'
-                      : `${setlist.trackCount} canciones`}
-                    {setlist.totalSeconds > 0 &&
-                      ` · ${formatTotalDuration(setlist.totalSeconds)}`}
-                    {setlist.tracksWithoutDuration > 0 &&
-                      ` (${setlist.tracksWithoutDuration} sin duración)`}
-                  </span>
-                </button>
-
-                <div className="setlist-card-actions">
-                  <button
-                    className="btn-link"
-                    onClick={() => {
-                      setRenamingId(setlist.id)
-                      setRenameValue(setlist.name)
-                    }}
-                  >
-                    ✎ Renombrar
-                  </button>
-
-                  {confirmDeleteId === setlist.id ? (
-                    <span className="confirm-delete">
-                      <span>¿Borrar &quot;{setlist.name}&quot;?</span>
-                      <button
-                        className="btn btn-ghost"
-                        onClick={() => setConfirmDeleteId(null)}
-                      >
-                        No
-                      </button>
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => handleDelete(setlist.id)}
-                      >
-                        Sí, borrar
-                      </button>
-                    </span>
-                  ) : (
-                    <button
-                      className="btn-link btn-link-danger"
-                      onClick={() => setConfirmDeleteId(setlist.id)}
-                    >
-                      Borrar
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
 
       {/*
-        La sugerencia de búsqueda sale de los géneros de la colección cuando los
-        hay: el nombre de un setlist generado ("Setlist Rock — 20 canciones")
-        buscado tal cual no daría ninguna imagen, y "rock" sí.
+        Cada setlist es una tarjeta con su imagen, como una funda en el cajón.
+        La tarjeta entera es un solo botón que abre: dentro está todo lo que se
+        le puede hacer.
       */}
-      {imagenDe && (
-        <ImagePicker
-          title={imagenDe.name}
-          current={imagenDe.image}
-          destino="archivo"
-          sugerencia={imagenDe.name}
-          generos={allGenres}
-          onChange={async (image: ImageRef | null) => {
-            const result = await window.api.setSetlistImage(imagenDe.id, image)
-            if (!result.ok) { setError(result.error); return }
-            refreshList()
-            if (detail && detail.id === imagenDe.id) loadDetail(imagenDe.id)
-          }}
-          onClose={() => setImagenDe(null)}
-        />
-      )}
+      <ul className="setlist-grid">
+        {setlists.map((setlist) => {
+          const portada = imageSrc(setlist.image)
+          return (
+            <li key={setlist.id}>
+              <button className="setlist-card" onClick={() => setOpenId(setlist.id)}>
+                <span className="setlist-card-cover">
+                  {portada ? (
+                    <img src={portada} alt="" loading="lazy" />
+                  ) : (
+                    <span className="setlist-card-cover-vacia" aria-hidden="true">
+                      <IconImage size={26} />
+                    </span>
+                  )}
+                </span>
+                <span className="setlist-card-name">{setlist.name}</span>
+                <span className="setlist-card-meta numeric">
+                  {describeSetlist(
+                    setlist.trackCount,
+                    setlist.totalSeconds,
+                    setlist.tracksWithoutDuration
+                  )}
+                </span>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

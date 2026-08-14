@@ -161,6 +161,71 @@ export function IconClose(props: IconProps) {
   )
 }
 
+/** Renombrar, editar un dato. */
+export function IconEdit(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </Svg>
+  )
+}
+
+/** Poner o cambiar una imagen. */
+export function IconImage(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="8.5" cy="9.5" r="1.5" />
+      <path d="m21 16-5-5-6.5 6.5" />
+    </Svg>
+  )
+}
+
+/** Borrar de verdad: sale de la base, no solo de la vista. */
+export function IconTrash(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 7h16" />
+      <path d="M9 7V4.5h6V7" />
+      <path d="M6 7l1 13h10l1-13" />
+    </Svg>
+  )
+}
+
+/** Subir un puesto en una lista ordenada. */
+export function IconUp(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="m6 14 6-6 6 6" />
+    </Svg>
+  )
+}
+
+/** Bajar un puesto. */
+export function IconDown(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="m6 10 6 6 6-6" />
+    </Svg>
+  )
+}
+
+/**
+ * El triángulo que indica si algo está desplegado.
+ *
+ * Es el MISMO ícono en los dos estados y gira con CSS: dos dibujos distintos
+ * harían que el ojo tenga que reconocer una forma nueva en vez de seguir un
+ * movimiento.
+ */
+export function IconChevron(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="m9 6 6 6-6 6" />
+    </Svg>
+  )
+}
+
 /** Exportar. */
 export function IconExport(props: IconProps) {
   return (

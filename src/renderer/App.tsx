@@ -446,6 +446,27 @@ function App() {
     setView('manual')
   }
 
+  /**
+   * Conseguiste un disco que estaba en la lista de deseos.
+   *
+   * Arranca la tarea de agregar con lo que ya habías anotado, así que el paso 1
+   * llega escrito. El deseo NO se borra solo: todavía no hay ningún disco
+   * guardado —la búsqueda puede no dar nada, o puedes arrepentirte a mitad— y
+   * borrar por adelantado sería perder lo anotado a cambio de nada.
+   */
+  function startFromWish(item: { artists: string; title: string; format: string | null }) {
+    setDraft({
+      artist: item.artists,
+      title: item.title,
+      /* El deseo puede no tener formato ("cualquiera"): ahí se cae al mismo
+         formato con el que arranca el buscador cuando no se dice nada. */
+      format: (item.format ?? 'vinilo') as AlbumDraft['format'],
+      coverFront: null,
+      coverBack: null
+    })
+    pushView('add')
+  }
+
   async function handleBrowseArtist(partialDraft: AlbumDraft) {
     setDraft(partialDraft)
     setError(null)
@@ -847,6 +868,7 @@ function App() {
           <WishlistScreen
             collectionId={activeCollectionId}
             onChanged={() => refreshCounts()}
+            onGotIt={startFromWish}
           />
         )}
 
