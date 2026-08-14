@@ -69,19 +69,51 @@ function HomeScreen({
   const [stats, setStats] = useState<CollectionStats | null>(null)
   const [data, setData] = useState<DashboardData | null>(null)
   const [loans, setLoans] = useState<ActiveLoan[]>([])
+  const [errorStats, setErrorStats] = useState<string | null>(null)
+  const [errorPaneles, setErrorPaneles] = useState<string | null>(null)
   const [orden, setOrden] = useState<ModuloId[]>(() => cargarOrden(collectionId))
   const [ordenando, setOrdenando] = useState(false)
 
+  /*
+    Cada llamada se resuelve por su cuenta.
+
+    Antes iban las tres juntas en un `Promise.all` y la pantalla no se
+    dibujaba hasta tenerlas todas: bastaba con que una fallara para dejar el
+    inicio completamente en blanco, sin decir por qué. Ahora los paneles que
+    sí tienen datos se muestran igual y el fallo se cuenta donde ocurrió.
+  */
   const load = useCallback(async () => {
     const ahora = new Date()
-    const [statsRes, loansRes, dataRes] = await Promise.all([
-      window.api.collectionStats(collectionId),
-      window.api.activeLoans(collectionId),
-      window.api.dashboardData(collectionId, today(), ahora.getFullYear())
-    ])
-    if (statsRes.ok) setStats(statsRes.data)
-    if (loansRes.ok) setLoans(loansRes.data)
-    if (dataRes.ok) setData(dataRes.data)
+
+    window.api.collectionStats(collectionId).then((res) => {
+      if (res.ok) setStats(res.data)
+      else setErrorStats(res.error)
+    })
+
+    window.api.activeLoans(collectionId).then((res) => {
+      if (res.ok) setLoans(res.data)
+    })
+
+    /*
+      La comprobación de que el método existe no es paranoia: `dashboardData`
+      se agregó al puente después, y una ventana que quedó abierta desde
+      antes sigue con el puente viejo cargado. Sin esto, la llamada revienta
+      con "no es una función" y se lleva por delante toda la pantalla.
+    */
+    if (typeof window.api.dashboardData !== 'function') {
+      setErrorPaneles(
+        'Los paneles nuevos necesitan reiniciar la app: la ventana abierta todavía tiene la versión anterior del puente interno.'
+      )
+      return
+    }
+
+    try {
+      const res = await window.api.dashboardData(collectionId, today(), ahora.getFullYear())
+      if (res.ok) setData(res.data)
+      else setErrorPaneles(res.error)
+    } catch (error) {
+      setErrorPaneles(String(error))
+    }
   }, [collectionId])
 
   useEffect(() => {
@@ -119,7 +151,23 @@ function HomeScreen({
     [loans]
   )
 
-  if (!stats || !data) return null
+  /*
+    Solo se espera por los totales, que son lo que decide si hay colección.
+    Si además fallan, se dice — antes esto devolvía null y el inicio quedaba
+    en blanco sin ninguna explicación.
+  */
+  if (!stats) {
+    if (!errorStats) return null
+    return (
+      <div className="screen">
+        <PageHeader title={collectionName} />
+        <div className="empty-state">
+          <p className="empty-state-title">No se pudo leer esta colección.</p>
+          <p className="empty-state-help">{errorStats}</p>
+        </div>
+      </div>
+    )
+  }
 
   if (stats.totalAlbums === 0) {
     return (
@@ -191,7 +239,7 @@ function HomeScreen({
       </Card>
     ) : null,
 
-    racha: (
+    racha: data ? (
       <Card key="racha" id="racha" titulo="Racha de catalogación" {...ctl('racha')}>
         <p className="racha-cifra numeric">{data.racha.actual}</p>
         <p className="racha-nota">
@@ -205,10 +253,10 @@ function HomeScreen({
           <p className="racha-mejor numeric">Tu mejor racha: {data.racha.mejor} días</p>
         )}
       </Card>
-    ),
+    ) : null,
 
     olvidados:
-      data.olvidados.length > 0 ? (
+      data && data.olvidados.length > 0 ? (
         <Card
           key="olvidados"
           id="olvidados"
@@ -280,7 +328,7 @@ function HomeScreen({
       ) : null,
 
     hitos:
-      data.hitos.length > 0 ? (
+      data && data.hitos.length > 0 ? (
         <Card key="hitos" id="hitos" titulo="Hitos" {...ctl('hitos')}>
           <ul className="hitos">
             {data.hitos.map((hito) => (
@@ -294,7 +342,7 @@ function HomeScreen({
       ) : null,
 
     efemerides:
-      data.efemerides.length > 0 ? (
+      data && data.efemerides.length > 0 ? (
         <Card key="efemerides" id="efemerides" titulo="Aniversarios este año" {...ctl('efemerides')}>
           <ul className="mini-list">
             {data.efemerides.map((e) => (
@@ -335,7 +383,7 @@ function HomeScreen({
       ) : null,
 
     generos:
-      data.generos.length > 0 ? (
+      data && data.generos.length > 0 ? (
         <Card key="generos" id="generos" titulo="Géneros" {...ctl('generos')}>
           <p className="card-nota">
             De cada 100 discos, cuántos son de este género. Un disco puede tener varios, así
@@ -355,14 +403,14 @@ function HomeScreen({
       ) : null,
 
     decadas:
-      data.decadas.length > 0 ? (
+      data && data.decadas.length > 0 ? (
         <Card key="decadas" id="decadas" ancho titulo="Por década" {...ctl('decadas')}>
           <Decadas datos={data.decadas} />
         </Card>
       ) : null,
 
     salud:
-      data.salud.length > 0 ? (
+      data && data.salud.length > 0 ? (
         <Card key="salud" id="salud" titulo="Salud de la colección" {...ctl('salud')}>
           <p className="card-nota">
             Datos que faltan. No es una lista de errores: se van completando cuando quieras.
@@ -390,7 +438,7 @@ function HomeScreen({
       ) : null,
 
     compras:
-      data.compras.conRegistro > 0 ? (
+      data && data.compras.conRegistro > 0 ? (
         <Card key="compras" id="compras" titulo="Dónde compras" {...ctl('compras')}>
           <p className="card-nota">
             De {numero(data.compras.conRegistro)}{' '}
@@ -466,6 +514,21 @@ function HomeScreen({
           </span>
           <span className="home-alert-go">Ver préstamos →</span>
         </button>
+      )}
+
+      {/*
+        Si los paneles que consultan la base no cargaron, se dice y se sigue
+        mostrando lo demás. Desaparecer sin explicación deja a quien mira sin
+        saber si es que no tiene datos o si algo se rompió.
+      */}
+      {errorPaneles && (
+        <div className="home-fallo">
+          <p className="home-fallo-titulo">Algunos paneles no se pudieron calcular.</p>
+          <p className="home-fallo-detalle">{errorPaneles}</p>
+          <button className="btn btn-ghost btn-sm" onClick={load}>
+            Reintentar
+          </button>
+        </div>
       )}
 
       <div className="home-grid">{orden.map((id) => paneles[id])}</div>

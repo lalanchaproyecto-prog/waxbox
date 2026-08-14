@@ -6342,3 +6342,27 @@ body {
   display: flex;
   gap: var(--space-2);
 }
+
+/* Aviso de que algún panel del inicio no se pudo calcular. */
+.home-fallo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-text);
+  border-radius: var(--radius-md);
+}
+
+.home-fallo-titulo {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--warning-text);
+}
+
+.home-fallo-detalle {
+  font-size: var(--text-xs);
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+}
