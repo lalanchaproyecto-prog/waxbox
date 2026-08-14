@@ -180,6 +180,31 @@ CREATE TABLE IF NOT EXISTS setlists (
 );
 
 /*
+  Listas inteligentes: un filtro guardado con nombre.
+
+  Guarda CRITERIOS, no discos. "Vinilos de los 70 en muy buen estado" no es
+  una lista congelada el día que se creó: es una pregunta que se vuelve a
+  hacer cada vez que se mira, así que un disco que entre mañana y cumpla las
+  condiciones aparece solo.
+
+  Por eso NO hay tabla intermedia con los discos de cada lista, a diferencia
+  de setlist_tracks: no hay nada que guardar salvo la pregunta.
+
+  Los criterios van como JSON en una sola columna. Son un puñado de campos
+  opcionales que siempre se leen juntos y nunca se consultan por separado —
+  normalizarlos en columnas obligaría a migrar el esquema cada vez que se
+  agregue un filtro nuevo a la pantalla de colección.
+*/
+CREATE TABLE IF NOT EXISTS smart_lists (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  collection_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  criteria TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE
+);
+
+/*
   Tabla intermedia: una canción puede estar en varios setlists y un setlist
   tiene varias canciones.
 
@@ -219,6 +244,7 @@ CREATE INDEX IF NOT EXISTS idx_wishlist_collection ON wishlist_items(collection_
 CREATE INDEX IF NOT EXISTS idx_loans_album ON loans(album_id);
 CREATE INDEX IF NOT EXISTS idx_albums_variant ON albums(variant_group_id);
 CREATE INDEX IF NOT EXISTS idx_albums_release_group ON albums(release_group_id);
+CREATE INDEX IF NOT EXISTS idx_smart_lists_collection ON smart_lists(collection_id);
 `
 
 /** Nombre de la colección que se crea sola para quien nunca eligió una. */

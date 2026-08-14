@@ -115,7 +115,15 @@ import {
   type ActiveLoan,
   type CollectionStats
 } from '../core/database/db'
-import { dashboardData, type DashboardData } from '../core/database/dashboard'
+import {
+  dashboardData,
+  listSmartLists,
+  createSmartList,
+  renameSmartList,
+  deleteSmartList,
+  type DashboardData
+} from '../core/database/dashboard'
+import type { SmartCriteria, SmartList } from '../core/models/smartList'
 import type { Loan } from '../core/models/loan'
 import type { EditableAlbum } from '../core/albumDraft'
 
@@ -694,6 +702,47 @@ export function registerIpcHandlers(): void {
     'collections:dashboard',
     (_event, collectionId: number, hoy: string, anoActual: number): Result<DashboardData> =>
       attemptSync(() => dashboardData(getDatabase(), collectionId, hoy, anoActual))
+  )
+
+  // --- Listas inteligentes -----------------------------------------------
+
+  ipcMain.handle(
+    'smartlists:list',
+    (_event, collectionId: number): Result<SmartList[]> =>
+      attemptSync(() => listSmartLists(getDatabase(), collectionId))
+  )
+
+  ipcMain.handle(
+    'smartlists:create',
+    (
+      _event,
+      collectionId: number,
+      name: string,
+      criteria: SmartCriteria
+    ): Result<{ id: number }> =>
+      attemptSync(() => {
+        const created = createSmartList(getDatabase(), collectionId, name, criteria)
+        persist()
+        return created
+      })
+  )
+
+  ipcMain.handle(
+    'smartlists:rename',
+    (_event, listId: number, name: string): Result<void> =>
+      attemptSync(() => {
+        renameSmartList(getDatabase(), listId, name)
+        persist()
+      })
+  )
+
+  ipcMain.handle(
+    'smartlists:delete',
+    (_event, listId: number): Result<void> =>
+      attemptSync(() => {
+        deleteSmartList(getDatabase(), listId)
+        persist()
+      })
   )
 
   // --- Setlists ----------------------------------------------------------

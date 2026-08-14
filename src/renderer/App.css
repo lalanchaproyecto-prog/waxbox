@@ -6561,3 +6561,41 @@ body {
 .orden-ocultar {
   color: var(--danger) !important;
 }
+
+/* ==========================================================================
+   Listas inteligentes
+   ========================================================================== */
+
+/* Guardar el filtro actual como lista, desde la propia colección. */
+.guardar-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  max-width: 32rem;
+}
+
+.guardar-lista-acciones {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+.lista-guardada {
+  padding: var(--space-3) var(--space-4);
+  background: var(--success-bg);
+  border-radius: var(--radius-md);
+  color: var(--success-text);
+  font-size: var(--text-sm);
+}
+
+/* El conteo de una lista en el inicio. Cambia solo: es lo que la hace viva. */
+.lista-count {
+  flex: none;
+  font-size: var(--text-md);
+  color: var(--accent);
+}

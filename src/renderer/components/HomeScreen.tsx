@@ -3,13 +3,17 @@ import type { CollectionStats, ActiveLoan } from '@core/database/db'
 import type { DashboardData } from '@core/database/dashboard'
 import { getFormat } from '@core/models/formats'
 import { loanStatus, today } from '@core/models/loan'
+import { conditionLabel } from '@core/models/condition'
 import PageHeader from './PageHeader'
+import type { SmartCriteria } from '@core/models/smartList'
 
 interface HomeScreenProps {
   collectionId: number
   collectionName: string
   onOpenAlbum: (albumId: number) => void
   onOpenLoans: () => void
+  /** Abre la colección con las condiciones de una lista ya aplicadas. */
+  onOpenLista: (criteria: SmartCriteria) => void
   onAdd: () => void
 }
 
@@ -30,6 +34,7 @@ const MODULOS = [
   { id: 'formatos', label: 'Por formato' },
   { id: 'generos', label: 'Géneros' },
   { id: 'decadas', label: 'Por década' },
+  { id: 'listas', label: 'Mis listas' },
   { id: 'salud', label: 'Salud de la colección' },
   { id: 'compras', label: 'Dónde compras' }
 ] as const
@@ -108,6 +113,7 @@ function HomeScreen({
   collectionName,
   onOpenAlbum,
   onOpenLoans,
+  onOpenLista,
   onAdd
 }: HomeScreenProps) {
   const [stats, setStats] = useState<CollectionStats | null>(null)
@@ -461,6 +467,39 @@ function HomeScreen({
         </Card>
       ) : null,
 
+    /*
+      Listas inteligentes: filtros guardados que se recalculan al mirarlos.
+
+      El número que se ve NO es el de cuando se creó la lista: se cuenta cada
+      vez, sobre los discos que hay ahora. Por eso una lista puede crecer sola
+      con un disco que compres mañana.
+    */
+    listas: data ? (
+      <Card key="listas" id="listas" titulo="Mis listas" {...ctl('listas')}>
+        {data.listas.length === 0 ? (
+          <p className="card-nota">
+            Todavía no tienes ninguna. En Colección, filtra lo que quieras y pulsa «Guardar
+            como lista»: se guardan las condiciones, no los discos, así que la lista se
+            mantiene al día sola.
+          </p>
+        ) : (
+          <ul className="mini-list">
+            {data.listas.map((lista) => (
+              <li key={lista.id}>
+                <button className="mini-row" onClick={() => onOpenLista(lista.criteria)}>
+                  <span className="mini-text">
+                    <span className="mini-title">{lista.name}</span>
+                    <span className="mini-sub">{describirCriterios(lista.criteria)}</span>
+                  </span>
+                  <span className="lista-count numeric">{numero(lista.count)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    ) : null,
+
     salud:
       data && data.salud.length > 0 ? (
         <Card key="salud" id="salud" titulo="Salud de la colección" {...ctl('salud')}>
@@ -743,6 +782,24 @@ function saludoPorHora(): string {
   if (hora < 12) return 'Para la mañana'
   if (hora < 19) return 'Para la tarde'
   return 'Para la noche'
+}
+
+/**
+ * Las condiciones de una lista, en una línea legible.
+ *
+ * Se describe lo que la lista PREGUNTA, no cuántos discos tiene: el número
+ * ya va al lado y cambia solo, mientras que la pregunta es lo que la
+ * identifica.
+ */
+function describirCriterios(c: SmartCriteria): string {
+  const partes: string[] = []
+  if (c.formato) partes.push(getFormat(c.formato)?.label ?? c.formato)
+  if (c.genero) partes.push(c.genero)
+  if (c.decada !== null && c.decada !== undefined) partes.push(`${c.decada}s`)
+  if (c.estado) partes.push(conditionLabel(c.estado))
+  if (c.etiqueta) partes.push(`«${c.etiqueta}»`)
+  if (c.texto?.trim()) partes.push(`«${c.texto.trim()}»`)
+  return partes.length > 0 ? partes.join(' · ') : 'Toda la colección'
 }
 
 /** "2026-08-14" → "ago 2026". Suficiente para un "hace cuánto". */

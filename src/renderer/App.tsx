@@ -20,6 +20,7 @@ import SetlistsScreen from './components/SetlistsScreen'
 import CollectionBar from './components/CollectionBar'
 import ProfilePicker from './components/ProfilePicker'
 import type { Profile } from '@core/models/profile'
+import type { SmartCriteria } from '@core/models/smartList'
 import ExploreScreen from './components/ExploreScreen'
 import WishlistScreen from './components/WishlistScreen'
 import HomeScreen from './components/HomeScreen'
@@ -174,6 +175,16 @@ function App() {
 
   const [paletteOpen, setPaletteOpen] = useState(false)
 
+  /**
+   * Condiciones con las que entrar a la colección.
+   *
+   * Se pone al abrir una lista inteligente desde el inicio y se limpia al
+   * entrar a Colección por el menú: quien pulsa «Colección» espera verla
+   * entera, no la última lista que abrió hace media hora.
+   */
+  const [listaAbierta, setListaAbierta] = useState<SmartCriteria | null>(null)
+
+
   useEffect(() => {
     startUp()
   }, [])
@@ -188,6 +199,19 @@ function App() {
     setError(null)
     setBackStack([])
     setView(next)
+  }
+
+  /*
+    Entrar a Colección desde el MENÚ limpia la lista abierta. Quien pulsa
+    "Colección" espera verla entera; si conservara los filtros de la última
+    lista que abrió, parecería que le faltan discos.
+
+    No se limpia al entrar desde una lista porque ahí el filtro es justamente
+    lo que se pidió: por eso la limpieza va aquí y no dentro de goToSection.
+  */
+  function irAColeccionCompleta(): void {
+    setListaAbierta(null)
+    goToSection('collection')
   }
 
   /** Abrir algo encima de lo que hay: la ficha de un disco, una tarea, ajustes. */
@@ -669,7 +693,7 @@ function App() {
           onSwitchCollection={handleSwitchCollection}
           onCollectionsChanged={handleCollectionsChanged}
           section={isSection(view) ? view : null}
-          onNavigate={goToSection}
+          onNavigate={(seccion) => (seccion === 'collection' ? irAColeccionCompleta() : goToSection(seccion))}
           counts={{
             albums: collection.length,
             setlists:
@@ -734,6 +758,10 @@ function App() {
             }
             onOpenAlbum={handleOpenSaved}
             onOpenLoans={() => goToSection('loans')}
+            onOpenLista={(criteria) => {
+              setListaAbierta(criteria)
+              goToSection('collection')
+            }}
             onAdd={() => pushView('add')}
           />
         )}
@@ -744,6 +772,7 @@ function App() {
             collectionId={activeCollectionId}
             onOpen={handleOpenSaved}
             onAdd={() => pushView('add')}
+            initialFilters={listaAbierta}
           />
         )}
 
@@ -919,14 +948,14 @@ function App() {
         onOpenAlbum={handleOpenSaved}
         actions={[
           { label: 'Inicio', hint: 'Sección', run: () => goToSection('home') },
-          { label: 'Colección', hint: 'Sección', run: () => goToSection('collection') },
+          { label: 'Colección', hint: 'Sección', run: irAColeccionCompleta },
           ...(features.setlists
             ? [{ label: 'Setlists', hint: 'Sección', run: () => goToSection('setlists') }]
             : []),
           { label: 'Lista de deseos', hint: 'Sección', run: () => goToSection('wishlist') },
           { label: 'Préstamos', hint: 'Sección', run: () => goToSection('loans') },
           { label: 'Agregar disco', hint: 'Acción', run: () => pushView('add') },
-          { label: 'Exportar la colección', hint: 'Acción', run: () => goToSection('collection') },
+          { label: 'Exportar la colección', hint: 'Acción', run: irAColeccionCompleta },
           { label: 'Configuración', hint: 'Ajustes', run: () => pushView('settings') },
           {
             label: `Acerca de Waxbox v${APP_VERSION}`,

@@ -36,6 +36,7 @@ import type {
   CollectionStats
 } from '../core/database/db'
 import type { DashboardData } from '../core/database/dashboard'
+import type { SmartCriteria, SmartList } from '../core/models/smartList'
 import type { Loan } from '../core/models/loan'
 import type { DeezerTrackRef } from '../core/services/deezer'
 import type { PlaybackSource } from '../core/player/queue'
@@ -190,6 +191,23 @@ const api = {
     anoActual: number
   ): Promise<Result<DashboardData>> =>
     ipcRenderer.invoke('collections:dashboard', collectionId, hoy, anoActual),
+
+  /* Listas inteligentes: filtros guardados que se recalculan al leerlos. */
+  listSmartLists: (collectionId: number): Promise<Result<SmartList[]>> =>
+    ipcRenderer.invoke('smartlists:list', collectionId),
+
+  createSmartList: (
+    collectionId: number,
+    name: string,
+    criteria: SmartCriteria
+  ): Promise<Result<{ id: number }>> =>
+    ipcRenderer.invoke('smartlists:create', collectionId, name, criteria),
+
+  renameSmartList: (listId: number, name: string): Promise<Result<void>> =>
+    ipcRenderer.invoke('smartlists:rename', listId, name),
+
+  deleteSmartList: (listId: number): Promise<Result<void>> =>
+    ipcRenderer.invoke('smartlists:delete', listId),
 
   listAlbumTracks: (albumId: number): Promise<Result<BrowsableTrack[]>> =>
     ipcRenderer.invoke('collection:albumTracks', albumId),

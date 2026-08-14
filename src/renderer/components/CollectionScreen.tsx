@@ -7,12 +7,21 @@ import type { ConditionId } from '@core/models/condition'
 import ExportDialog from './ExportDialog'
 import PageHeader from './PageHeader'
 import { IconClose, IconGrid, IconSearch, IconTable } from './Icons'
+import { suggestName, type SmartCriteria } from '@core/models/smartList'
 
 interface CollectionScreenProps {
   albums: AlbumSummary[]
   collectionId: number
   onOpen: (albumId: number) => void
   onAdd: () => void
+  /**
+   * Filtros con los que entrar ya aplicados.
+   *
+   * Es lo que hace que una lista inteligente lleve a algún sitio: al abrirla
+   * desde el inicio se entra aquí con sus condiciones puestas, en vez de
+   * mostrar otra pantalla parecida pero distinta.
+   */
+  initialFilters?: SmartCriteria | null
 }
 
 type ViewMode = 'grid' | 'table'
@@ -103,14 +112,43 @@ function matchesFilters(album: AlbumSummary, filtros: Filtros): boolean {
   return true
 }
 
-function CollectionScreen({ albums, collectionId, onOpen, onAdd }: CollectionScreenProps) {
+/** Los criterios guardados de una lista, traducidos a los filtros de aquí. */
+function filtrosDesde(criteria: SmartCriteria | null | undefined): Filtros {
+  if (!criteria) return SIN_FILTROS
+  return {
+    formato: criteria.formato ?? null,
+    genero: criteria.genero ?? null,
+    decada: criteria.decada ?? null,
+    estado: criteria.estado ?? null,
+    etiqueta: criteria.etiqueta ?? null
+  }
+}
+
+function CollectionScreen({
+  albums,
+  collectionId,
+  onOpen,
+  onAdd,
+  initialFilters
+}: CollectionScreenProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [sortKey, setSortKey] = useState<SortKey>('title')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
-  const [search, setSearch] = useState('')
-  const [filtros, setFiltros] = useState<Filtros>(SIN_FILTROS)
+  const [search, setSearch] = useState(initialFilters?.texto ?? '')
+  const [filtros, setFiltros] = useState<Filtros>(() => filtrosDesde(initialFilters))
   const [exporting, setExporting] = useState(false)
+  const [guardandoLista, setGuardandoLista] = useState(false)
+  const [nombreLista, setNombreLista] = useState('')
+  const [errorLista, setErrorLista] = useState<string | null>(null)
+  /** Se muestra un momento tras guardar, para confirmar que quedó. */
+  const [listaGuardada, setListaGuardada] = useState<string | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  /* Entrar desde otra lista cambia los filtros sin remontar la pantalla. */
+  useEffect(() => {
+    setFiltros(filtrosDesde(initialFilters))
+    setSearch(initialFilters?.texto ?? '')
+  }, [initialFilters])
 
   /*
     Las opciones de cada filtro salen de la colección real, no de una lista
@@ -188,6 +226,32 @@ function CollectionScreen({ albums, collectionId, onOpen, onAdd }: CollectionScr
     (key) => filtros[key] !== null
   )
   const hasActiveFilters = activos.length > 0
+
+  /** Lo que está aplicado ahora, en el formato en que se guarda una lista. */
+  const criteriosActuales: SmartCriteria = {
+    texto: search.trim() || undefined,
+    formato: filtros.formato,
+    genero: filtros.genero,
+    decada: filtros.decada,
+    estado: filtros.estado,
+    etiqueta: filtros.etiqueta
+  }
+
+  async function guardarLista() {
+    const nombre = nombreLista.trim()
+    if (!nombre) return
+    setErrorLista(null)
+    const result = await window.api.createSmartList(collectionId, nombre, criteriosActuales)
+    if (!result.ok) {
+      setErrorLista(result.error)
+      return
+    }
+    setGuardandoLista(false)
+    // Se confirma con el nombre puesto: quien acaba de escribirlo necesita
+    // ver que quedó guardado y dónde encontrarlo.
+    setListaGuardada(nombre)
+    setTimeout(() => setListaGuardada(null), 6000)
+  }
 
   return (
     <div className="screen">
@@ -414,6 +478,70 @@ function CollectionScreen({ albums, collectionId, onOpen, onAdd }: CollectionScr
           <button className="btn-link" onClick={() => setFiltros(SIN_FILTROS)}>
             Quitar {activos.length === 1 ? 'el filtro' : 'todos'}
           </button>
+
+          {/*
+            Guardar lo que estás viendo como lista con nombre.
+
+            Guarda las CONDICIONES, no los discos que cumplen hoy: mañana
+            entra solo el disco que compres y encaje. Por eso el botón vive
+            aquí, junto a los filtros, y no en un menú aparte — lo que se
+            guarda es exactamente esto.
+          */}
+          {!guardandoLista && (
+            <button
+              className="btn-link"
+              onClick={() => {
+                setNombreLista(
+                  suggestName(criteriosActuales, getFormat(filtros.formato ?? '')?.label)
+                )
+                setGuardandoLista(true)
+              }}
+            >
+              Guardar como lista
+            </button>
+          )}
+        </div>
+      )}
+
+      {listaGuardada && (
+        <p className="lista-guardada">
+          Lista «{listaGuardada}» guardada. La encuentras en Inicio, en «Mis listas».
+        </p>
+      )}
+
+      {guardandoLista && (
+        <div className="guardar-lista">
+          <label className="field">
+            <span className="field-label">Nombre de la lista</span>
+            <input
+              value={nombreLista}
+              onChange={(e) => setNombreLista(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') guardarLista()
+                if (e.key === 'Escape') setGuardandoLista(false)
+              }}
+              placeholder="Ej: Vinilos de los 70"
+              autoFocus
+              spellCheck={false}
+            />
+          </label>
+          <p className="card-nota">
+            Se guardan las condiciones, no los {filtered.length} discos de ahora: la lista se
+            recalcula sola cada vez que la abras.
+          </p>
+          {errorLista && <p className="feedback-error">{errorLista}</p>}
+          <div className="guardar-lista-acciones">
+            <button className="btn btn-ghost" onClick={() => setGuardandoLista(false)}>
+              Cancelar
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={guardarLista}
+              disabled={nombreLista.trim().length === 0}
+            >
+              Guardar lista
+            </button>
+          </div>
         </div>
       )}
 

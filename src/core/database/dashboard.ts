@@ -21,6 +21,13 @@
 
 import type { Database, SqlValue } from 'sql.js'
 import type { PhysicalFormatId } from '../models/formats'
+import type { ConditionId } from '../models/condition'
+import {
+  matches,
+  type FiltrableAlbum,
+  type SmartCriteria,
+  type SmartList
+} from '../models/smartList'
 
 /** Un disco al que le falta algo, tal como lo muestra el panel de salud. */
 export interface AlbumConHueco {
@@ -118,6 +125,7 @@ export interface DashboardData {
   racha: Racha
   olvidados: Olvidado[]
   generos: GeneroShare[]
+  listas: SmartList[]
   /** Cuántos discos tiene la colección, para calcular proporciones. */
   totalAlbums: number
 }
@@ -491,6 +499,93 @@ export function generos(db: Database, collectionId: number, limite = 8): GeneroS
     .slice(0, limite)
 }
 
+/* ==========================================================================
+   Listas inteligentes
+   ========================================================================== */
+
+/**
+ * Las listas de una colección, cada una con su conteo al día.
+ *
+ * El conteo se calcula AHORA, aplicando los criterios sobre los discos
+ * actuales. Guardarlo en la tabla lo dejaría desactualizado al primer disco
+ * que entre, y una lista que dice 12 cuando hay 14 es peor que no decir nada.
+ */
+export function listSmartLists(db: Database, collectionId: number): SmartList[] {
+  const albums = albumsParaFiltrar(db, collectionId)
+
+  return rows(
+    db,
+    `SELECT id, name, criteria FROM smart_lists WHERE collection_id = ? ORDER BY name`,
+    [collectionId]
+  ).map((r) => {
+    let criteria: SmartCriteria = {}
+    try {
+      criteria = JSON.parse((r['criteria'] as string) || '{}') as SmartCriteria
+    } catch {
+      criteria = {}
+    }
+    return {
+      id: r['id'] as number,
+      name: r['name'] as string,
+      criteria,
+      count: albums.filter((album) => matches(album, criteria)).length
+    }
+  })
+}
+
+/** Los campos de cada disco que necesitan los criterios, y nada más. */
+function albumsParaFiltrar(db: Database, collectionId: number): FiltrableAlbum[] {
+  return rows(
+    db,
+    `SELECT title, artists, label, year, format, condition, genres, tags
+     FROM albums WHERE collection_id = ?`,
+    [collectionId]
+  ).map((r) => ({
+    title: (r['title'] as string) ?? '',
+    artists: (r['artists'] as string) ?? '',
+    label: (r['label'] as string) ?? null,
+    year: (r['year'] as number) ?? null,
+    format: r['format'] as PhysicalFormatId,
+    condition: (r['condition'] as ConditionId) ?? null,
+    genres: parseLista(r['genres']),
+    tags: parseLista(r['tags'])
+  }))
+}
+
+/** Géneros y etiquetas se guardan como lista JSON en una sola columna. */
+function parseLista(valor: SqlValue): string[] {
+  if (typeof valor !== 'string' || valor === '') return []
+  try {
+    const parsed = JSON.parse(valor)
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export function createSmartList(
+  db: Database,
+  collectionId: number,
+  name: string,
+  criteria: SmartCriteria
+): { id: number } {
+  db.run('INSERT INTO smart_lists (collection_id, name, criteria) VALUES (?, ?, ?)', [
+    collectionId,
+    name,
+    JSON.stringify(criteria)
+  ])
+  const r = rows(db, 'SELECT last_insert_rowid() AS id')
+  return { id: r[0]['id'] as number }
+}
+
+export function renameSmartList(db: Database, listId: number, name: string): void {
+  db.run('UPDATE smart_lists SET name = ? WHERE id = ?', [name, listId])
+}
+
+export function deleteSmartList(db: Database, listId: number): void {
+  db.run('DELETE FROM smart_lists WHERE id = ?', [listId])
+}
+
 /** Todo lo del inicio de una sola vez, para no ir y volver ocho veces. */
 export function dashboardData(
   db: Database,
@@ -507,6 +602,7 @@ export function dashboardData(
     racha: racha(db, collectionId, hoy),
     olvidados: olvidados(db, collectionId),
     generos: generos(db, collectionId),
+    listas: listSmartLists(db, collectionId),
     totalAlbums: count(db, 'SELECT COUNT(*) AS n FROM albums WHERE collection_id = ?', [
       collectionId
     ])
