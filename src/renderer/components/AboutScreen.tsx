@@ -1,4 +1,6 @@
 import { APP_NAME, APP_VERSION, REPO_URL } from '@core/config'
+import PageHeader from './PageHeader'
+import { Isotipo } from './Logo'
 
 interface AboutScreenProps {
   onBack: () => void
@@ -38,20 +40,22 @@ const FUENTES = [
  */
 function AboutScreen({ onBack }: AboutScreenProps) {
   return (
-    <div className="about">
-      <div className="about-marca">
-        {/* Disco de vinilo dibujado, para no depender de ninguna imagen */}
-        <svg className="about-disco" viewBox="0 0 100 100" aria-hidden="true">
-          <circle cx="50" cy="50" r="47" fill="var(--bg-input)" stroke="var(--border)" strokeWidth="2" />
-          <circle cx="50" cy="50" r="36" fill="none" stroke="var(--border)" strokeWidth="1.5" />
-          <circle cx="50" cy="50" r="28" fill="none" stroke="var(--border)" strokeWidth="1.5" />
-          <circle cx="50" cy="50" r="18" fill="var(--accent)" />
-          <circle cx="50" cy="50" r="4" fill="var(--bg-body)" />
-        </svg>
+    <div className="screen about">
+      <PageHeader title="Acerca de Waxbox" subtitle={`Versión ${APP_VERSION}`} onBack={onBack} />
 
-        <h2>{APP_NAME}</h2>
+      {/*
+        La marca la dibuja el isotipo, no un SVG propio de esta pantalla.
+
+        Antes había aquí un tercer disco dibujado a mano, distinto del isotipo y
+        distinto del primitivo `.disc`: tres versiones del mismo objeto que
+        había que mantener por separado. Cuando llegue el logo definitivo, esta
+        pantalla se actualiza sola.
+      */}
+      <div className="about-marca">
+        <Isotipo size={72} className="about-isotipo" />
+        <h2 className="about-nombre">{APP_NAME}</h2>
         <p className="about-slogan">Tu música, tu historia.</p>
-        <span className="about-version">Versión {APP_VERSION}</span>
+        <span className="about-version numeric">Versión {APP_VERSION}</span>
       </div>
 
       <section className="about-bloque about-autoria">
@@ -90,12 +94,6 @@ function AboutScreen({ onBack }: AboutScreenProps) {
           Ver el repositorio en GitHub
         </a>
       </section>
-
-      <footer className="about-footer">
-        <button className="btn btn-ghost" onClick={onBack}>
-          Volver
-        </button>
-      </footer>
     </div>
   )
 }

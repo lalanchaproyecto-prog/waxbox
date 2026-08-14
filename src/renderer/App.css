@@ -536,18 +536,33 @@ body {
   gap: 0.85rem;
 }
 
+/*
+  El rótulo de una sección, en TODA la app.
+
+  Era el último sitio donde el mismo elemento se veía de dos maneras: aquí una
+  versalita en negrita de la tipografía de texto, y en el inicio y en la ficha
+  la versalita en mono. Se queda con la mono, que es la marca del dato de
+  catálogo, y así diez pantallas dejan de tener cada una su propio rótulo.
+*/
 .section-title {
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-wide);
   color: var(--text-dimmed);
 }
 
+/* Sobre paneles hundidos el gris sube un paso: ver la nota del final. */
+.ficha-aside .section-title,
+.guide .section-title {
+  color: var(--text-muted);
+}
+
 .section-note {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-dimmed);
-  margin-top: -0.5rem;
+  margin-top: calc(var(--space-2) * -1);
 }
 
 .field {
@@ -1621,84 +1636,83 @@ body {
 /* ---------- Pantalla de configuración ---------- */
 
 .settings {
-  width: 100%;
-  max-width: 680px;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  max-width: 780px;
 }
 
-.settings-header h2 {
-  font-size: 1.6rem;
-  color: var(--text-heading);
-  margin-bottom: 0.3rem;
-}
-
-.settings-header p {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
+/*
+  Cada ajuste es una tarjeta igual a las demás, como los paneles del inicio.
+  Lo que distingue a una de otra es lo que contiene, no si tiene marco propio.
+*/
 .setting-block {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--space-4);
+  padding: var(--space-5);
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.5rem;
+  border-radius: var(--radius-lg);
 }
 
 .setting-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--space-3);
 }
 
-.setting-title-row h3 {
-  font-size: 1.05rem;
-  color: var(--text-heading);
-}
-
+/* Estado de una función, en la mono de los datos. */
 .badge {
-  font-size: 0.72rem;
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
-  background: var(--bg-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
+/* El color no va solo: la palabra ya dice "Configurado". */
 .badge-on {
   background: var(--success-bg);
+  border-color: var(--success-text);
   color: var(--success-text);
 }
 
 .setting-description {
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  font-size: 0.92rem;
-  line-height: 1.6;
+  line-height: var(--leading-normal);
+  max-width: 66ch;
+}
+
+.setting-description strong {
+  font-weight: 600;
+  color: var(--text-heading);
 }
 
 .setting-note {
-  color: var(--text-dimmed);
-  font-size: 0.85rem;
-  line-height: 1.55;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+  max-width: 66ch;
 }
 
 .setting-warning {
-  color: var(--warning-text);
-  font-size: 0.85rem;
-  line-height: 1.5;
+  padding: var(--space-3) var(--space-4);
   background: var(--warning-bg);
-  border-radius: 6px;
-  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--warning-text);
+  line-height: var(--leading-normal);
 }
 
 .key-form {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--space-3);
   align-items: flex-start;
 }
 
@@ -1708,65 +1722,72 @@ body {
 
 .setting-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .feedback-ok {
+  font-size: var(--text-sm);
   color: var(--success-text);
-  font-size: 0.88rem;
 }
 
 .feedback-error {
+  font-size: var(--text-sm);
   color: var(--error-text);
-  font-size: 0.88rem;
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 
 .guide-toggle {
   align-self: flex-start;
-  font-size: 0.85rem;
 }
 
+/*
+  La guía para conseguir la clave de YouTube: un panel hundido dentro de la
+  tarjeta. Es material de consulta, no parte del ajuste, y el hueco lo dice
+  sin necesidad de decirlo con palabras.
+*/
 .guide {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--space-3);
+  padding: var(--space-4);
   background: var(--bg-inset);
-  border-radius: 8px;
-  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
 }
 
+/* Sobre el hundido los grises suben un paso: --bg-inset es MÁS CLARO que la
+   tarjeta en oscuro, y los grises están calibrados contra la tarjeta. */
 .guide-intro,
 .guide-note {
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  font-size: 0.85rem;
-  line-height: 1.6;
+  line-height: var(--leading-normal);
 }
 
 .guide-steps {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  padding-left: 1.2rem;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  font-size: 0.88rem;
-  line-height: 1.55;
+  line-height: var(--leading-normal);
 }
 
 .guide-steps strong {
+  font-weight: 600;
   color: var(--text-primary);
 }
 
 .guide-steps code {
-  background: var(--bg-subtle);
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
-  font-size: 0.85em;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 1px var(--space-1);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
 }
 
-.settings-footer {
-  display: flex;
-}
 
 /* ---------- Botón de escuchar ---------- */
 
@@ -2877,153 +2898,138 @@ body {
 /* ---------- Acerca de ---------- */
 
 .about {
-  width: 100%;
-  max-width: 620px;
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
+  max-width: 720px;
 }
 
+/*
+  La marca, sin halo.
+
+  Antes había detrás un resplandor radial de acento. Bandeja es plana: el
+  resplandor era exactamente el tipo de profundidad falsa que se retiró de
+  botones y tarjetas, y aquí además competía con el isotipo, que es lo único
+  que hay que mirar.
+*/
 .about-marca {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
-  padding: 2.5rem 1.5rem 2rem;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-5);
   text-align: center;
-  overflow: hidden;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
 }
 
-.about-marca::before {
-  content: '';
-  position: absolute;
-  top: -55%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 26rem;
-  height: 20rem;
-  background: radial-gradient(
-    ellipse at center,
-    var(--halo-accent) 0%,
-    var(--halo-warm) 45%,
-    transparent 70%
-  );
-  pointer-events: none;
+.about-isotipo {
+  color: var(--accent);
+  margin-bottom: var(--space-2);
 }
 
-.about-marca > * {
-  position: relative;
-}
-
-.about-disco {
-  width: 4.5rem;
-  height: 4.5rem;
-  margin-bottom: 0.6rem;
-}
-
-.about-marca h2 {
-  font-size: 2rem;
-  font-weight: 800;
+.about-nombre {
+  font-family: var(--font-display);
+  font-variation-settings: var(--width-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-tight);
   color: var(--text-heading);
-  letter-spacing: -0.03em;
 }
 
+/*
+  El eslogan iba en --accent-soft, que es un acento aclarado para rellenos y
+  bordes: como texto se quedaba en 3:1. Es la segunda vez que aparece el mismo
+  error (la otra fue el subtítulo de los diálogos).
+*/
 .about-slogan {
-  color: var(--accent-soft);
-  font-style: italic;
-  font-size: 1.02rem;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
 }
 
 .about-version {
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
   color: var(--text-dimmed);
-  font-size: 0.8rem;
-  margin-top: 0.5rem;
 }
 
 .about-bloque {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: var(--space-3);
   align-items: flex-start;
 }
 
+/* Filete de acento a la izquierda: lo mismo que marca "esto es tuyo" en la
+   ficha del disco. Aquí marca de quién es la app. */
 .about-autoria {
+  padding: var(--space-5);
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent-warm);
-  border-radius: 0 12px 12px 0;
-  padding: 1.35rem 1.5rem;
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
 }
 
 .about-autoria p {
+  font-size: var(--text-base);
   color: var(--text-body);
-  font-size: 0.98rem;
-  line-height: 1.65;
+  line-height: var(--leading-loose);
 }
 
 .about-autoria strong {
-  color: var(--text-heading);
   font-weight: 600;
+  color: var(--text-heading);
 }
 
 .about-intro {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  max-width: 62ch;
 }
 
 .about-fuentes {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: var(--space-3);
   width: 100%;
 }
 
 .about-fuentes li {
   display: grid;
   grid-template-columns: 11rem 1fr;
-  gap: 1rem;
+  gap: var(--space-4);
   align-items: baseline;
-  padding-bottom: 0.7rem;
+  padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .about-fuentes a {
-  color: var(--accent-soft);
+  font-size: var(--text-sm);
+  color: var(--accent-link);
   text-decoration: none;
-  font-size: 0.92rem;
 }
 
 .about-fuentes a:hover {
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .about-fuentes span {
+  font-size: var(--text-sm);
   color: var(--text-muted);
-  font-size: 0.86rem;
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 
 .about-bloque .btn {
-  text-decoration: none;
   display: inline-block;
-}
-
-.about-footer {
-  display: flex;
-  border-top: 1px solid var(--border-separator);
-  padding-top: 1.25rem;
+  text-decoration: none;
 }
 
 @media (max-width: 520px) {
   .about-fuentes li {
     grid-template-columns: 1fr;
-    gap: 0.25rem;
+    gap: var(--space-1);
   }
 }
 
@@ -3031,32 +3037,41 @@ body {
 
 .theme-options {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-1);
   flex-wrap: wrap;
 }
 
+/*
+  Son las mismas fichas que los filtros de la colección, y a propósito:
+  elegir tema y elegir formato son el mismo gesto —marcar una opción de una
+  fila corta— y no hay razón para que se vean distinto.
+*/
 .theme-chip {
-  background: var(--bg-input);
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.45rem 0.9rem;
-  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition: border-color var(--dur-base) var(--ease),
+    color var(--dur-base) var(--ease),
+    background-color var(--dur-base) var(--ease);
 }
 
 .theme-chip:hover {
-  border-color: var(--accent-soft);
+  border-color: var(--border-strong);
   color: var(--text-primary);
 }
 
 .theme-chip.selected {
-  background: var(--bg-active);
-  border-color: var(--accent-soft);
-  color: var(--text-heading);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
 }
+
 
 /* ---------- Diálogo de exportación ---------- */
 
@@ -3309,15 +3324,14 @@ body {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
 }
 
 .feature-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1.25rem;
-  padding: 0.75rem 0;
+  gap: var(--space-5);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -3328,33 +3342,40 @@ body {
 .feature-text {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--space-1);
 }
 
 .feature-label {
-  color: var(--text-heading);
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
   font-weight: 600;
+  color: var(--text-heading);
 }
 
 .feature-description {
+  font-size: var(--text-xs);
   color: var(--text-muted);
-  font-size: 0.82rem;
-  line-height: 1.55;
+  line-height: var(--leading-normal);
+  max-width: 52ch;
 }
 
+/*
+  El interruptor es de las poquísimas piezas con forma de píldora que quedan,
+  y se la gana: un interruptor de verdad tiene esa forma, y aquí la forma ES
+  el significado —encendido o apagado— no un adorno.
+*/
 .feature-switch {
-  flex-shrink: 0;
+  flex: none;
   position: relative;
   width: 2.75rem;
   height: 1.55rem;
-  margin-top: 0.15rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-strong);
-  background: var(--bg-input);
-  cursor: pointer;
+  margin-top: 2px;
   padding: 0;
-  transition: background-color 0.2s, border-color 0.2s;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease),
+    border-color var(--dur-base) var(--ease);
 }
 
 .feature-switch.on {
@@ -3365,42 +3386,51 @@ body {
 .feature-switch-knob {
   position: absolute;
   top: 50%;
-  left: 0.18rem;
+  left: 3px;
   transform: translateY(-50%);
   width: 1.1rem;
   height: 1.1rem;
   border-radius: 50%;
   background: var(--text-muted);
-  transition: left 0.2s, background-color 0.2s;
+  transition: left var(--dur-base) var(--ease),
+    background-color var(--dur-base) var(--ease);
 }
 
+/* El color del texto que va SOBRE el acento, no un blanco escrito a mano:
+   en tema oscuro el acento es claro y un botón blanco encima desaparece. */
 .feature-switch.on .feature-switch-knob {
-  left: calc(100% - 1.28rem);
-  background: #fff;
+  left: calc(100% - 1.1rem - 4px);
+  background: var(--on-accent);
 }
+
 
 /* ---------- Selector de perfil ---------- */
 
+/*
+  La primera pantalla de la app: todavía no hay ninguna base abierta, así que
+  tampoco hay menú lateral. Va centrada porque es lo único que hay.
+*/
 .profile-picker {
   width: 100%;
   max-width: 720px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
   align-items: center;
+  gap: var(--space-5);
+  padding-top: var(--space-5);
   text-align: center;
-  padding-top: 1.5rem;
 }
 
-.profile-picker-header h2 {
-  font-size: 1.6rem;
-  color: var(--text-heading);
-  margin-bottom: 0.5rem;
+.profile-picker-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .profile-picker-header p {
-  color: var(--text-muted);
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
 }
 
 .profile-cards {
@@ -3408,50 +3438,59 @@ body {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1.25rem;
+  gap: var(--space-5);
 }
 
 .profile-card-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-2);
   width: 8.5rem;
 }
 
+/*
+  La tarjeta no se levanta al pasar por encima. El único sitio de la app con
+  volumen y movimiento es el disco, y aquí no hay ninguno: la respuesta al
+  cursor la da el borde, que es lo que usa el resto de Bandeja.
+*/
 .profile-card {
   width: 8.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-3);
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1.35rem 0.75rem;
+  border-radius: var(--radius-lg);
   font-family: inherit;
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s, background 0.2s;
+  transition: border-color var(--dur-base) var(--ease),
+    background-color var(--dur-base) var(--ease);
 }
 
 .profile-card:hover {
   border-color: var(--accent);
   background: var(--bg-hover);
-  transform: translateY(-2px);
 }
 
+/* Color explícito: donde la fuente de emoji es monocroma, el glifo se pinta
+   con el color del texto heredado y sobre la tarjeta oscura desaparecía. */
 .profile-card-emoji {
   font-size: 2.4rem;
   line-height: 1;
+  color: var(--text-primary);
 }
 
 .profile-card-name {
-  color: var(--text-heading);
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
   font-weight: 600;
+  color: var(--text-heading);
   word-break: break-word;
 }
 
+/* Lo que todavía no existe se dibuja con borde discontinuo. */
 .profile-card-new {
   border-style: dashed;
 }
@@ -3463,18 +3502,18 @@ body {
 
 .profile-card-editing {
   cursor: default;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .profile-card-editing input {
   width: 100%;
   background: var(--bg-input);
   border: 1px solid var(--border-input);
-  border-radius: 7px;
-  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   text-align: center;
 }
 
@@ -3485,12 +3524,12 @@ body {
 
 .profile-card-editing-actions {
   display: flex;
-  gap: 0.6rem;
+  gap: var(--space-3);
 }
 
 .profile-card-actions {
   display: flex;
-  gap: 0.7rem;
+  gap: var(--space-3);
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -3498,11 +3537,11 @@ body {
 .profile-confirm {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-2);
   flex-wrap: wrap;
   justify-content: center;
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
 }
 
 .profile-create {
@@ -3510,29 +3549,60 @@ body {
   max-width: 30rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
+}
+
+/*
+  Antes esta fila reusaba la clase de crear setlists, que vive en otra pantalla
+  y en la Fase G dejó de existir: el formulario se quedó sin ningún estilo.
+  Cada pantalla nombra lo suyo.
+*/
+.profile-create-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.profile-create-fila input {
+  flex: 1;
+  min-width: 12rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+}
+
+.profile-create-fila input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .profile-emoji-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: var(--space-1);
   justify-content: center;
 }
 
 .profile-emoji {
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: 8px;
   width: 2.3rem;
   height: 2.3rem;
-  font-size: 1.15rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-md);
+  color: var(--text-primary);
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color var(--dur-base) var(--ease),
+    background-color var(--dur-base) var(--ease);
 }
 
 .profile-emoji:hover {
-  border-color: var(--accent-soft);
+  border-color: var(--border-strong);
 }
 
 .profile-emoji.selected {
@@ -3540,12 +3610,17 @@ body {
   background: var(--bg-active);
 }
 
+/*
+  Un perfil separa datos, no los protege. Se dice aquí, en la pantalla donde
+  se elige, para no dar una falsa sensación de seguridad.
+*/
 .profile-picker-note {
-  color: var(--text-dimmed);
-  font-size: 0.8rem;
-  line-height: 1.55;
   max-width: 34rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
 }
+
 
 /* ---------- Selector de colección ---------- */
 

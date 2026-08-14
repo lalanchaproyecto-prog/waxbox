@@ -77,7 +77,7 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
   return (
     <div className="profile-picker">
       <header className="profile-picker-header">
-        <h2>¿Quién eres?</h2>
+        <h2 className="display">¿Quién eres?</h2>
         <p>
           Cada perfil tiene sus propias colecciones, discos y setlists, sin mezclarse.
         </p>
@@ -194,7 +194,7 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
               </button>
             ))}
           </div>
-          <div className="setlist-create-row">
+          <div className="profile-create-fila">
             <input
               type="text"
               value={newName}
@@ -204,6 +204,7 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
                 if (event.key === 'Escape') setCreating(false)
               }}
               placeholder="Nombre del perfil"
+              aria-label="Nombre del perfil"
               autoFocus
             />
             <button className="btn btn-ghost" onClick={() => setCreating(false)}>

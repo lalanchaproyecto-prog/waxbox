@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { SettingsStatus } from '@core/models/settings'
 import { FEATURES, type FeatureFlags } from '@core/models/features'
 import type { ThemePreference } from '../App'
+import PageHeader from './PageHeader'
 
 interface SettingsScreenProps {
   status: SettingsStatus
@@ -81,15 +82,16 @@ function SettingsScreen({
   }
 
   return (
-    <div className="settings">
-      <header className="settings-header">
-        <h2>Configuración</h2>
-        <p>Ajustes que se guardan solo en este computador.</p>
-      </header>
+    <div className="screen settings">
+      <PageHeader
+        title="Configuración"
+        subtitle="Se guarda solo en este computador"
+        onBack={onBack}
+      />
 
       <section className="setting-block">
         <div className="setting-title-row">
-          <h3>Apariencia</h3>
+          <h3 className="section-title">Apariencia</h3>
         </div>
         <p className="setting-description">
           Elige cómo se ve Waxbox. En automático, sigue la configuración de tu sistema operativo.
@@ -112,7 +114,7 @@ function SettingsScreen({
 
       <section className="setting-block">
         <div className="setting-title-row">
-          <h3>Funciones de la app</h3>
+          <h3 className="section-title">Funciones de la app</h3>
         </div>
         <p className="setting-description">
           Enciende solo lo que uses. Apagar una función la esconde de la interfaz,{' '}
@@ -149,7 +151,7 @@ function SettingsScreen({
 
       <section className="setting-block">
         <div className="setting-title-row">
-          <h3>Escuchar canciones (opcional)</h3>
+          <h3 className="section-title">Escuchar canciones (opcional)</h3>
           <span className={`badge${status.youtubeConfigured ? ' badge-on' : ''}`}>
             {status.youtubeConfigured ? 'Configurado' : 'Sin configurar'}
           </span>
@@ -271,7 +273,7 @@ function SettingsScreen({
 
       <section className="setting-block">
         <div className="setting-title-row">
-          <h3>Acerca de Waxbox</h3>
+          <h3 className="section-title">Acerca de Waxbox</h3>
         </div>
         <p className="setting-description">
           Quién hizo Waxbox, qué versión tienes instalada y de dónde salen los datos de tus
@@ -284,11 +286,11 @@ function SettingsScreen({
         </div>
       </section>
 
-      <footer className="settings-footer">
-        <button className="btn btn-ghost" onClick={onBack}>
-          Volver
-        </button>
-      </footer>
+      {/*
+        Ya no hay un "Volver" al final del scroll: el de la cabecera es el
+        mismo y está siempre a la vista. Tener los dos obligaba a decidir cuál
+        usar, y el de abajo solo aparecía después de recorrer toda la guía.
+      */}
     </div>
   )
 }
