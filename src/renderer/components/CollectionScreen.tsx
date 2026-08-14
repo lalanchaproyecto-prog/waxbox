@@ -6,6 +6,7 @@ import { conditionShort, CONDITIONS } from '@core/models/condition'
 import type { ConditionId } from '@core/models/condition'
 import ExportDialog from './ExportDialog'
 import PageHeader from './PageHeader'
+import { IconClose, IconGrid, IconSearch, IconTable } from './Icons'
 
 interface CollectionScreenProps {
   albums: AlbumSummary[]
@@ -152,16 +153,15 @@ function CollectionScreen({ albums, collectionId, onOpen, onAdd }: CollectionScr
     setFiltros((current) => ({ ...current, [key]: current[key] === value ? null : value }))
   }
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-        event.preventDefault()
-        searchRef.current?.focus()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  /*
+    Ctrl+K ya NO se atiende aquí: ahora abre la búsqueda global de toda la
+    app. Tener las dos escuchando la misma combinación hacía que al pulsarla
+    en esta pantalla se abriera la paleta Y se robara el foco este campo.
+
+    Son dos cosas distintas y conviene que se noten distintas: la paleta
+    encuentra un disco en cualquier parte, este campo filtra lo que se está
+    viendo aquí sin salir de la pantalla.
+  */
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -228,23 +228,26 @@ function CollectionScreen({ albums, collectionId, onOpen, onAdd }: CollectionScr
 
       <div className="collection-toolbar">
         <div className="search-box">
-          <span className="search-icon" aria-hidden="true">&#128269;</span>
+          <span className="search-icon" aria-hidden="true">
+            <IconSearch size={16} />
+          </span>
           <input
             ref={searchRef}
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por artista, álbum, año, sello...  (Ctrl+K)"
+            placeholder="Filtrar por artista, álbum, año o sello"
             className="search-input"
             spellCheck={false}
+            aria-label="Filtrar la colección"
           />
           {search && (
             <button
               className="search-clear"
               onClick={() => setSearch('')}
-              title="Limpiar búsqueda"
+              aria-label="Limpiar el filtro"
             >
-              ✕
+              <IconClose size={14} />
             </button>
           )}
         </div>
@@ -255,18 +258,20 @@ function CollectionScreen({ albums, collectionId, onOpen, onAdd }: CollectionScr
             aria-checked={viewMode === 'grid'}
             className={`view-btn${viewMode === 'grid' ? ' active' : ''}`}
             onClick={() => setViewMode('grid')}
-            title="Cuadrícula de portadas"
+            aria-label="Ver las portadas"
+            title="Portadas"
           >
-            &#9638;&#9638;
+            <IconGrid size={16} />
           </button>
           <button
             role="radio"
             aria-checked={viewMode === 'table'}
             className={`view-btn${viewMode === 'table' ? ' active' : ''}`}
             onClick={() => setViewMode('table')}
-            title="Tabla con datos"
+            aria-label="Ver los datos en tabla"
+            title="Datos"
           >
-            &#9776;
+            <IconTable size={16} />
           </button>
         </div>
       </div>
@@ -363,12 +368,54 @@ function CollectionScreen({ albums, collectionId, onOpen, onAdd }: CollectionScr
           )}
         </div>
 
-        {hasActiveFilters && (
-          <button className="btn-link" onClick={() => setFiltros(SIN_FILTROS)}>
-            Quitar {activos.length === 1 ? 'el filtro' : `los ${activos.length} filtros`}
-          </button>
-        )}
       </div>
+
+      {/*
+        Los filtros activos, cada uno con su propia salida.
+
+        Antes solo había un "Quitar los 3 filtros" que los borraba todos de
+        golpe: para soltar uno solo había que acordarse de cuál de los cuatro
+        desplegables lo tenía y volver a ponerlo en "todos". Aquí se ve qué
+        está aplicado y se suelta de a uno.
+      */}
+      {hasActiveFilters && (
+        <div className="active-filters">
+          <span className="active-filters-label">Filtrando por</span>
+          {filtros.formato && (
+            <FilterToken
+              text={getFormat(filtros.formato)?.label ?? filtros.formato}
+              onRemove={() => setFiltros((f) => ({ ...f, formato: null }))}
+            />
+          )}
+          {filtros.genero && (
+            <FilterToken
+              text={filtros.genero}
+              onRemove={() => setFiltros((f) => ({ ...f, genero: null }))}
+            />
+          )}
+          {filtros.decada !== null && (
+            <FilterToken
+              text={`${filtros.decada}s`}
+              onRemove={() => setFiltros((f) => ({ ...f, decada: null }))}
+            />
+          )}
+          {filtros.estado && (
+            <FilterToken
+              text={CONDITIONS.find((c) => c.id === filtros.estado)?.label ?? filtros.estado}
+              onRemove={() => setFiltros((f) => ({ ...f, estado: null }))}
+            />
+          )}
+          {filtros.etiqueta && (
+            <FilterToken
+              text={filtros.etiqueta}
+              onRemove={() => setFiltros((f) => ({ ...f, etiqueta: null }))}
+            />
+          )}
+          <button className="btn-link" onClick={() => setFiltros(SIN_FILTROS)}>
+            Quitar {activos.length === 1 ? 'el filtro' : 'todos'}
+          </button>
+        </div>
+      )}
 
       {filtered.length === 0 && (search.trim() || hasActiveFilters) && (
         <p className="empty-note">
@@ -386,23 +433,31 @@ function CollectionScreen({ albums, collectionId, onOpen, onAdd }: CollectionScr
                 key={album.id}
                 className="album-card"
                 onClick={() => onOpen(album.id)}
+                /* El disco que asoma al pasar por encima solo tiene sentido
+                   donde hay un disco: un casete no sale de su funda así. */
+                data-format={album.format}
               >
-                <div className="album-card-cover">
-                  {src ? (
-                    <img src={src} alt={`Portada de ${album.title}`} loading="lazy" />
-                  ) : (
-                    <div className="album-card-placeholder">
-                      <span>{format?.icon ?? '🎵'}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="album-card-info">
+                <span className="album-card-sleeve">
+                  <span className="album-card-disc" aria-hidden="true" />
+                  <span className="album-card-cover">
+                    {src ? (
+                      <img src={src} alt={`Portada de ${album.title}`} loading="lazy" />
+                    ) : (
+                      <span className="album-card-placeholder" aria-hidden="true">
+                        {format?.icon ?? '🎵'}
+                      </span>
+                    )}
+                  </span>
+                </span>
+
+                <span className="album-card-info">
                   <span className="album-card-title">{album.title}</span>
                   <span className="album-card-artist">{album.artists}</span>
-                  <span className="album-card-meta">
-                    {album.year ?? '—'} · {format?.icon ?? ''} {album.trackCount} canciones
+                  <span className="album-card-meta numeric">
+                    {album.year ?? '——'} · {format?.label ?? album.format} · {album.trackCount}{' '}
+                    {album.trackCount === 1 ? 'canción' : 'canciones'}
                   </span>
-                </div>
+                </span>
               </button>
             )
           })}
@@ -462,6 +517,18 @@ function CollectionScreen({ albums, collectionId, onOpen, onAdd }: CollectionScr
         </div>
       )}
     </div>
+  )
+}
+
+/** Un filtro aplicado, con su propia salida. */
+function FilterToken({ text, onRemove }: { text: string; onRemove: () => void }) {
+  return (
+    <span className="filter-token">
+      {text}
+      <button onClick={onRemove} aria-label={`Quitar el filtro ${text}`}>
+        <IconClose size={12} />
+      </button>
+    </span>
   )
 }
 

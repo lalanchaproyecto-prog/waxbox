@@ -1716,27 +1716,26 @@ body {
 
 /* ---------- Colección ---------- */
 
-/* --- Toolbar: buscador + toggle de vista --- */
+/* --- Toolbar: filtro de texto + vista --- */
 
 .collection-toolbar {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  gap: var(--space-3);
 }
 
 .search-box {
   flex: 1;
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .search-icon {
   position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.85rem;
-  opacity: 0.4;
+  left: var(--space-3);
+  display: flex;
+  color: var(--text-dimmed);
   pointer-events: none;
 }
 
@@ -1744,177 +1743,237 @@ body {
   width: 100%;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.55rem 2rem 0.55rem 2.2rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-7) var(--space-3) var(--space-7);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color var(--dur-base) var(--ease);
 }
 
 .search-input:focus {
-  border-color: var(--accent-soft);
+  border-color: var(--accent);
 }
 
 .search-input::placeholder {
-  color: var(--text-faint);
+  color: var(--text-dimmed);
 }
 
 .search-clear {
   position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
+  right: var(--space-2);
+  display: flex;
   background: none;
   border: none;
   color: var(--text-dimmed);
   cursor: pointer;
-  font-size: 0.8rem;
-  padding: 0.2rem 0.4rem;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+
+.search-clear:hover {
+  color: var(--text-primary);
 }
 
 .view-toggle {
   display: flex;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
+  flex: none;
 }
 
 .view-btn {
+  display: flex;
+  align-items: center;
   background: none;
   border: none;
   color: var(--text-dimmed);
   cursor: pointer;
-  padding: 0.5rem 0.7rem;
-  font-size: 0.9rem;
+  padding: var(--space-2) var(--space-3);
   font-family: inherit;
-  transition: color 0.2s, background 0.2s;
-  letter-spacing: 0.05em;
+  transition: color var(--dur-base) var(--ease),
+    background-color var(--dur-base) var(--ease);
 }
 
-.view-btn.active {
-  background: var(--bg-active);
+.view-btn:hover {
   color: var(--text-primary);
 }
 
-/* --- Filtros de colección --- */
+.view-btn.active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* --- Filtros --- */
 
 .collection-filters {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
 .filter-group {
   display: flex;
-  gap: 0.4rem;
+  gap: var(--space-1);
 }
 
 .filter-chip {
-  background: var(--bg-input);
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.35rem 0.85rem;
-  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition: border-color var(--dur-base) var(--ease),
+    color var(--dur-base) var(--ease),
+    background-color var(--dur-base) var(--ease);
 }
 
 .filter-chip:hover {
-  border-color: var(--accent-soft);
+  border-color: var(--border-strong);
   color: var(--text-primary);
 }
 
 .filter-chip.selected {
-  background: var(--bg-active);
-  border-color: var(--accent-soft);
-  color: var(--text-heading);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.filter-selects {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .filter-select {
-  background: var(--bg-input);
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.35rem 0.7rem;
-  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   cursor: pointer;
   outline: none;
 }
 
 .filter-select:focus {
-  border-color: var(--accent-soft);
+  border-color: var(--accent);
 }
 
-/* --- Cuadrícula de portadas --- */
+/* --- Lo que está aplicado ahora mismo --- */
 
-/* El hueco es más ancho que antes: las tarjetas van inclinadas y se tocarían. */
+.active-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.active-filters-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-dimmed);
+}
+
+.filter-token {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-1) 2px var(--space-3);
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.filter-token button {
+  display: flex;
+  padding: 2px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-dimmed);
+  cursor: pointer;
+}
+
+.filter-token button:hover {
+  background: var(--bg-active);
+  color: var(--text-heading);
+}
+
+/* --- La bandeja: las portadas --- */
+
 .collection-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1.9rem 1.6rem;
-  padding: 0.5rem 0.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: var(--space-5) var(--space-4);
 }
 
 /*
-  Cada disco de la cuadrícula es una foto Polaroid: marco claro, más ancho
-  abajo, y una inclinación mínima.
+  La tarjeta ya no es una foto Polaroid inclinada con tinta marrón fija.
 
-  La inclinación se reparte con :nth-child y no con un número al azar. Si fuera
-  al azar cambiaría en cada redibujado, y la cuadrícula entera temblaría cada
-  vez que alguien escribe una letra en el buscador.
+  Aquella versión tenía dos problemas: los colores del texto estaban escritos
+  a mano y no seguían el tema, así que en oscuro el texto quedaba casi
+  ilegible; y la inclinación con `rotate` obligaba a dejar huecos enormes
+  entre tarjetas para que no se tocaran, lo que hacía caber muchos menos
+  discos en pantalla.
+
+  Ahora la portada es la protagonista y todo lo demás es texto tranquilo
+  debajo, sobre el fondo de la app.
 */
 .album-card {
-  --tilt: 0deg;
-  background: var(--polaroid-frame);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: none;
   border: none;
-  border-radius: 4px;
-  padding: 0.5rem 0.5rem 0.2rem;
+  padding: 0;
   cursor: pointer;
   text-align: left;
-  color: #2a2118;
   font-family: inherit;
-  box-shadow: var(--polaroid-shadow);
-  transform: rotate(var(--tilt));
-  transition: transform var(--dur-base) var(--ease),
-    box-shadow var(--dur-base) var(--ease);
+  border-radius: var(--radius-md);
 }
 
-.album-card:nth-child(4n + 1) { --tilt: -1.1deg; }
-.album-card:nth-child(4n + 2) { --tilt: 0.8deg; }
-.album-card:nth-child(4n + 3) { --tilt: -0.5deg; }
-.album-card:nth-child(4n + 4) { --tilt: 1.3deg; }
-
-.album-card:hover,
-.album-card:focus-visible {
-  transform: rotate(0deg) translateY(-4px) scale(1.03);
-  box-shadow: var(--shadow-3);
-  z-index: 2;
-}
-
-.album-card:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+/* La funda: contiene la portada y el disco que asoma por detrás. */
+.album-card-sleeve {
+  position: relative;
+  display: block;
+  isolation: isolate;
 }
 
 .album-card-cover {
+  position: relative;
+  z-index: 2;
+  display: block;
   aspect-ratio: 1;
   overflow: hidden;
-  background: #d8d0c4;
-  border-radius: 1px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--dur-base) var(--ease);
 }
 
 .album-card-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .album-card-placeholder {
@@ -1923,26 +1982,76 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
-  opacity: 0.35;
+  font-size: var(--text-xl);
+  opacity: 0.4;
 }
 
 /*
-  El texto de la tarjeta va sobre el marco claro de la Polaroid, así que lleva
-  tinta oscura fija y NO las variables de texto del tema: en tema oscuro esas
-  variables son casi blancas y el texto desaparecería sobre el marco.
+  El disco asomando de la funda al pasar por encima.
+
+  Es el mismo gesto que sacar un disco a medias para ver cuál es. Solo se
+  dibuja en los formatos que SON un disco —un casete no sale de su caja así—
+  y solo al pasar por encima, así que nunca hay más de uno pintándose a la
+  vez aunque haya 250 discos en pantalla.
 */
+.album-card-disc {
+  position: absolute;
+  z-index: 1;
+  top: 6%;
+  left: 0;
+  width: 88%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  opacity: 0;
+  background-color: var(--disc-vinyl);
+  background-image:
+    repeating-radial-gradient(
+      circle at center,
+      var(--disc-groove) 0px,
+      var(--disc-groove) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(circle at center, var(--disc-vinyl-edge), var(--disc-vinyl) 70%);
+  transition: transform var(--dur-base) var(--ease), opacity var(--dur-base) var(--ease);
+  pointer-events: none;
+}
+
+.album-card[data-format='cd'] .album-card-disc {
+  background-color: var(--disc-cd);
+  background-image: radial-gradient(circle at center, var(--disc-cd), var(--disc-cd-edge) 76%);
+}
+
+/* Los formatos que no son un disco no sacan nada de la funda. */
+.album-card[data-format='casete'] .album-card-disc {
+  display: none;
+}
+
+.album-card:hover .album-card-disc,
+.album-card:focus-visible .album-card-disc {
+  opacity: 1;
+  transform: translateX(28%);
+}
+
+/*
+  El estado de conservación NO va en la tarjeta. Los estados de Waxbox son
+  palabras ("Muy bueno", "Regular"), no siglas de dos letras, y una etiqueta
+  de ese largo encima de una portada de 168px tapa justo lo que la persona
+  está mirando para reconocer el disco. Vive en la tabla y en la ficha, que
+  es donde hay sitio para leerlo.
+*/
+
 .album-card-info {
-  padding: 0.7rem 0.35rem 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 1px;
+  min-width: 0;
 }
 
 .album-card-title {
   font-weight: 600;
   font-size: var(--text-sm);
-  color: #2a2118;
+  color: var(--text-heading);
   letter-spacing: var(--tracking-tight);
   white-space: nowrap;
   overflow: hidden;
@@ -1950,8 +2059,8 @@ body {
 }
 
 .album-card-artist {
-  font-size: var(--text-xs);
-  color: #6b5c4c;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1959,9 +2068,19 @@ body {
 
 .album-card-meta {
   font-size: var(--text-xs);
-  color: #8b7c6a;
-  margin-top: 0.2rem;
-  font-variant-numeric: tabular-nums;
+  color: var(--text-dimmed);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.album-card:hover .album-card-cover {
+  border-color: var(--accent);
+}
+
+.album-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
 }
 
 /* --- Tabla de datos --- */
@@ -1969,24 +2088,34 @@ body {
 .collection-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--bg-card);
 }
 
 .collection-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
 }
 
-.collection-table th {
+/*
+  La cabecera se queda pegada arriba al bajar por la tabla. Con 250 discos,
+  perder de vista qué columna es cuál obliga a subir hasta arriba solo para
+  volver a leer los encabezados.
+*/
+.collection-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   text-align: left;
-  padding: 0.65rem 0.75rem;
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.78rem;
+  padding: var(--space-3);
+  background: var(--bg-inset);
+  color: var(--text-dimmed);
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-wide);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
   user-select: none;
@@ -1994,21 +2123,20 @@ body {
 
 .collection-table th.sortable {
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color var(--dur-base) var(--ease);
 }
 
 .collection-table th.sortable:hover,
 .collection-table th.sorted {
-  color: var(--text-primary);
+  color: var(--text-heading);
 }
 
 .sort-arrow {
-  font-size: 0.65rem;
-  color: var(--accent-soft);
+  color: var(--accent);
 }
 
 .collection-table td {
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   color: var(--text-body);
   border-bottom: 1px solid var(--border-subtle);
   white-space: nowrap;
@@ -2019,7 +2147,7 @@ body {
 
 .collection-table tbody tr {
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background-color var(--dur-fast) var(--ease);
 }
 
 .collection-table tbody tr:hover {
@@ -2032,14 +2160,15 @@ body {
 
 .col-cover {
   width: 40px;
-  padding: 0.35rem 0.5rem !important;
+  padding: var(--space-1) var(--space-2) !important;
 }
 
 .table-thumb {
   width: 34px;
   height: 34px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
   display: block;
 }
 
@@ -2049,8 +2178,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
-  opacity: 0.3;
+  font-size: var(--text-md);
+  opacity: 0.4;
 }
 
 .col-title {
@@ -2058,12 +2187,16 @@ body {
   color: var(--text-heading) !important;
 }
 
+/* Los números se alinean a la derecha y en la mono: así una columna de años
+   o de duraciones se lee como una columna y no como texto suelto. */
 .col-num {
   text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .col-short {
-  max-width: 120px;
+  max-width: 130px;
 }
 
 /* --- Selector de condición --- */

@@ -130,6 +130,37 @@ export function IconBack(props: IconProps) {
   )
 }
 
+/** Vista de cuadrícula: las portadas. */
+export function IconGrid(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="3" width="7.5" height="7.5" rx="1" />
+      <rect x="13.5" y="3" width="7.5" height="7.5" rx="1" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="1" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1" />
+    </Svg>
+  )
+}
+
+/** Vista de tabla: los datos. */
+export function IconTable(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="4" width="18" height="16" rx="1.5" />
+      <path d="M3 9.5h18M3 15h18M9 9.5V20" />
+    </Svg>
+  )
+}
+
+/** Quitar, cerrar. */
+export function IconClose(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M18 6 6 18M6 6l12 12" />
+    </Svg>
+  )
+}
+
 /** Exportar. */
 export function IconExport(props: IconProps) {
   return (
