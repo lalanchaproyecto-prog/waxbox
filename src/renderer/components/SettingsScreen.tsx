@@ -4,6 +4,7 @@ import { FEATURES, type FeatureFlags } from '@core/models/features'
 import type { ThemePreference } from '../App'
 import PageHeader from './PageHeader'
 import { IconChevron } from './Icons'
+import { enlaceIssues, enlaceReportarProblema, enlaceSugerencia } from '../support'
 
 interface SettingsScreenProps {
   status: SettingsStatus
@@ -283,6 +284,47 @@ function SettingsScreen({
             </p>
           </div>
         )}
+      </section>
+
+      {/*
+        Reportar y sugerir.
+
+        Los dos llevan al mismo sitio —los issues del repositorio— pero con
+        formularios distintos, y eso importa: un fallo y una idea necesitan
+        que te pregunten cosas diferentes. Juntarlos en un solo botón
+        «contacto» dejaría a quien reporta un fallo sin las preguntas que
+        hacen ese informe útil.
+
+        Se abren en el navegador, no dentro de la app: escribir un informe
+        largo dentro de una ventana sin pestañas ni gestor de contraseñas es
+        peor, y además así se ve antes de publicar si alguien ya lo reportó.
+      */}
+      <section className="setting-block">
+        <div className="setting-title-row">
+          <h3 className="section-title">Reportar un problema o sugerir algo</h3>
+        </div>
+        <p className="setting-description">
+          Si algo no funciona o echas en falta alguna función, cuéntanoslo. Se abre el
+          navegador con el formulario ya empezado, incluida la versión que tienes
+          instalada — así no hay que preguntártela después. Nada se envía hasta que tú lo
+          publiques.
+        </p>
+        <div className="setting-actions">
+          <a
+            className="btn btn-ghost"
+            href={enlaceReportarProblema()}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Reportar un problema
+          </a>
+          <a className="btn btn-ghost" href={enlaceSugerencia()} target="_blank" rel="noreferrer">
+            Sugerir una mejora
+          </a>
+          <a className="btn btn-ghost" href={enlaceIssues()} target="_blank" rel="noreferrer">
+            Ver lo ya reportado
+          </a>
+        </div>
       </section>
 
       {/*

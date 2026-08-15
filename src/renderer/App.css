@@ -59,9 +59,18 @@ body {
   quedaban flotando en medio de la nada. Ahora el contenido empieza siempre
   arriba a la izquierda, en el mismo punto, en todas las pantallas.
 */
+/*
+  El ancho del menú vive en una variable porque no es solo cosa del menú: el
+  reproductor se apoya en ella para no meterse por debajo. Si cambia aquí,
+  cambia allá sola.
+*/
+:root {
+  --sidebar-width: 232px;
+}
+
 .app {
   display: grid;
-  grid-template-columns: 232px 1fr;
+  grid-template-columns: var(--sidebar-width) 1fr;
   min-height: 100vh;
 }
 
@@ -73,8 +82,8 @@ body {
   menú al lado de 1600 de contenido se ve raquítico.
 */
 @media (min-width: 1600px) {
-  .app {
-    grid-template-columns: 268px 1fr;
+  :root {
+    --sidebar-width: 268px;
   }
 }
 
@@ -1792,6 +1801,25 @@ body {
 .setting-actions {
   display: flex;
   gap: var(--space-3);
+  /* Tres botones seguidos no caben en una ventana angosta: bajan de línea
+     en vez de desbordar. */
+  flex-wrap: wrap;
+}
+
+/*
+  Los botones que en realidad son enlaces.
+
+  «Reportar un problema» abre el navegador, así que es un <a> de verdad y no
+  un <button> con un manejador: así se puede copiar la dirección, abrir en
+  otra ventana, y los lectores de pantalla lo anuncian como lo que es. Pero
+  un <a> no hereda el centrado ni la altura de `.btn`, y sin esto queda un
+  botón con el texto pegado arriba.
+*/
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .feedback-ok {
@@ -4870,12 +4898,30 @@ body {
   referencia de la píldora de vidrio. `position: fixed` es lo que lo mantiene
   quieto mientras el resto de la app se desplaza.
 */
+/*
+  LA BARRA SE CENTRA EN EL CONTENIDO, NO EN LA PANTALLA.
+
+  Antes iba centrada en la ventana entera (`left: 50%`), y como el menú
+  lateral ocupa la franja izquierda, la barra se le montaba encima: tapaba
+  «Configuración» y lo que quedara abajo del menú, que es justo donde hay que
+  poder pulsar mientras suena algo.
+
+  Ahora la caja arranca donde termina el menú y el `margin: auto` la centra
+  dentro de esa franja. No hace falta `transform` para centrar, lo que además
+  deja la animación de entrada libre para mover solo en vertical.
+
+  Y es más corta: 920 px era casi el ancho de la ventana para una barra que
+  solo lleva portada, título y tres botones. 620 la deja como lo que es —una
+  pieza que acompaña— en vez de una franja que cruza la pantalla.
+*/
 .player-wrap {
   position: fixed;
-  left: 50%;
+  left: var(--sidebar-width);
+  right: 0;
   bottom: 1.1rem;
-  transform: translateX(-50%);
-  width: min(920px, calc(100vw - 2.5rem));
+  width: auto;
+  max-width: min(620px, calc(100vw - var(--sidebar-width) - 2.5rem));
+  margin-inline: auto;
   z-index: 60;
   display: flex;
   flex-direction: column;
@@ -4884,8 +4930,8 @@ body {
 }
 
 @keyframes player-in {
-  from { opacity: 0; transform: translate(-50%, 12px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
 }
 
 .player-bar {
@@ -4920,11 +4966,19 @@ body {
   font-size: 1.2rem;
 }
 
+/*
+  En una barra más corta hay que repartir mejor.
+
+  El título y el artista pesan más que la barra de avance: saber QUÉ suena es
+  la razón de que exista esta pieza, y para mover el punto de la canción está
+  el reproductor grande, que tiene sitio de sobra. Por eso el texto conserva
+  su espacio y lo que cede es el avance.
+*/
 .player-info {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  flex: 1 1 12rem;
+  flex: 1 1 10rem;
 }
 
 .player-title {
@@ -5004,7 +5058,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  flex: 2 1 14rem;
+  flex: 1 1 9rem;
   min-width: 0;
 }
 
