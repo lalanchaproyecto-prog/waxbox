@@ -2,6 +2,7 @@ import type { CollectionSummary } from '@core/database/db'
 import type { Profile } from '@core/models/profile'
 import type { FeatureFlags } from '@core/models/features'
 import CollectionBar from './CollectionBar'
+import { Logotipo } from './Logo'
 import {
   IconAdd,
   IconCollection,
@@ -73,6 +74,17 @@ function Sidebar({
 }: SidebarProps) {
   return (
     <nav className="sidebar" aria-label="Menú principal">
+      {/*
+        La marca, una sola vez y arriba del todo.
+
+        No es decoración ni un botón: es lo que contesta «¿en qué programa
+        estoy?» de un vistazo. Va sobre el perfil porque la app contiene a la
+        persona, no al revés.
+      */}
+      <div className="sidebar-marca">
+        <Logotipo alto={22} />
+      </div>
+
       <div className="sidebar-identity">
         <button
           className="profile-block"

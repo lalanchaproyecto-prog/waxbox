@@ -13,6 +13,7 @@ interface SettingsScreenProps {
   features: FeatureFlags
   onFeaturesChange: (features: FeatureFlags) => void
   onOpenAbout: () => void
+  onVerTutorial: () => void
   onBack: () => void
 }
 
@@ -39,6 +40,7 @@ function SettingsScreen({
   features,
   onFeaturesChange,
   onOpenAbout,
+  onVerTutorial,
   onBack
 }: SettingsScreenProps) {
   const [apiKey, setApiKey] = useState('')
@@ -96,7 +98,7 @@ function SettingsScreen({
           <h3 className="section-title">Apariencia</h3>
         </div>
         <p className="setting-description">
-          Elige cómo se ve Waxbox. En automático, sigue la configuración de tu sistema operativo.
+          Elige cómo se ve Melôfyle. En automático, sigue la configuración de tu sistema operativo.
         </p>
         <div className="theme-options" role="radiogroup" aria-label="Tema de la aplicación">
           {THEME_OPTIONS.map((opt) => (
@@ -170,7 +172,7 @@ function SettingsScreen({
         </div>
 
         <p className="setting-description">
-          Waxbox puede buscar en YouTube el video de cada canción de tus discos. Para eso
+          Melôfyle puede buscar en YouTube el video de cada canción de tus discos. Para eso
           necesita una clave gratuita de Google, tuya. <strong>Es completamente opcional</strong>:
           sin ella, todo lo demás — tus fotos, el tracklist, el año, el género, el sello y la
           reseña — funciona igual.
@@ -244,10 +246,10 @@ function SettingsScreen({
               <li>
                 Arriba, al lado del logo de Google Cloud, hay un selector de proyectos. Haz clic y
                 elige <strong>&quot;Proyecto nuevo&quot;</strong>. Ponle de nombre{' '}
-                <strong>Waxbox</strong> y confirma. Espera unos segundos a que se cree.
+                <strong>Melôfyle</strong> y confirma. Espera unos segundos a que se cree.
               </li>
               <li>
-                Comprueba que arriba quede seleccionado el proyecto <strong>Waxbox</strong> y no
+                Comprueba que arriba quede seleccionado el proyecto <strong>Melôfyle</strong> y no
                 otro.
               </li>
               <li>
@@ -270,25 +272,47 @@ function SettingsScreen({
                 Recomendado: en Google Cloud, haz clic en{' '}
                 <strong>&quot;Restringir clave&quot;</strong> y, en restricciones de API, marca
                 solo <strong>YouTube Data API v3</strong>. Deja la restricción de aplicación en{' '}
-                <strong>&quot;Ninguna&quot;</strong>, porque Waxbox es un programa de escritorio.
+                <strong>&quot;Ninguna&quot;</strong>, porque Melôfyle es un programa de escritorio.
               </li>
             </ol>
 
             <p className="guide-note">
               Google da 10.000 unidades diarias gratis y cada búsqueda de una canción cuesta 100,
-              o sea unas 100 canciones por día. Por eso Waxbox busca el video solo cuando le das
+              o sea unas 100 canciones por día. Por eso Melôfyle busca el video solo cuando le das
               al botón de escuchar, y lo guarda para no volver a gastarlo.
             </p>
           </div>
         )}
       </section>
 
+      {/*
+        El tutorial, para volver a verlo.
+
+        Sale solo la primera vez que entra un perfil, así que sin esto no
+        habría forma de recuperarlo: quien lo saltó apurado el primer día se
+        quedaría sin saber qué hace la mitad de la app.
+      */}
       <section className="setting-block">
         <div className="setting-title-row">
-          <h3 className="section-title">Acerca de Waxbox</h3>
+          <h3 className="section-title">Tutorial de introducción</h3>
         </div>
         <p className="setting-description">
-          Quién hizo Waxbox, qué versión tienes instalada y de dónde salen los datos de tus
+          El recorrido por todo lo que puedes hacer en la app y cómo se hace. Aparece solo
+          la primera vez; aquí lo puedes volver a ver cuando quieras.
+        </p>
+        <div className="setting-actions">
+          <button className="btn btn-ghost" onClick={onVerTutorial}>
+            Ver el tutorial
+          </button>
+        </div>
+      </section>
+
+      <section className="setting-block">
+        <div className="setting-title-row">
+          <h3 className="section-title">Acerca de Melôfyle</h3>
+        </div>
+        <p className="setting-description">
+          Quién hizo Melôfyle, qué versión tienes instalada y de dónde salen los datos de tus
           discos.
         </p>
         <div className="setting-actions">

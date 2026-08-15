@@ -93,6 +93,22 @@ function configureSpellChecker(window: BrowserWindow): void {
   })
 }
 
+/*
+  El icono de la ventana.
+
+  En la app instalada lo pone electron-builder desde `resources/icon.png`, pero
+  en desarrollo nadie lo hace y la ventana sale con el icono genérico de
+  Electron. Esto lo carga a mano cuando existe: así la barra de tareas muestra
+  la marca también mientras se trabaja.
+
+  El `resources/` del proyecto no se empaqueta dentro de `out/`, así que la
+  ruta se calcula desde la raíz y solo se usa si el archivo está ahí.
+*/
+function iconoDeLaVentana(): string | undefined {
+  const ruta = join(__dirname, '../../resources/icon.png')
+  return existsSync(ruta) ? ruta : undefined
+}
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -100,7 +116,8 @@ function createWindow(): void {
     minWidth: 800,
     minHeight: 600,
     show: false,
-    title: 'Waxbox',
+    title: 'Melôfyle',
+    icon: iconoDeLaVentana(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -127,7 +144,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('com.waxbox.app')
+  electronApp.setAppUserModelId('com.melofyle.app')
 
   // La base ya no se abre acá: cada perfil tiene la suya y no sabemos cuál
   // hasta que la persona elija en el selector de perfiles.

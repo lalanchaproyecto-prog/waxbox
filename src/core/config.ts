@@ -9,12 +9,27 @@
  * Ver https://musicbrainz.org/doc/MusicBrainz_API/Rate_Limiting
  */
 
-export const APP_NAME = 'Waxbox'
+/** El nombre de la app tal como se escribe y se muestra, con su circunflejo. */
+export const APP_NAME = 'Melôfyle'
+
+/** El eslogan. Va en inglés a propósito: es parte del logotipo, no una frase traducible. */
+export const APP_SLOGAN = 'Keep your music.'
+
+/**
+ * El nombre sin acentos, para donde no cabe un carácter que no sea ASCII.
+ *
+ * Las cabeceras HTTP solo admiten ASCII de forma segura: una ô cruda en el
+ * User-Agent viaja mal y hay servidores que directamente rechazan la petición.
+ * MusicBrainz es de los que se lo toma en serio, y quedarnos sin catálogo por
+ * un acento sería un final tonto.
+ */
+export const APP_NAME_ASCII = 'Melofyle'
+
 export const APP_VERSION = '1.0.0'
-export const REPO_URL = 'https://github.com/lalanchaproyecto-prog/waxbox'
+export const REPO_URL = 'https://github.com/lalanchaproyecto-prog/melofyle'
 
 /** Cabecera User-Agent en el formato que pide MusicBrainz: Nombre/Versión ( contacto ) */
-export const USER_AGENT = `${APP_NAME}/${APP_VERSION} ( ${REPO_URL} )`
+export const USER_AGENT = `${APP_NAME_ASCII}/${APP_VERSION} ( ${REPO_URL} )`
 
 /**
  * MusicBrainz permite como máximo una petición por segundo por aplicación.

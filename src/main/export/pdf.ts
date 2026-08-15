@@ -195,7 +195,7 @@ function docShell(title: string, subtitle: string, css: string, body: string): s
     <div class="doc-sub">${esc(subtitle)}</div>
   </header>
   ${body}
-  <footer class="doc-footer">Generado con Waxbox el ${esc(stamp)}</footer>
+  <footer class="doc-footer">Generado con Melôfyle el ${esc(stamp)}</footer>
 </body></html>`
 }
 

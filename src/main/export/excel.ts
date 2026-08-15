@@ -62,7 +62,7 @@ export function buildCollectionWorkbook(
   fields: Set<string>
 ): ExcelJS.Workbook {
   const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'Waxbox'
+  workbook.creator = 'Melôfyle'
   workbook.created = new Date()
 
   const sheet = workbook.addWorksheet('Colección')
@@ -175,7 +175,7 @@ export function buildSetlistWorkbook(
   fields: Set<string>
 ): ExcelJS.Workbook {
   const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'Waxbox'
+  workbook.creator = 'Melôfyle'
   workbook.created = new Date()
 
   const sheet = workbook.addWorksheet(setlist.name.slice(0, 30) || 'Setlist')

@@ -15,6 +15,7 @@ import ArtistAlbumPicker from './components/ArtistAlbumPicker'
 import AlbumReview from './components/AlbumReview'
 import CollectionScreen from './components/CollectionScreen'
 import SettingsScreen from './components/SettingsScreen'
+import Tutorial from './components/Tutorial'
 import AboutScreen from './components/AboutScreen'
 import SetlistsScreen from './components/SetlistsScreen'
 import CollectionBar from './components/CollectionBar'
@@ -81,6 +82,18 @@ function featuresKey(profileId: string): string {
 
 function activeCollectionKey(profileId: string): string {
   return `waxbox-active-collection-${profileId}`
+}
+
+/**
+ * Si a este perfil ya se le mostró el tutorial de bienvenida.
+ *
+ * Va por perfil y no por instalación: en un computador compartido, la segunda
+ * persona que crea su perfil merece la misma introducción que tuvo la
+ * primera. Que alguien ya sepa usar la app no dice nada de quien entra
+ * después.
+ */
+function tutorialKey(profileId: string): string {
+  return `waxbox-tutorial-visto-${profileId}`
 }
 
 /** Lee las funciones encendidas. Ante cualquier problema, todo queda encendido. */
@@ -155,6 +168,7 @@ function App() {
    */
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null)
+  const [mostrarTutorial, setMostrarTutorial] = useState(false)
   const [starting, setStarting] = useState(true)
 
   /** Setlist al que se le están sumando canciones desde el modo explorar. */
@@ -342,6 +356,21 @@ function App() {
     if (!activeProfile) return
     localStorage.setItem(featuresKey(activeProfile.id), JSON.stringify(features))
   }, [features, activeProfile])
+
+  /*
+    El tutorial se abre solo la primera vez que entra un perfil.
+
+    Se marca como visto en cuanto se abre, no al terminarlo. Si alguien lo
+    salta en el primer capítulo es porque no lo quiere; volver a plantárselo
+    en el siguiente arranque sería insistir. Queda en Configuración para
+    quien cambie de opinión.
+  */
+  useEffect(() => {
+    if (!activeProfile) return
+    if (localStorage.getItem(tutorialKey(activeProfile.id))) return
+    localStorage.setItem(tutorialKey(activeProfile.id), 'si')
+    setMostrarTutorial(true)
+  }, [activeProfile])
 
   useEffect(() => {
     if (!features.setlists && (view === 'setlists' || view === 'explore')) {
@@ -767,7 +796,7 @@ function App() {
           <div className="screen empty-first-run">
             <h2 className="page-title">Tu colección está vacía</h2>
             <p className="empty-state-help">
-              Agrega tu primer disco, casete o CD para empezar. Waxbox completa el año, el
+              Agrega tu primer disco, casete o CD para empezar. Melôfyle completa el año, el
               sello y el tracklist por ti.
             </p>
             <button className="btn btn-primary" onClick={() => pushView('add')}>
@@ -800,6 +829,7 @@ function App() {
               goToSection('collection')
             }}
             onAdd={() => pushView('add')}
+            playbackEnabled={features.playback}
           />
         )}
 
@@ -895,6 +925,7 @@ function App() {
             features={features}
             onFeaturesChange={setFeatures}
             onOpenAbout={() => pushView('about')}
+            onVerTutorial={() => setMostrarTutorial(true)}
             onBack={goBack}
           />
         )}
@@ -982,6 +1013,14 @@ function App() {
       {features.playback && <PlayerBar />}
 
       {/*
+        El tutorial va encima de todo y fuera del <main>: se abre solo en el
+        primer arranque de cada perfil, y a mano desde Configuración.
+      */}
+      {mostrarTutorial && (
+        <Tutorial features={features} onCerrar={() => setMostrarTutorial(false)} />
+      )}
+
+      {/*
         Ctrl+K. Busca discos Y secciones en la misma lista: quien escribe
         "exportar" no tiene por qué saber si eso es una pantalla o un botón.
       */}
@@ -1002,7 +1041,7 @@ function App() {
           { label: 'Exportar la colección', hint: 'Acción', run: irAColeccionCompleta },
           { label: 'Configuración', hint: 'Ajustes', run: () => pushView('settings') },
           {
-            label: `Acerca de Waxbox v${APP_VERSION}`,
+            label: `Acerca de Melôfyle v${APP_VERSION}`,
             hint: 'Ajustes',
             run: () => pushView('about')
           }

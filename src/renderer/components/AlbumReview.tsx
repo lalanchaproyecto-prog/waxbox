@@ -982,7 +982,7 @@ function AlbumReview({
 
         {/*
           ===================================================================
-          TU COPIA — el elemento firma de Waxbox.
+          TU COPIA — el elemento firma de Melôfyle.
 
           Todo lo que esta app sabe y ningún catálogo público sabe: en qué
           estado está TU disco, dónde lo compraste, a quién se lo prestaste,

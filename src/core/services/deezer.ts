@@ -3,13 +3,13 @@
  *
  * Deezer permite buscar canciones sin cuenta, sin clave y sin trámite alguno,
  * y devuelve un adelanto de 30 segundos en MP3 de cada una. Por eso es la forma
- * principal de escuchar en Waxbox: funciona de entrada para cualquier persona
+ * principal de escuchar en Melôfyle: funciona de entrada para cualquier persona
  * que instale la aplicación, sin pedirle nada.
  *
  * DETALLE IMPORTANTE — los enlaces de audio caducan:
  * La dirección del adelanto lleva una firma con fecha de vencimiento (unas 5
  * horas). Guardarla en la base de datos dejaría la colección llena de enlaces
- * muertos al día siguiente. Por eso Waxbox guarda el IDENTIFICADOR de la
+ * muertos al día siguiente. Por eso Melôfyle guarda el IDENTIFICADOR de la
  * canción en Deezer, que no caduca, y pide una dirección nueva justo en el
  * momento de reproducir.
  *

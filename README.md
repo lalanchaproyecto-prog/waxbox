@@ -1,6 +1,6 @@
-# Waxbox
+# Melôfyle
 
-**Tu música, tu historia.**
+**Keep your music.**
 
 Aplicación de escritorio para Windows que te permite catalogar tu colección de música en formatos
 físicos: vinilo, CD, casete y los que se vayan agregando más adelante.
@@ -8,14 +8,14 @@ físicos: vinilo, CD, casete y los que se vayan agregando más adelante.
 Cuando agregas un disco, la app completa automáticamente los datos del álbum (año, género, sello,
 tracklist) consultando servicios públicos de música, y te deja revisar y corregir todo antes de guardarlo.
 
-Waxbox es exclusivamente para música en formato físico: lo que tienes en la mano y en el estante.
-La música digital y el streaming quedan fuera del alcance del proyecto: Waxbox cataloga objetos,
+Melôfyle es exclusivamente para música en formato físico: lo que tienes en la mano y en el estante.
+La música digital y el streaming quedan fuera del alcance del proyecto: Melôfyle cataloga objetos,
 no bibliotecas digitales.
 
 Con una excepción, que es la que confirma la regla: **puedes asociar tus propios archivos de audio
 a las canciones de un disco que ya tienes** — el código de descarga que venía dentro del vinilo, o
 el CD que rippeaste. No es una biblioteca digital: es poder escuchar el disco que está en tu
-estante. Waxbox guarda la ruta a tus archivos donde ya están, sin copiarlos ni moverlos.
+estante. Melôfyle guarda la ruta a tus archivos donde ya están, sin copiarlos ni moverlos.
 
 ## Estado del proyecto
 
@@ -92,7 +92,7 @@ salvo YouTube, que es opcional.
 
 ## Escuchar las canciones
 
-Waxbox usa Deezer para que puedas escuchar 30 segundos de cada canción. Funciona
+Melôfyle usa Deezer para que puedas escuchar 30 segundos de cada canción. Funciona
 de entrada, sin configurar nada.
 
 Si además quieres ver el video completo, puedes agregar tu propia clave gratuita de
@@ -102,10 +102,10 @@ computador y nunca se comparte.
 
 ## Créditos
 
-Waxbox es una iniciativa de **Proyecto La Lancha**, creada por Fabian Cardenas Perez e
+Melôfyle es una iniciativa de **Proyecto La Lancha**, creada por Fabian Cardenas Perez e
 Ivy Bonilla Guerrero.
 
-Waxbox existe gracias a proyectos de datos abiertos mantenidos por sus comunidades:
+Melôfyle existe gracias a proyectos de datos abiertos mantenidos por sus comunidades:
 [MusicBrainz](https://musicbrainz.org/), [Cover Art Archive](https://coverartarchive.org/),
 [Wikipedia y Wikidata](https://www.wikidata.org/), y [Deezer](https://developers.deezer.com/api).
 

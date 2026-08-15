@@ -157,7 +157,7 @@ function AddAlbumForm({ initial, onSubmit, onBrowseArtist, onManual, onCancel }:
 
       <PageHeader
         title="Agregar un disco"
-        subtitle="Escribe el artista y el álbum; Waxbox busca el resto"
+        subtitle="Escribe el artista y el álbum; Melôfyle busca el resto"
       />
 
       <section className="form-section">

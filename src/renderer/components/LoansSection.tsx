@@ -111,7 +111,7 @@ function LoansSection({ albumId }: LoansSectionProps) {
                 <h2>Prestar este disco</h2>
                 <p className="modal-subtitle">
                   Solo el nombre de la persona es obligatorio. La fecha de devolución
-                  sirve para que Waxbox te avise si se pasa.
+                  sirve para que Melôfyle te avise si se pasa.
                 </p>
               </div>
               <button

@@ -363,7 +363,7 @@ const api = {
   }
 }
 
-export type WaxboxApi = typeof api
+export type MelofyleApi = typeof api
 
 if (process.contextIsolated) {
   try {

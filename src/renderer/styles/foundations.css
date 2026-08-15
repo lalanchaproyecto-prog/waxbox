@@ -55,7 +55,7 @@
 */
 .glass {
   background-color: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  border: var(--frame-width) solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-3);
 }
@@ -127,7 +127,7 @@
 /*
   EL ELEMENTO FIRMA DE LA APP.
 
-  Waxbox cataloga objetos que existen. En toda la interfaz —plana, contenida,
+  Melôfyle cataloga objetos que existen. En toda la interfaz —plana, contenida,
   de bordes definidos— este es el único sitio donde se permite volumen,
   materia y movimiento, y se lo permite porque aquí el volumen NO es adorno:
   es el objeto del que trata la ficha.

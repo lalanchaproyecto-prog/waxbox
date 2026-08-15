@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CollectionStats, ActiveLoan } from '@core/database/db'
 import type { DashboardData } from '@core/database/dashboard'
+import type { PlayableTrack } from '@core/player/queue'
 import { getFormat } from '@core/models/formats'
 import { loanStatus, today } from '@core/models/loan'
 import { conditionLabel } from '@core/models/condition'
+import { usePlayer } from '../player/PlayerProvider'
 import PageHeader from './PageHeader'
 import type { SmartCriteria, SmartList } from '@core/models/smartList'
 
@@ -15,6 +17,8 @@ interface HomeScreenProps {
   /** Abre la colección viendo esa lista, con sus condiciones aplicadas. */
   onOpenLista: (lista: SmartList) => void
   onAdd: () => void
+  /** Si la función de reproducir está encendida en configuración. */
+  playbackEnabled: boolean
 }
 
 /**
@@ -54,7 +58,7 @@ function explicarFallo(mensaje: string): string {
   if (mensaje.includes('No handler registered')) {
     return (
       'La app está a medio actualizar: la ventana ya tiene los paneles nuevos, pero el ' +
-      'proceso de fondo todavía es el anterior y no sabe responderlos. Cierra Waxbox por ' +
+      'proceso de fondo todavía es el anterior y no sabe responderlos. Cierra Melôfyle por ' +
       'completo y vuelve a abrirla (si la ejecutas con «npm run dev», detén el comando con ' +
       'Ctrl+C y arráncalo otra vez).'
     )
@@ -89,6 +93,47 @@ function ocultosKey(collectionId: number): string {
   return `waxbox-home-ocultos-${collectionId}`
 }
 
+function anchosKey(collectionId: number): string {
+  return `waxbox-home-anchos-${collectionId}`
+}
+
+/**
+ * Cuántas columnas ocupa cada panel.
+ *
+ * ESTO ES LO QUE RESUELVE LOS HUECOS EN BLANCO. Antes cada panel tenía un
+ * ancho fijo decidido en el código —uno de una columna, otro de dos— y no
+ * había forma de tocarlo: si la cuadrícula te dejaba un hueco al lado de un
+ * panel corto, ahí se quedaba.
+ *
+ * Ahora el ancho es una preferencia más, como el orden. Junto con el
+ * acomodo denso de la cuadrícula (los paneles chicos se meten solos en los
+ * huecos que dejan los grandes), permite armar el inicio sin espacios
+ * muertos.
+ */
+type Ancho = 1 | 2 | 3
+
+/** Los que traen ancho doble de fábrica: necesitan sitio para lo que muestran. */
+const ANCHO_POR_OMISION: Partial<Record<ModuloId, Ancho>> = {
+  tonight: 2,
+  recientes: 2,
+  decadas: 2
+}
+
+function cargarAnchos(collectionId: number): Record<string, Ancho> {
+  try {
+    const raw = localStorage.getItem(anchosKey(collectionId))
+    if (!raw) return { ...ANCHO_POR_OMISION }
+    const guardado = JSON.parse(raw) as Record<string, number>
+    const limpio: Record<string, Ancho> = { ...ANCHO_POR_OMISION }
+    for (const [id, valor] of Object.entries(guardado)) {
+      if (valor === 1 || valor === 2 || valor === 3) limpio[id] = valor
+    }
+    return limpio
+  } catch {
+    return { ...ANCHO_POR_OMISION }
+  }
+}
+
 /**
  * Qué paneles decidió NO ver.
  *
@@ -114,8 +159,10 @@ function HomeScreen({
   onOpenAlbum,
   onOpenLoans,
   onOpenLista,
-  onAdd
+  onAdd,
+  playbackEnabled
 }: HomeScreenProps) {
+  const player = usePlayer()
   const [stats, setStats] = useState<CollectionStats | null>(null)
   const [data, setData] = useState<DashboardData | null>(null)
   const [loans, setLoans] = useState<ActiveLoan[]>([])
@@ -123,7 +170,16 @@ function HomeScreen({
   const [errorPaneles, setErrorPaneles] = useState<string | null>(null)
   const [orden, setOrden] = useState<ModuloId[]>(() => cargarOrden(collectionId))
   const [ocultos, setOcultos] = useState<ModuloId[]>(() => cargarOcultos(collectionId))
+  const [anchos, setAnchos] = useState<Record<string, Ancho>>(() => cargarAnchos(collectionId))
   const [ordenando, setOrdenando] = useState(false)
+
+  /* Qué panel se está arrastrando y sobre cuál está pasando ahora mismo. */
+  const [arrastrado, setArrastrado] = useState<ModuloId | null>(null)
+  const [destino, setDestino] = useState<ModuloId | null>(null)
+
+  /* La sugerencia tarda un momento en cargar sus canciones antes de sonar. */
+  const [cargandoSugerencia, setCargandoSugerencia] = useState(false)
+  const [avisoSugerencia, setAvisoSugerencia] = useState<string | null>(null)
 
   /*
     Cada llamada se resuelve por su cuenta.
@@ -174,6 +230,7 @@ function HomeScreen({
   useEffect(() => {
     setOrden(cargarOrden(collectionId))
     setOcultos(cargarOcultos(collectionId))
+    setAnchos(cargarAnchos(collectionId))
   }, [collectionId])
 
   function guardarOrden(nuevo: ModuloId[]) {
@@ -187,6 +244,15 @@ function HomeScreen({
     localStorage.setItem(ocultosKey(collectionId), JSON.stringify(nuevo))
   }
 
+  /** Cicla el ancho de un panel: 1 → 2 → 3 → 1 columnas. */
+  function cambiarAncho(id: ModuloId) {
+    const actual = anchos[id] ?? 1
+    const siguiente: Ancho = actual === 1 ? 2 : actual === 2 ? 3 : 1
+    const nuevo = { ...anchos, [id]: siguiente }
+    setAnchos(nuevo)
+    localStorage.setItem(anchosKey(collectionId), JSON.stringify(nuevo))
+  }
+
   function mover(id: ModuloId, delta: number) {
     const i = orden.indexOf(id)
     const j = i + delta
@@ -196,10 +262,74 @@ function HomeScreen({
     guardarOrden(copia)
   }
 
+  /**
+   * Suelta el panel arrastrado justo delante del panel de destino.
+   *
+   * Se trabaja sobre `orden` completo, ocultos incluidos: si se reordenara
+   * solo lo visible, volver a mostrar un panel escondido lo devolvería a una
+   * posición que ya no significa nada.
+   */
+  function soltarSobre(sobre: ModuloId) {
+    if (!arrastrado || arrastrado === sobre) {
+      setArrastrado(null)
+      setDestino(null)
+      return
+    }
+    const sinEl = orden.filter((x) => x !== arrastrado)
+    const i = sinEl.indexOf(sobre)
+    sinEl.splice(i < 0 ? sinEl.length : i, 0, arrastrado)
+    guardarOrden(sinEl)
+    setArrastrado(null)
+    setDestino(null)
+  }
+
   function spin() {
     window.api.collectionStats(collectionId).then((res) => {
       if (res.ok) setStats(res.data)
     })
+  }
+
+  /**
+   * Pone a sonar el disco sugerido, desde la primera canción.
+   *
+   * La sugerencia solo trae el resumen del álbum —título, artista, portada—,
+   * no su tracklist, así que hay que ir a buscarlo antes de poder armar la
+   * cola. Es la misma cola que construye la ficha del disco: el reproductor
+   * no distingue de dónde salió.
+   */
+  async function reproducirSugerencia() {
+    const album = stats?.randomAlbum
+    if (!album || cargandoSugerencia) return
+
+    setCargandoSugerencia(true)
+    setAvisoSugerencia(null)
+
+    const resultado = await window.api.getAlbum(album.id)
+    setCargandoSugerencia(false)
+
+    if (!resultado.ok || !resultado.data) {
+      setAvisoSugerencia('No se pudo leer este disco.')
+      return
+    }
+
+    const portada = coverSrc(album)
+    const cola: PlayableTrack[] = resultado.data.tracks.map((track) => ({
+      trackId: track.id,
+      title: track.title,
+      artist: track.artist,
+      albumTitle: resultado.data!.title,
+      format: resultado.data!.format,
+      cover: portada,
+      file: track.file ?? null,
+      deezer: track.deezer
+    }))
+
+    if (cola.length === 0) {
+      setAvisoSugerencia('Este disco todavía no tiene canciones cargadas.')
+      return
+    }
+
+    player.play(cola, 0)
   }
 
   const numero = useCallback((valor: number) => valor.toLocaleString('es-CL'), [])
@@ -234,7 +364,7 @@ function HomeScreen({
         <div className="empty-state">
           <p className="empty-state-title">Esta colección está vacía.</p>
           <p className="empty-state-help">
-            Agrega tu primer disco, casete o CD. Waxbox completa el año, el sello y el
+            Agrega tu primer disco, casete o CD. Melôfyle completa el año, el sello y el
             tracklist por ti.
           </p>
           <button className="btn btn-primary" onClick={onAdd} style={{ alignSelf: 'flex-start' }}>
@@ -248,7 +378,7 @@ function HomeScreen({
   /** Cada módulo devuelve su tarjeta, o null si no tiene nada que mostrar. */
   const paneles: Record<ModuloId, React.ReactNode> = {
     tonight: stats.randomAlbum ? (
-      <Card key="tonight" id="tonight" ancho titulo="¿Qué escucho hoy?" {...ctl('tonight')}>
+      <Card key="tonight" id="tonight" titulo="¿Qué escucho hoy?" {...ctl('tonight')}>
         <div className="tonight">
           <div className="tonight-object">
             <div className="ficha-sleeve">
@@ -282,8 +412,24 @@ function HomeScreen({
               }`}
             </p>
             <div className="tonight-actions">
+              {/*
+                Reproducir va primero y en el botón fuerte.
+
+                Este panel contesta «¿qué escucho hoy?», así que la acción que
+                cierra esa pregunta es ponerlo a sonar, no abrir su ficha para
+                seguir leyendo sobre él.
+              */}
+              {playbackEnabled && (
+                <button
+                  className="btn btn-primary"
+                  onClick={reproducirSugerencia}
+                  disabled={cargandoSugerencia}
+                >
+                  {cargandoSugerencia ? 'Cargando...' : '▶ Reproducir'}
+                </button>
+              )}
               <button
-                className="btn btn-primary"
+                className={`btn ${playbackEnabled ? 'btn-ghost' : 'btn-primary'}`}
                 onClick={() => onOpenAlbum(stats.randomAlbum!.id)}
               >
                 Abrir la ficha
@@ -292,6 +438,7 @@ function HomeScreen({
                 Otra sugerencia
               </button>
             </div>
+            {avisoSugerencia && <p className="card-nota">{avisoSugerencia}</p>}
           </div>
         </div>
       </Card>
@@ -351,7 +498,6 @@ function HomeScreen({
         <Card
           key="recientes"
           id="recientes"
-          ancho
           titulo="Últimas incorporaciones"
           {...ctl('recientes')}
         >
@@ -462,7 +608,7 @@ function HomeScreen({
 
     decadas:
       data && data.decadas.length > 0 ? (
-        <Card key="decadas" id="decadas" ancho titulo="Por década" {...ctl('decadas')}>
+        <Card key="decadas" id="decadas" titulo="Por década" {...ctl('decadas')}>
           <Decadas datos={data.decadas} />
         </Card>
       ) : null,
@@ -559,11 +705,24 @@ function HomeScreen({
     const visibles = orden.filter((x) => !ocultos.includes(x))
     return {
       ordenando,
+      columnas: anchos[id] ?? 1,
       onSubir: () => mover(id, -1),
       onBajar: () => mover(id, 1),
       onOcultar: () => alternarVisible(id),
+      onAncho: () => cambiarAncho(id),
       primero: visibles.indexOf(id) === 0,
-      ultimo: visibles.indexOf(id) === visibles.length - 1
+      ultimo: visibles.indexOf(id) === visibles.length - 1,
+
+      /* Arrastrar y soltar. Solo se activa en modo personalizar. */
+      arrastrando: arrastrado === id,
+      apuntado: destino === id && arrastrado !== null && arrastrado !== id,
+      onArrastrarInicio: () => setArrastrado(id),
+      onArrastrarFin: () => {
+        setArrastrado(null)
+        setDestino(null)
+      },
+      onEncima: () => setDestino(id),
+      onSoltar: () => soltarSobre(id)
     }
   }
 
@@ -578,7 +737,7 @@ function HomeScreen({
               className={`btn ${ordenando ? 'btn-primary' : 'btn-ghost'}`}
               onClick={() => setOrdenando(!ordenando)}
             >
-              {ordenando ? 'Listo' : 'Ordenar paneles'}
+              {ordenando ? 'Listo' : 'Personalizar inicio'}
             </button>
             <button className="btn btn-primary" onClick={onAdd}>
               Agregar disco
@@ -590,8 +749,10 @@ function HomeScreen({
       {ordenando && (
         <div className="orden-aviso">
           <p>
-            Mueve los paneles con las flechas y ocúltalos con la ✕. Se guarda para esta
-            colección.
+            <strong>Arrastra un panel y suéltalo sobre otro</strong> para cambiarlo de
+            sitio. Con «1 col» eliges cuántas columnas ocupa —súbelo a 2 o 3 para llenar
+            los huecos— y con la ✕ lo escondes. Las flechas hacen lo mismo que arrastrar,
+            para cuando prefieras el teclado. Todo se guarda para esta colección.
           </p>
 
           {/*
@@ -663,46 +824,110 @@ function HomeScreen({
 interface CardProps {
   id: string
   titulo: string
-  /** Ocupa las dos columnas. Para lo que necesita sitio: la portada, la grilla. */
-  ancho?: boolean
   children: React.ReactNode
   ordenando: boolean
+  /** Cuántas columnas de la cuadrícula ocupa. */
+  columnas: Ancho
   onSubir: () => void
   onBajar: () => void
   onOcultar: () => void
+  onAncho: () => void
   primero: boolean
   ultimo: boolean
+  arrastrando: boolean
+  apuntado: boolean
+  onArrastrarInicio: () => void
+  onArrastrarFin: () => void
+  onEncima: () => void
+  onSoltar: () => void
 }
 
 /**
  * La tarjeta de un panel.
  *
- * Todo el inicio está hecho de estas: antes, "¿Qué escucho hoy?" tenía caja
- * propia y el resto quedaba suelto sobre el fondo, así que parecían cosas de
- * distinta importancia cuando son todas lo mismo — un panel que mira un
- * aspecto de la colección.
+ * Todo el inicio está hecho de estas: lo que distingue a una de otra es
+ * cuánto ocupa y qué contiene, no si tiene marco.
+ *
+ * EN MODO PERSONALIZAR SE ARRASTRA. La tarjeta entera es agarrable y se
+ * suelta sobre otra para ponerse en su lugar. Las flechas siguen ahí, pero
+ * ya no son la forma principal de mover nada: están para quien navega con
+ * teclado, porque arrastrar con el ratón no se puede hacer con teclas.
+ *
+ * Fuera de ese modo la tarjeta NO es arrastrable, y es a propósito: casi todo
+ * lo que hay dentro de un panel se pulsa, y un panel que se despega al
+ * intentar hacer clic en un disco sería un accidente constante.
  */
 function Card({
   titulo,
-  ancho,
   children,
   ordenando,
+  columnas,
   onSubir,
   onBajar,
   onOcultar,
+  onAncho,
   primero,
-  ultimo
+  ultimo,
+  arrastrando,
+  apuntado,
+  onArrastrarInicio,
+  onArrastrarFin,
+  onEncima,
+  onSoltar
 }: CardProps) {
+  const clases = [
+    'home-card',
+    ordenando ? 'home-card-movible' : '',
+    arrastrando ? 'home-card-arrastrando' : '',
+    apuntado ? 'home-card-apuntada' : ''
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <section className={`home-card${ancho ? ' home-card-ancha' : ''}`}>
+    <section
+      className={clases}
+      data-columnas={columnas}
+      draggable={ordenando}
+      onDragStart={onArrastrarInicio}
+      onDragEnd={onArrastrarFin}
+      onDragOver={(evento) => {
+        if (!ordenando) return
+        // Sin esto el navegador no admite que se suelte nada encima.
+        evento.preventDefault()
+        onEncima()
+      }}
+      onDrop={(evento) => {
+        if (!ordenando) return
+        evento.preventDefault()
+        onSoltar()
+      }}
+    >
       <header className="home-card-head">
-        <h3 className="home-card-title">{titulo}</h3>
+        <h3 className="home-card-title">
+          {ordenando && (
+            <span className="orden-agarre" aria-hidden="true">
+              ⠿
+            </span>
+          )}
+          {titulo}
+        </h3>
         {ordenando && (
           <div className="orden-controles">
-            <button onClick={onSubir} disabled={primero} aria-label={`Subir ${titulo}`}>
+            <button
+              className="orden-ancho"
+              onClick={onAncho}
+              title="Cambiar el ancho de este panel"
+              aria-label={`${titulo}: ancho de ${columnas} ${
+                columnas === 1 ? 'columna' : 'columnas'
+              }. Pulsa para cambiarlo`}
+            >
+              <span className="numeric">{columnas}</span> col
+            </button>
+            <button onClick={onSubir} disabled={primero} aria-label={`Mover ${titulo} antes`}>
               ↑
             </button>
-            <button onClick={onBajar} disabled={ultimo} aria-label={`Bajar ${titulo}`}>
+            <button onClick={onBajar} disabled={ultimo} aria-label={`Mover ${titulo} después`}>
               ↓
             </button>
             <button

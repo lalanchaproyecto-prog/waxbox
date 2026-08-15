@@ -223,7 +223,7 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
 
       <p className="profile-picker-note">
         Los perfiles sirven para organizarse, no para esconder datos: no tienen
-        contraseña y cualquiera que abra Waxbox puede entrar a cualquiera.
+        contraseña y cualquiera que abra Melôfyle puede entrar a cualquiera.
       </p>
 
       {/*

@@ -3,10 +3,10 @@
  *
  * A diferencia de las demás fuentes, YouTube sí exige una clave de acceso.
  * Cada persona usa la suya, gratuita, que configura desde la pantalla de
- * Configuración de Waxbox. La clave nunca viaja a ningún servidor nuestro:
+ * Configuración de Melôfyle. La clave nunca viaja a ningún servidor nuestro:
  * se guarda cifrada en el computador de cada quien.
  *
- * Esta función es OPCIONAL. Sin clave, Waxbox funciona completo; lo único que
+ * Esta función es OPCIONAL. Sin clave, Melôfyle funciona completo; lo único que
  * no aparece es el botón de escuchar cada canción.
  *
  * Este módulo no guarda ni conoce dónde vive la clave: la recibe como
@@ -60,7 +60,7 @@ function explainError(status: number, body: GoogleErrorBody | null): string {
     return 'Se agotó tu cuota diaria de YouTube. Vuelve a intentar mañana; la cuota se reinicia sola.'
   }
   if (has('API_KEY_HTTP_REFERRER_BLOCKED') || has('API_KEY_IP_ADDRESS_BLOCKED')) {
-    return 'La clave tiene restricciones que bloquean a Waxbox. En Google Cloud, deja la restricción de aplicación en "Ninguna" y restringe solo por API.'
+    return 'La clave tiene restricciones que bloquean a Melôfyle. En Google Cloud, deja la restricción de aplicación en "Ninguna" y restringe solo por API.'
   }
   if (status === 403) {
     return 'Google rechazó la consulta. Revisa que la API esté habilitada y que la clave no tenga restricciones.'

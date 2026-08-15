@@ -42,6 +42,20 @@ const PROFILE_EMOJIS = ['🎧', '🎸', '🎹', '🎤', '🥁', '🎺', '📻', 
 
 let activeProfileId: string | null = null
 
+/*
+  DÓNDE VIVEN LOS DATOS, Y POR QUÉ LA CARPETA SIGUE LLAMÁNDOSE «waxbox».
+
+  `app.getPath('userData')` no inventa la ruta: la arma con el `name` del
+  package.json. Ese campo sigue diciendo «waxbox» a propósito, aunque la app
+  ahora se llame Melôfyle.
+
+  Cambiarlo renombraría la carpeta, y las colecciones, los perfiles y las fotos
+  que ya existen se quedarían en la carpeta anterior — la app arrancaría
+  vacía, como recién instalada, con todo el catálogo intacto pero invisible en
+  un directorio que ya nadie mira. El nombre interno no lo ve nadie; perder una
+  colección sí se nota. Si algún día hay que cambiarlo, primero hay que migrar
+  la carpeta, no solo renombrarla.
+*/
 function profilesFilePath(): string {
   return join(app.getPath('userData'), 'profiles.json')
 }

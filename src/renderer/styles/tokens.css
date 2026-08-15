@@ -1,11 +1,11 @@
 /*
-  TOKENS — el vocabulario visual de Waxbox.
+  TOKENS — el vocabulario visual de Melôfyle.
 
   Este archivo es la única fuente de la paleta, la tipografía, el espaciado y
   los radios. Ningún componente escribe un valor a mano: todos leen de aquí.
 
   SISTEMA "BANDEJA" — EN UNA FRASE:
-  Waxbox no es un reproductor, es un catálogo de objetos. El vocabulario sale
+  Melôfyle no es un reproductor, es un catálogo de objetos. El vocabulario sale
   del objeto impreso y del cajón donde se guarda — cartón, funda, ficha — no
   del equipo de sonido. Un solo acento de imprenta; el resto es neutro.
 
@@ -32,31 +32,51 @@
 
 :root {
   /*
-    ---------- Superficies: cartón y funda ----------
-    Gris cálido con sesgo de cartón, no gris azulado de SaaS. El fondo de la
-    app es el cajón (--bg-body); las tarjetas son la funda (--bg-card), un
-    escalón más clara.
+    ---------- Superficies ----------
+    Gris neutro muy claro para el fondo de la app, y un blanco roto para las
+    piezas que van encima. La diferencia entre los dos es mínima a propósito:
+    en este sistema lo que separa una tarjeta del fondo NO es el color, es el
+    marco oscuro que la rodea.
+
+    Antes el fondo era un beige de cartón bastante más oscuro. Se aclaró para
+    que el marco negro y el naranja tengan sobre qué destacar: sobre cartón
+    medio, los dos pierden fuerza y todo se vuelve del mismo tono.
   */
-  --bg-body: #dfdbd2;
-  --bg-card: #f6f4ef;
-  --bg-input: #efece5;
-  --bg-inset: #e4e0d8;
-  --bg-hover: #ebe8e1;
-  --bg-active: #e4e0d8;
-  --bg-subtle: #ebe8e1;
+  --bg-body: #e6e5e3;
+  --bg-card: #f4f3f0;
+  --bg-input: #eceae7;
+  --bg-inset: #e0dedb;
+  --bg-hover: #eae8e5;
+  --bg-active: #e2e0dd;
+  --bg-subtle: #eae8e5;
 
   /*
-    Bordes con presencia. Cada tarjeta tiene que leerse como una pieza
-    contenida, con su sitio: si el borde apenas se insinúa, las cosas se
-    funden con lo de al lado y vuelve el problema de "no se entiende nada a
-    simple vista".
+    ---------- Bordes ----------
+    Dos pesos, y hacen cosas distintas.
+
+    `--border` y sus variantes son la línea fina de dentro: separan filas de
+    una lista, dibujan el contorno en reposo de un campo. Se ven poco a
+    propósito.
+
+    `--border-frame` es el MARCO: la línea casi negra que rodea cada pieza
+    completa —una tarjeta del inicio, un diálogo, el reproductor— y la
+    convierte en un objeto con límite propio. Es el gesto que define el
+    sistema: piezas nítidamente recortadas sobre el fondo, no superficies que
+    se funden en un degradado suave.
+
+    Los dos pesos no son intercambiables. Poner el marco en todo dejaría la
+    app pareciendo un boceto de alambre; no ponerlo en nada devuelve el
+    problema de que no se distingue dónde termina una cosa y empieza otra.
   */
-  --border: #c2bcb1;
-  --border-input: #b0aa9d;
-  --border-strong: #948e82;
-  --border-subtle: #d4cfc4;
-  --border-separator: #cec9bd;
-  --border-accent: #c2bcb1;
+  --border: #cbc9c4;
+  --border-input: #a9a7a1;
+  --border-strong: #6f6d68;
+  --border-subtle: #dad8d3;
+  --border-separator: #d3d1cc;
+  --border-accent: #cbc9c4;
+
+  --border-frame: #1e1f23;
+  --frame-width: 2px;
 
   /* ---------- Texto ----------
      Todos llegan como mínimo a 4.5:1 sobre el CARTÓN, que es el fondo más
@@ -76,25 +96,43 @@
   --text-faint: #5d6065;
 
   /*
-    ---------- Acento: azul de imprenta ----------
-    Un solo acento en toda la app. Nunca decorativo: solo lo interactivo —
-    botones, foco, enlaces, lo que tú anotaste — lo usa.
+    ---------- Acento: el rojo de la marca ----------
+    Un solo acento en toda la app, y es exactamente el de la ô del logotipo.
+    Nunca decorativo: solo lo interactivo —botones, foco, enlaces, lo que tú
+    anotaste— lo usa.
+
+    OJO CON EL TEXTO QUE VA ENCIMA: es oscuro, no blanco.
+
+    Este rojo es demasiado luminoso para llevar texto blanco (3,6:1, por
+    debajo del mínimo legible), pero con texto casi negro llega a 5,8:1. Así
+    que un botón de acento es un bloque naranja con letras oscuras. No es un
+    apaño: es lo que hace el referente, donde la cifra grande va en negro
+    sobre el bloque naranja. Sale más contundente que el blanco y además se
+    lee.
   */
-  --accent: #1b4fa0;
-  --accent-hover: #163f80;
-  --accent-soft: #6a8fc4;
-  --accent-link: #1b4fa0;
-  --on-accent: #ffffff;
+  --accent: #fb3d2b;
+  --accent-hover: #e6311f;
+  --accent-soft: #f8a396;
+  --on-accent: #17181a;
+
+  /*
+    El acento cuando es TEXTO y no un bloque.
+
+    Un enlace naranja sobre fondo claro se queda en 3,2:1 y no hay manera de
+    leerlo bien. Esta versión oscurecida del mismo rojo llega a 5,6:1 y sigue
+    perteneciendo a la misma familia de color.
+  */
+  --accent-link: #b32a19;
 
   /*
     Antes había un segundo acento (mostaza) y un tercero (turquesa, solo para
-    setlists). Bandeja usa uno solo: una sección se distingue por dónde vive
-    en la navegación, no por tener su propio color. Estos dos quedan
+    setlists). El sistema usa uno solo: una sección se distingue por dónde
+    vive en la navegación, no por tener su propio color. Estos dos quedan
     apuntando al mismo acento para que nada que todavía los use desentone.
   */
-  --accent-warm: #1b4fa0;
-  --accent-cool: #1b4fa0;
-  --on-accent-cool: #ffffff;
+  --accent-warm: #fb3d2b;
+  --accent-cool: #fb3d2b;
+  --on-accent-cool: #17181a;
 
   /* ---------- Estados ---------- */
   --error-bg: #f7e6e5;
@@ -109,14 +147,14 @@
   --danger-bg: rgba(156, 47, 58, 0.08);
 
   --overlay: rgba(22, 24, 26, 0.5);
-  --halo-accent: rgba(27, 79, 160, 0.12);
-  --halo-warm: rgba(27, 79, 160, 0);
+  --halo-accent: rgba(251, 61, 43, 0.14);
+  --halo-warm: rgba(251, 61, 43, 0);
 
   /* ---------- Tinte dinámico ----------
      Lo reescribe en vivo el extractor de color de la portada, en la ficha del
      disco. Estos valores son el respaldo antes de que eso ocurra. */
-  --tint: #1b4fa0;
-  --tint-soft: rgba(27, 79, 160, 0.1);
+  --tint: #fb3d2b;
+  --tint-soft: rgba(251, 61, 43, 0.1);
   --tint-text: #16181a;
 
   /* ---------- Tipografía ----------
@@ -168,11 +206,16 @@
   --space-8: 64px;
 
   /* ---------- Bordes redondeados ----------
-     Cuatro valores. Los botones dejan de ser píldoras: una píldora dice
-     "etiqueta", no "acción", y hoy todos los botones tenían esa forma. */
+     Los botones no son píldoras: una píldora dice "etiqueta", no "acción".
+
+     El radio grande subió de 14 a 18, y se sumó uno mayor todavía para los
+     marcos exteriores. Una esquina generosa es parte de lo que hace que una
+     pieza con marco negro se lea como un objeto y no como una caja de
+     formulario. */
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
   --radius-pill: 999px;
 
   /* ---------- Sombras ----------
@@ -212,6 +255,22 @@
   --texture-metal: none;
   --texture-paper: none;
 
+  /*
+    La trama diagonal.
+
+    Es la única textura del sistema, y tiene un trabajo concreto: marcar la
+    parte que FALTA de una barra. Sobre el bloque naranja de una medida, lo
+    rayado es lo que todavía no está —el resto del 100%, los discos sin dato—
+    y lo liso es lo que sí. Se entiende sin leyenda y funciona igual para
+    quien no distingue bien los colores, porque la diferencia es de dibujo y
+    no de tono.
+  */
+  --hatch: repeating-linear-gradient(
+    45deg,
+    rgba(23, 24, 26, 0.85) 0 2px,
+    transparent 2px 7px
+  );
+
   /* Surco de vinilo: se mantiene con tono neutro para el disco que gira en
      la pantalla de carga, hasta que esa pantalla tenga su propia pasada. */
   --texture-grooves:
@@ -232,8 +291,8 @@
      que hay debajo, y lo que esta app necesita es exactamente lo contrario —
      que cada pieza tenga un borde definido y un sitio claro. La separación
      la dan el borde, la sombra y el velo de fondo, no el blur. */
-  --glass-bg: #f6f4ef;
-  --glass-border: #c2bcb1;
+  --glass-bg: #f4f3f0;
+  --glass-border: #1e1f23;
   --glass-blur: 0px;
 
   /* Marco de las fotos que sube la persona. */
@@ -242,7 +301,7 @@
 
   /*
     ---------- El objeto físico ----------
-    El único lugar donde Waxbox se permite volumen y movimiento: el disco.
+    El único lugar donde Melôfyle se permite volumen y movimiento: el disco.
 
     No es decoración. Es el contenido — cada ficha de esta app describe un
     objeto que existe, y el disco es ese objeto. Por eso el rojo del vinilo
@@ -278,10 +337,18 @@
 
   --border: #343841;
   --border-input: #3d424c;
-  --border-strong: #4c525d;
+  --border-strong: #6b7280;
   --border-subtle: #2a2e34;
   --border-separator: #2e323a;
   --border-accent: #343841;
+
+  /*
+    En oscuro el marco no puede ser negro: sobre un fondo ya oscuro no se ve
+    nada. Se invierte el gesto y el marco pasa a ser una línea CLARA, que es
+    lo que recorta la pieza contra el fondo. El grosor se mantiene, así que
+    las piezas siguen teniendo el mismo peso que en claro.
+  */
+  --border-frame: #8a9099;
 
   /* Mismo criterio que en claro: ninguno baja de 4.5:1 sobre la funda
      oscura. Un gris apagado sobre fondo oscuro se vuelve ilegible mucho
@@ -294,15 +361,22 @@
   --text-dimmed: #878d95;
   --text-faint: #8a9098;
 
-  --accent: #79adee;
-  --accent-hover: #93bdf2;
-  --accent-soft: #4d739f;
-  --accent-link: #79adee;
-  --on-accent: #0e1a2b;
+  /*
+    El mismo rojo, un punto más claro.
 
-  --accent-warm: #79adee;
-  --accent-cool: #79adee;
-  --on-accent-cool: #0e1a2b;
+    El de la marca sobre fondo oscuro se queda en 4,4:1, justo por debajo del
+    mínimo. Aclararlo un poco lo lleva a 5,2:1 sin que deje de ser el mismo
+    color. El texto que va encima sigue siendo oscuro, igual que en claro.
+  */
+  --accent: #ff5c42;
+  --accent-hover: #ff7460;
+  --accent-soft: #8f4034;
+  --accent-link: #ff7c6a;
+  --on-accent: #17181a;
+
+  --accent-warm: #ff5c42;
+  --accent-cool: #ff5c42;
+  --on-accent-cool: #17181a;
 
   --error-bg: #2c1a1c;
   --error-border: #5a2f34;
@@ -316,11 +390,11 @@
   --danger-bg: rgba(236, 127, 139, 0.1);
 
   --overlay: rgba(8, 9, 10, 0.6);
-  --halo-accent: rgba(121, 173, 238, 0.14);
-  --halo-warm: rgba(121, 173, 238, 0);
+  --halo-accent: rgba(255, 92, 66, 0.16);
+  --halo-warm: rgba(255, 92, 66, 0);
 
-  --tint: #79adee;
-  --tint-soft: rgba(121, 173, 238, 0.12);
+  --tint: #ff5c42;
+  --tint-soft: rgba(255, 92, 66, 0.12);
   --tint-text: #ecedef;
 
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -340,11 +414,18 @@
       transparent 1px,
       transparent 4px
     );
+  /* La trama va siempre sobre el naranja, que no cambia de claridad con el
+     tema, así que sigue rayando en oscuro. */
+  --hatch: repeating-linear-gradient(
+    45deg,
+    rgba(23, 24, 26, 0.85) 0 2px,
+    transparent 2px 7px
+  );
   --grain: none;
   --grain-opacity: 0;
 
   --glass-bg: #1d2024;
-  --glass-border: #343841;
+  --glass-border: #8a9099;
 
   --polaroid-frame: #23262b;
   --polaroid-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);

@@ -1,7 +1,7 @@
 /**
- * Formatos físicos que Waxbox puede catalogar.
+ * Formatos físicos que Melôfyle puede catalogar.
  *
- * Waxbox es exclusivamente para música en formato físico: algo que la persona posee
+ * Melôfyle es exclusivamente para música en formato físico: algo que la persona posee
  * y puede tocar. Música digital, streaming y archivos de audio quedan fuera del alcance.
  *
  * PARA AGREGAR UN FORMATO NUEVO:

@@ -125,7 +125,7 @@ function CommandPalette({ open, onClose, albums, onOpenAlbum, actions }: Command
         className="palette"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
-        aria-label="Buscar en Waxbox"
+        aria-label="Buscar en Melôfyle"
       >
         <input
           ref={inputRef}

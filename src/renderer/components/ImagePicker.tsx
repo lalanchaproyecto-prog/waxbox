@@ -300,7 +300,7 @@ function ImagePicker({
         {pestana === 'archivo' && (
           <section className="image-picker-body">
             <p className="section-note">
-              Una foto tuya desde el computador. Se copia a la carpeta de Waxbox, así que
+              Una foto tuya desde el computador. Se copia a la carpeta de Melôfyle, así que
               puedes mover o borrar el original sin perderla.
             </p>
             <button className="btn btn-ghost" onClick={subirArchivo}>

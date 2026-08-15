@@ -1,5 +1,5 @@
 /*
-  Estilos de los componentes de Waxbox.
+  Estilos de los componentes de Melôfyle.
 
   La paleta, la tipografia y las texturas NO viven aqui: viven en
   styles/tokens.css. Los materiales reutilizables (volumen, vidrio, Polaroid)
@@ -65,6 +65,19 @@ body {
   min-height: 100vh;
 }
 
+/*
+  EL MENÚ CRECE UN POCO EN PANTALLAS ANCHAS.
+
+  No mucho: es una lista de cinco secciones y ensancharla más solo pondría
+  aire entre el icono y su etiqueta. Pero en un monitor grande, 232 px de
+  menú al lado de 1600 de contenido se ve raquítico.
+*/
+@media (min-width: 1600px) {
+  .app {
+    grid-template-columns: 268px 1fr;
+  }
+}
+
 /* Arranque y selector de perfil: sin menú, porque todavía no hay a dónde ir. */
 .app-bare {
   display: flex;
@@ -75,7 +88,13 @@ body {
 
 .app-main {
   min-width: 0;
-  padding: var(--space-6) var(--space-7) var(--space-8);
+  /*
+    El margen lateral crece con la ventana en vez de quedarse clavado en 48
+    px. En un monitor grande, un contenido que arranca pegado al menú y
+    termina pegado al canto se ve tan mal como uno que deja media pantalla
+    vacía: `clamp` da aire proporcional sin llegar nunca a desperdiciarlo.
+  */
+  padding: var(--space-6) clamp(var(--space-5), 3.5vw, var(--space-8)) var(--space-8);
   /* Sitio para que el reproductor no tape la última fila de contenido. */
   padding-bottom: 7rem;
   /*
@@ -90,12 +109,28 @@ body {
   overflow-x: clip;
 }
 
-/* La pantalla, con un ancho máximo para que el texto no cruce el monitor. */
+/*
+  LA PANTALLA OCUPA EL ANCHO QUE HAY.
+
+  Antes esto tenía un tope duro de 1180 px. En un monitor de 1920 eso dejaba
+  medio palmo de fondo vacío a la derecha, siempre, y la app parecía una
+  ventana pequeña estirada mal: no es que sobrara espacio, es que se veía
+  como si faltara contenido.
+
+  El tope se quita y en su lugar la app ESCALA. Lo que crece son las
+  cuadrículas —más discos por fila, más paneles al lado— que es donde el
+  ancho de verdad sirve para algo.
+
+  El texto corrido no se estira con ellas: los párrafos siguen con su propio
+  tope en `ch` allí donde estén, porque una línea de 200 caracteres es
+  ilegible por muy grande que sea la pantalla. Ancho para las rejillas,
+  medida contenida para la lectura.
+*/
 .screen {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  max-width: 1180px;
+  width: 100%;
 }
 
 /* ---------- Barra lateral ---------- */
@@ -112,6 +147,14 @@ body {
   background: var(--bg-card);
   border-right: 1px solid var(--border);
   overflow-y: auto;
+}
+
+/* La marca en el menú. Va con el color del texto y la ô pone el rojo. */
+.sidebar-marca {
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  color: var(--text-heading);
 }
 
 .sidebar-identity {
@@ -397,7 +440,7 @@ body {
   gap: var(--space-2);
   padding: var(--space-7) var(--space-5);
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: var(--frame-width) solid var(--border-frame);
   border-radius: var(--radius-lg);
 }
 
@@ -422,11 +465,6 @@ body {
 
 .empty-first-run .btn {
   align-self: flex-start;
-}
-
-/* El agujero del centro del disco del isotipo deja ver el fondo. */
-.isotipo-hole {
-  fill: var(--bg-body);
 }
 
 .empty-note {
@@ -756,7 +794,7 @@ body {
 .format-chip.selected {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 600;
 }
 
@@ -954,7 +992,7 @@ body {
 /* Lo ya resuelto: el visto reemplaza al número, que ya cumplió su función. */
 .flow-hecho .flow-num {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-link);
 }
 
 .flow-hecho .flow-label {
@@ -1142,7 +1180,7 @@ body {
 /* ==========================================================================
    LA FICHA DEL DISCO
 
-   La pantalla más importante de Waxbox y el sitio del elemento firma.
+   La pantalla más importante de Melôfyle y el sitio del elemento firma.
 
    La idea que la organiza: hay dos clases de información sobre un disco, y
    antes se veían exactamente igual. Lo que dice el CATÁLOGO (título, año,
@@ -1156,8 +1194,16 @@ body {
    y el azul del acento.
    ========================================================================== */
 
+/*
+  La ficha tampoco tiene tope de ancho.
+
+  Lo que crece aquí es útil: el tracklist gana sitio para títulos largos y el
+  panel de «tu copia» deja de apretarse. La reseña, que es lo único de leer
+  seguido, tiene su propia medida en `ch` más abajo y no se estira con el
+  resto.
+*/
 .ficha {
-  max-width: 1180px;
+  width: 100%;
 }
 
 /* --- El encabezado: el objeto y su ficha de catálogo --- */
@@ -1387,7 +1433,7 @@ body {
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
-  color: var(--accent);
+  color: var(--accent-link);
 }
 
 .mine-block {
@@ -1836,13 +1882,13 @@ body {
 .listen-btn:hover:not(:disabled) {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .listen-btn.playing {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .youtube-btn {
@@ -1960,7 +2006,7 @@ body {
 }
 
 .edited-mark {
-  color: var(--accent);
+  color: var(--accent-link);
   font-size: 0.7em;
   margin-left: 0.35rem;
   vertical-align: super;
@@ -2011,7 +2057,7 @@ body {
   flex-direction: column;
   gap: var(--space-5);
   background-color: var(--bg-card);
-  border: 1px solid var(--border-strong);
+  border: var(--frame-width) solid var(--border-frame);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-3);
   padding: var(--space-6);
@@ -2155,7 +2201,7 @@ body {
 }
 
 .credit-mine {
-  color: var(--accent);
+  color: var(--accent-link);
   font-size: 0.7rem;
 }
 
@@ -2597,7 +2643,7 @@ body {
 }
 
 /*
-  El estado de conservación NO va en la tarjeta. Los estados de Waxbox son
+  El estado de conservación NO va en la tarjeta. Los estados de Melôfyle son
   palabras ("Muy bueno", "Regular"), no siglas de dos letras, y una etiqueta
   de ese largo encima de una portada de 168px tapa justo lo que la persona
   está mirando para reconocer el disco. Vive en la tabla y en la ficha, que
@@ -2709,7 +2755,7 @@ body {
 }
 
 .sort-arrow {
-  color: var(--accent);
+  color: var(--accent-link);
 }
 
 .collection-table td {
@@ -2940,23 +2986,13 @@ body {
   padding: var(--space-7) var(--space-5);
   text-align: center;
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: var(--frame-width) solid var(--border-frame);
   border-radius: var(--radius-lg);
 }
 
-.about-isotipo {
-  color: var(--accent);
-  margin-bottom: var(--space-2);
-}
-
-.about-nombre {
-  font-family: var(--font-display);
-  font-variation-settings: var(--width-display);
-  font-size: var(--text-xl);
-  font-weight: 700;
-  letter-spacing: var(--tracking-display);
-  line-height: var(--leading-tight);
+.about-logotipo {
   color: var(--text-heading);
+  margin-bottom: var(--space-3);
 }
 
 /*
@@ -3271,7 +3307,7 @@ body {
 .genre-chip.selected {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .genre-chip:disabled {
@@ -3882,7 +3918,7 @@ body {
 .setlist-add-btn:hover {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .setlist-flash {
@@ -4745,42 +4781,22 @@ body {
   to { opacity: 1; transform: none; }
 }
 
+/*
+  El arranque.
+
+  Antes aquí giraba un disco dibujado a mano, porque no había logo. Ahora hay
+  marca de verdad y el logotipo se queda quieto: una palabra que da vueltas no
+  se lee, y lo que tiene que pasar en esos 1,6 segundos es justamente que se
+  lea el nombre. El movimiento lo aporta el indicador de carga de abajo.
+*/
 .logo-completo {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  position: relative;
+  gap: var(--space-4);
 }
 
-/* Gira en 4 segundos: en los 1,6 s que dura el arranque el giro se nota. */
 .logo-completo-marca {
-  color: var(--accent);
-  filter: drop-shadow(0 6px 18px var(--halo-accent));
-  animation: gira 4s linear infinite;
-}
-
-/* El disco gira lento, como en un tocadiscos. */
-@keyframes gira {
-  to { transform: rotate(360deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .logo-completo-marca { animation: none; }
-}
-
-.logo-completo-texto {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.logo-completo-nombre {
-  font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  letter-spacing: var(--tracking-display);
   color: var(--text-heading);
 }
 
@@ -4789,23 +4805,6 @@ body {
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
   color: var(--text-dimmed);
-}
-
-/*
-  Aviso de que la marca es provisional. Se quita junto con el logo definitivo:
-  está para que nadie confunda el marcador de posición con una decisión de
-  diseño ya tomada.
-*/
-.logo-placeholder-nota {
-  position: absolute;
-  bottom: -1.6rem;
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  color: var(--text-faint);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 0.1rem 0.6rem;
 }
 
 /* ---------- Portada de la ficha del disco ---------- */
@@ -5670,6 +5669,131 @@ body {
   max-width: 40rem;
 }
 
+/* ==========================================================================
+   El tutorial de bienvenida
+   ========================================================================== */
+
+/*
+  Alto fijo, no ajustado al contenido.
+
+  Los capítulos son de largos distintos, y con alto automático el diálogo
+  crecía y encogía en cada «Siguiente»: los botones de abajo saltaban de sitio
+  y había que perseguirlos con el ratón. Con una altura estable, avanzar es
+  pulsar catorce veces en el mismo punto.
+*/
+.modal-tutorial {
+  max-width: 42rem;
+  height: min(34rem, 86vh);
+}
+
+.tutorial-encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tutorial-avance {
+  height: 4px;
+  background-color: var(--bg-inset);
+  background-image: var(--hatch);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.tutorial-avance-lleno {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  transition: width var(--dur-base) var(--ease);
+}
+
+/* El cuerpo scrollea solo; la cabecera y el pie se quedan quietos. */
+.tutorial-cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.tutorial-marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0 var(--space-5);
+  color: var(--text-heading);
+  border-bottom: 1px solid var(--border-separator);
+}
+
+.tutorial-eslogan {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-dimmed);
+}
+
+.tutorial-texto {
+  font-size: var(--text-base);
+  line-height: var(--leading-loose);
+  color: var(--text-body);
+  max-width: 62ch;
+}
+
+.tutorial-pasos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-inset);
+  border-radius: var(--radius-md);
+}
+
+/*
+  Los pasos van numerados porque son una secuencia: primero esto, después
+  aquello. Una lista con puntos diría que da igual el orden, y no da igual.
+*/
+.tutorial-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 1.4rem;
+  list-style: decimal;
+}
+
+.tutorial-lista li {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.tutorial-lista li::marker {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent-link);
+}
+
+/*
+  Saltar a la izquierda, avanzar a la derecha: se separan a propósito, para
+  que abandonar no quede pegado al botón que se pulsa catorce veces seguidas.
+
+  Va con doble clase porque más abajo en este archivo hay otra regla de
+  `.modal-footer` que alinea todo a la derecha, y sin la especificidad extra
+  gana esa por venir después.
+*/
+.modal-footer.tutorial-pie {
+  justify-content: space-between;
+}
+
+.tutorial-navegacion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .wishlist-search-form {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
@@ -5820,27 +5944,138 @@ body {
   ninguna de las tres es lo que trae a nadie aquí.
 */
 
+/*
+  LA CUADRÍCULA, Y POR QUÉ YA NO DEJA HUECOS.
+
+  Tres cosas cambiaron respecto de antes, y hacen falta las tres:
+
+  1. `auto-fill` en vez de `auto-fit`. Con `auto-fit` las columnas vacías se
+     colapsaban y los paneles se estiraban hasta ocupar todo, así que un
+     panel de «2 columnas» podía acabar siendo la fila entera. Con
+     `auto-fill` las pistas se mantienen y decir «2 columnas» significa dos.
+
+  2. `dense`. Cuando un panel ancho no cabe en lo que queda de fila, la
+     cuadrícula deja el hueco y salta abajo. Con el acomodo denso, los
+     paneles angostos que vienen después se meten en ese hueco en lugar de
+     dejarlo vacío. Es lo que rellena los espacios en blanco solo.
+
+  3. `align-items` vuelve a su valor normal (estirar). Antes era `start`, y
+     eso hacía que en una fila con un panel alto y otro corto, el corto
+     dejara aire debajo. Estirados, los dos llegan al mismo borde y la fila
+     se lee como una banda entera, igual que las celdas del referente.
+*/
 .home-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-auto-flow: row dense;
   gap: var(--space-5);
-  align-items: start;
 }
 
+/*
+  El ancho que pidió cada panel.
+
+  Va como atributo y no como estilo en línea porque así el tope por tamaño de
+  ventana se puede escribir aquí abajo: un panel no puede ocupar más columnas
+  de las que hay, o la cuadrícula inventa columnas de más y saca una barra de
+  scroll horizontal.
+
+  La preferencia guardada NO se pierde al recortarla — sigue en su sitio y
+  vuelve a aplicarse en cuanto la ventana da para tanto.
+*/
+.home-card[data-columnas='2'] {
+  grid-column: span 2;
+}
+
+.home-card[data-columnas='3'] {
+  grid-column: span 3;
+}
+
+@media (max-width: 1250px) {
+  .home-card[data-columnas='3'] {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 920px) {
+  .home-card[data-columnas='2'],
+  .home-card[data-columnas='3'] {
+    grid-column: span 1;
+  }
+}
+
+/*
+  Cada panel es una pieza recortada: marco oscuro y esquina generosa.
+
+  Este es el sitio donde más se nota el sistema, porque el inicio es una
+  cuadrícula de piezas iguales y el marco es lo que las convierte en piezas
+  en vez de en zonas de un mismo lienzo.
+*/
 .home-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-5);
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: var(--frame-width) solid var(--border-frame);
   border-radius: var(--radius-lg);
   min-width: 0;
 }
 
-/* Lo que necesita sitio: la portada de la sugerencia, la grilla, el tiempo. */
-.home-card-ancha {
-  grid-column: 1 / -1;
+/* --- Personalizar: arrastrar, soltar y ancho --- */
+
+/*
+  El panel se puede agarrar. El cursor lo dice antes de intentarlo, que es la
+  única pista que tiene alguien de que esto se arrastra.
+*/
+.home-card-movible {
+  cursor: grab;
+  user-select: none;
+}
+
+.home-card-movible:active {
+  cursor: grabbing;
+}
+
+/* El que va en la mano: se atenúa para que no compita con el hueco. */
+.home-card-arrastrando {
+  opacity: 0.4;
+}
+
+/*
+  Dónde va a caer.
+
+  El borde de acento marca el panel sobre el que se está pasando, que es el
+  que va a ceder su posición. Sin esta señal, soltar es adivinar.
+*/
+.home-card-apuntada {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--halo-accent);
+}
+
+/* El asa de arrastre, junto al título. */
+.orden-agarre {
+  margin-right: var(--space-2);
+  color: var(--text-faint);
+  letter-spacing: -0.1em;
+}
+
+/*
+  Cuántas columnas ocupa. Se pulsa y cicla 1 → 2 → 3.
+
+  Este es el único control de la fila que lleva texto en vez de un símbolo, y
+  por eso necesita anular el ancho cuadrado de sus hermanos: «2 col» dentro de
+  una caja de 26 px se parte a la mitad. Se pone `width: auto` y un mínimo
+  para que los tres valores ocupen lo mismo y el botón no cambie de tamaño al
+  ciclar.
+*/
+.orden-controles button.orden-ancho {
+  width: auto;
+  min-width: 3.4rem;
+  gap: 0.2rem;
+  padding: 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
 }
 
 .home-card-head {
@@ -5953,7 +6188,7 @@ body {
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
-  color: var(--accent);
+  color: var(--accent-link);
 }
 
 .tonight-title {
@@ -6056,9 +6291,19 @@ body {
 
 /* La pista es un paso claro del mismo azul, no un gris: así el estado se lee
    a lo largo de toda la barra y no solo donde hay color. */
+/*
+  El canal de la barra va rayado, no en gris plano.
+
+  Lo rayado es la parte que falta: sobre el naranja lleno se lee al instante
+  cuánto hay y cuánto no, sin depender de distinguir dos tonos parecidos. Es
+  el mismo recurso que el bloque con trama del referente, y de paso resuelve
+  el caso de quien no diferencia bien los colores.
+*/
 .meter-track {
   height: 10px;
-  background: var(--halo-accent);
+  background-color: var(--bg-inset);
+  background-image: var(--hatch);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
@@ -6120,7 +6365,10 @@ body {
   height: 6rem;
   display: flex;
   align-items: flex-end;
-  background: var(--halo-accent);
+  background-color: var(--bg-inset);
+  background-image: var(--hatch);
+  border: 1px solid var(--border);
+  border-bottom: none;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
@@ -6242,7 +6490,7 @@ body {
   flex: none;
   width: 2.75rem;
   font-size: var(--text-md);
-  color: var(--accent);
+  color: var(--accent-link);
   text-align: right;
 }
 
@@ -6339,6 +6587,7 @@ body {
 @media (max-width: 720px) {
   .tonight {
     grid-template-columns: 1fr;
+
     gap: var(--space-5);
   }
 
@@ -6694,7 +6943,7 @@ body {
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
-  color: var(--accent);
+  color: var(--accent-link);
 }
 
 .modal-footer {
@@ -7083,7 +7332,7 @@ body {
 .lista-count {
   flex: none;
   font-size: var(--text-md);
-  color: var(--accent);
+  color: var(--accent-link);
 }
 
 /* --- La lista que se está viendo, con todo lo que se le puede hacer --- */

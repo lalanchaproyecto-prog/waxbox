@@ -4,7 +4,7 @@
  * QUÉ SON Y QUÉ NO:
  * Son el audio de un disco que la persona YA TIENE en la mano — el código de
  * descarga que venía dentro del vinilo, o el CD que rippeó. No es streaming ni
- * una biblioteca digital: Waxbox sigue catalogando objetos físicos, y esto es
+ * una biblioteca digital: Melôfyle sigue catalogando objetos físicos, y esto es
  * poder escuchar el objeto que ya está en el estante.
  *
  * POR QUÉ ESTOS FORMATOS Y NO OTROS:

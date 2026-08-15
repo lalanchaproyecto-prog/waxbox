@@ -29,7 +29,7 @@ export type ProgressReporter = (progress: ExportProgress) => void
 
 /** Windows no acepta estos caracteres en un nombre de archivo. */
 function safeFileName(name: string): string {
-  return name.replace(/[\\/:*?"<>|]/g, '-').trim() || 'Waxbox'
+  return name.replace(/[\\/:*?"<>|]/g, '-').trim() || 'Melôfyle'
 }
 
 async function askWhereToSave(
@@ -82,7 +82,7 @@ export async function runExport(
       throw new Error('Esta colección está vacía, no hay nada que exportar.')
     }
 
-    const path = await askWhereToSave(window, 'Waxbox - Mi colección', request.format)
+    const path = await askWhereToSave(window, 'Melôfyle - Mi colección', request.format)
     if (!path) return { path: null }
 
     const covers: Array<CoverImage | null> = wantsCovers
@@ -125,7 +125,7 @@ export async function runExport(
 
   const path = await askWhereToSave(
     window,
-    `Waxbox - ${safeFileName(setlist.name)}`,
+    `Melôfyle - ${safeFileName(setlist.name)}`,
     request.format
   )
   if (!path) return { path: null }
