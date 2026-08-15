@@ -16,8 +16,9 @@
 
 import { safeStorage } from 'electron'
 import { join } from 'path'
-import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'fs'
+import { existsSync, readFileSync, unlinkSync } from 'fs'
 import { activeProfileDir } from './profiles'
+import { escribirAtomico } from './escrituraAtomica'
 
 interface StoredSettings {
   /** Clave cifrada, en base64. */
@@ -48,8 +49,17 @@ function read(): StoredSettings {
   }
 }
 
+/*
+  Atómico como los otros dos archivos de datos, aunque aquí lo que está en
+  juego es mucho menos: si esto se corrompe, `read()` lo detecta, devuelve
+  vacío y la persona vuelve a pegar su clave de YouTube. Molesto, no grave.
+
+  Se hace igual porque la alternativa es dejar el único sitio del proyecto
+  donde escribir un archivo se hace «de la otra manera», y esa excepción es
+  justo lo que el día de mañana se copia y pega a un archivo que sí importe.
+*/
 function write(settings: StoredSettings): void {
-  writeFileSync(settingsPath(), JSON.stringify(settings, null, 2), 'utf-8')
+  escribirAtomico(settingsPath(), JSON.stringify(settings, null, 2))
 }
 
 /** Indica si el sistema puede cifrar. En Windows normalmente sí. */

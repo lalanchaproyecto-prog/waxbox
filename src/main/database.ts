@@ -1,17 +1,10 @@
 import { join, dirname } from 'path'
-import {
-  existsSync,
-  readFileSync,
-  writeFileSync,
-  mkdirSync,
-  copyFileSync,
-  renameSync,
-  unlinkSync
-} from 'fs'
+import { existsSync, readFileSync, copyFileSync } from 'fs'
 import initSqlJs from 'sql.js'
 import type { Database } from 'sql.js'
 import { initSchema } from '../core/database/db'
 import { LATEST_SCHEMA_VERSION } from '../core/database/schema'
+import { escribirAtomico } from './escrituraAtomica'
 
 let db: Database | null = null
 
@@ -117,37 +110,15 @@ export function getDatabase(): Database {
   es la colección entera perdida, no el último cambio.
 
   Con la ventana de riesgo multiplicada por cientos de escrituras al día, era
-  cuestión de tiempo. Ahora se escribe a un archivo temporal y se renombra
-  encima: renombrar dentro del mismo disco es atómico, así que en cualquier
-  instante lo que hay en la ruta buena es la versión vieja completa o la nueva
-  completa, nunca una mitad.
+  cuestión de tiempo. El cómo se resuelve está en `escribirAtomico`, que es el
+  único sitio del proyecto donde se escribe un archivo de datos.
 
   El respaldo de antes de migrar sigue siendo necesario y hace otra cosa:
   protege de una migración equivocada, no de un corte a mitad de escritura.
 */
 export function persist(): void {
   if (!db) return
-  const path = dbPath()
-  const dir = dirname(path)
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-
-  const temporal = `${path}.tmp`
-  try {
-    writeFileSync(temporal, db.export())
-    renameSync(temporal, path)
-  } catch (error) {
-    /*
-      Si algo falla, se limpia el temporal para no ir dejando basura al lado de
-      la base. El error se vuelve a lanzar: quien llamó tiene que enterarse de
-      que su cambio no quedó guardado.
-    */
-    try {
-      if (existsSync(temporal)) unlinkSync(temporal)
-    } catch {
-      // Si tampoco se puede borrar, no vale la pena tapar el error de verdad.
-    }
-    throw error
-  }
+  escribirAtomico(dbPath(), db.export())
 }
 
 export function closeDatabase(): void {

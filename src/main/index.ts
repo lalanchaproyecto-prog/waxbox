@@ -6,7 +6,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './ipc'
 import { closeDatabase, getDatabase } from './database'
 import { trackFilePath } from '../core/database/db'
-import { getPhotosDir, getAvatarsDir } from './photos'
+import { getPhotosDir, getAvatarsDir, esNombreSeguro } from './photos'
 import { ensureProfilesReady } from './profiles'
 import { iniciarActualizaciones } from './updater'
 
@@ -154,20 +154,34 @@ function nombreDeArchivo(url: string): string {
   return crudo.replace(/^\/+|\/+$/g, '')
 }
 
-/**
- * Que el nombre sea un archivo suelto y no un camino a otra parte del disco.
- *
- * Sin esto, una dirección como `melofyle-photo://../../../datos.db` serviría
- * cualquier archivo del computador a quien consiguiera ejecutar algo en la
- * ventana.
- */
-function esNombreSeguro(filename: string): boolean {
-  return (
-    filename.length > 0 &&
-    !filename.includes('..') &&
-    !filename.includes('/') &&
-    !filename.includes('\\')
-  )
+/*
+  QUÉ DIRECCIONES SE LE PUEDEN ENTREGAR AL SISTEMA OPERATIVO.
+
+  `shell.openExternal` no abre una página: le pasa la dirección a Windows para
+  que la abra con lo que corresponda. Con `https://` eso es el navegador. Con
+  otros esquemas puede ser cualquier otra cosa, y ahí deja de ser «abrir un
+  enlace».
+
+  Lo que lo convierte en un riesgo real y no teórico es de dónde salen algunas
+  de esas direcciones: los enlaces del disco vienen de las relaciones de
+  MusicBrainz, y MusicBrainz lo edita la comunidad igual que Wikipedia.
+  Cualquiera puede añadirle una URL a un disco. Antes se entregaba tal cual
+  llegara.
+
+  Así que la lista es blanca, no negra: se permiten dos esquemas y todo lo demás
+  se descarta, aunque aparezca uno nuevo que hoy no existe.
+*/
+const ESQUEMAS_PERMITIDOS = new Set(['http:', 'https:'])
+
+function abrirEnElNavegador(url: string): void {
+  let analizada: URL
+  try {
+    analizada = new URL(url)
+  } catch {
+    return
+  }
+  if (!ESQUEMAS_PERMITIDOS.has(analizada.protocol)) return
+  shell.openExternal(url)
 }
 
 function createWindow(): void {
@@ -181,6 +195,26 @@ function createWindow(): void {
     icon: iconoDeLaVentana(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      /*
+        Los dos de abajo YA son los valores por omisión de Electron. Están
+        escritos igualmente porque un valor por omisión es una decisión de
+        Electron, no nuestra, y puede cambiar en una versión futura sin que
+        nadie aquí se entere. Escritos, una actualización no puede apagarlos
+        en silencio.
+
+        `contextIsolation` es lo que mantiene el puente del preload en un
+        mundo aparte del de la página: la ventana ve `window.api` y nada más.
+        `nodeIntegration` apagado es lo que hace que en la página no existan
+        `require` ni `process`. Comprobado en la app construida: los dos están
+        efectivamente activos.
+      */
+      contextIsolation: true,
+      nodeIntegration: false,
+      /*
+        Este sí está apagado a propósito, y es un escalón menos de
+        aislamiento: el preload necesita cargar módulos de Node. Con
+        `contextIsolation` encendido la página sigue sin alcanzarlos.
+      */
       sandbox: false,
       spellcheck: true
     }
@@ -192,9 +226,36 @@ function createWindow(): void {
     mainWindow.show()
   })
 
+  // Los enlaces con target="_blank" se abren fuera, en el navegador de la
+  // persona, y nunca dentro de la app.
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    abrirEnElNavegador(details.url)
     return { action: 'deny' }
+  })
+
+  /*
+    LA VENTANA NO SE PUEDE IR A OTRO SITIO.
+
+    Esta ventana carga la app y ya está: no es un navegador. Pero por defecto
+    sí se comporta como uno — basta con arrastrarle un archivo encima para que
+    navegue a él y reemplace la app.
+
+    Y eso importa más de lo que parece, porque el preload se vuelve a
+    enganchar en lo que sea que la ventana cargue. Una página cualquiera que
+    llegara aquí se encontraría con `window.api` entero servido: la base de
+    datos, las fotos, los ajustes.
+
+    Hoy no hay ningún camino conocido para que pase —todos los enlaces de la
+    app abren fuera—, así que esto no arregla un fallo: cierra la puerta por la
+    que entraría el día que alguien añada un enlace sin darse cuenta.
+
+    La dirección que la app carga de verdad se deja pasar; cualquier otra se
+    cancela y, si era algo legítimamente externo, se abre en el navegador.
+  */
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url === mainWindow.webContents.getURL()) return
+    event.preventDefault()
+    abrirEnElNavegador(url)
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {

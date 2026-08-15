@@ -24,7 +24,8 @@
 
 import { app } from 'electron'
 import { join } from 'path'
-import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, rmSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'fs'
+import { escribirAtomico } from './escrituraAtomica'
 import { randomBytes } from 'crypto'
 import { userInfo } from 'os'
 
@@ -93,8 +94,34 @@ function readProfilesFile(): ProfilesFile {
   }
 }
 
+/*
+  ESTE ARCHIVO ES EL ÍNDICE DE TODO, Y POR ESO SE ESCRIBE ATÓMICAMENTE.
+
+  Es pequeño y se escribe poco comparado con la base, así que parecía el menos
+  arriesgado de los tres. Es al revés: es el que peores consecuencias tiene si
+  se corta a media escritura, porque la recuperación se sabotea a sí misma.
+
+  La cadena, paso a paso:
+
+    1. Queda un JSON partido.
+    2. `readProfilesFile()` no lo puede interpretar y devuelve «no hay
+       perfiles» — que por sí solo es razonable: mejor abrir la app que
+       impedir entrar.
+    3. `ensureProfilesReady()` ve cero perfiles y crea uno nuevo.
+    4. Al crearlo llama aquí, y ESTA escritura se lleva por delante el archivo
+       dañado.
+
+  En el paso 4 desaparece la única lista de qué perfiles existían. Los datos
+  siguen enteros en `users/<id>/`, pero ya nada apunta a ellos y no queda
+  rastro de cuáles eran: la app arranca como recién instalada y recuperarla es
+  editar JSON a mano.
+
+  Se escribe cada vez que alguien entra a un perfil, o sea al menos una vez por
+  sesión. Con `escribirAtomico` el paso 1 no puede ocurrir, y sin el paso 1 no
+  hay cadena.
+*/
 function writeProfilesFile(data: ProfilesFile): void {
-  writeFileSync(profilesFilePath(), JSON.stringify(data, null, 2), 'utf-8')
+  escribirAtomico(profilesFilePath(), JSON.stringify(data, null, 2))
 }
 
 export function listProfiles(): Profile[] {
