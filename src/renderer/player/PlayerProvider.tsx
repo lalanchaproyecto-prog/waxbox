@@ -112,12 +112,35 @@ export function PlayerProvider({ youtubeConfigured, children }: PlayerProviderPr
     window.api.recordPlay(trackId, source).catch(() => {})
   }, [])
 
+  /*
+    QUÉ CARGA MANDA.
+
+    `load` no termina de una vez: para Deezer pide una dirección nueva al
+    servidor, y para YouTube hace una búsqueda. Los dos son viajes a internet
+    que tardan.
+
+    Si mientras tanto se pulsa «siguiente» —o se salta a otra canción de la
+    cola, que es lo normal cuando algo no engancha— arranca una segunda carga
+    sin que la primera haya vuelto. Y al volver, la primera seguía adelante
+    como si nada: ponía SU dirección en el reproductor y le daba al play. El
+    resultado era que saltabas a la canción 3 y un segundo después empezaba a
+    sonar la 2, con la pantalla diciendo que sonaba la 3. El historial de
+    escuchas también anotaba la equivocada.
+
+    Cada carga se numera al empezar y comprueba tras cada espera que sigue
+    siendo la última. Si no, se retira en silencio sin tocar nada.
+  */
+  const cargaVigente = useRef(0)
+
   /** Carga la canción de una posición y la hace sonar. */
   const load = useCallback(
     async (queue: PlayableTrack[], index: number) => {
       const track = queue[index]
       const audio = audioRef.current
       if (!track || !audio) return
+
+      const miCarga = ++cargaVigente.current
+      const sigueVigente = (): boolean => miCarga === cargaVigente.current
 
       audio.pause()
 
@@ -150,9 +173,11 @@ export function PlayerProvider({ youtubeConfigured, children }: PlayerProviderPr
         audio.src = String(resolved.ref)
         try {
           await audio.play()
+          if (!sigueVigente()) return
           setState((s) => ({ ...s, playing: true, loading: false }))
           recordPlay(track.trackId, 'archivo')
         } catch {
+          if (!sigueVigente()) return
           setState((s) => ({
             ...s,
             playing: false,
@@ -169,6 +194,7 @@ export function PlayerProvider({ youtubeConfigured, children }: PlayerProviderPr
           se pide una nueva justo ahora en vez de guardarla.
         */
         const result = await window.api.getPreviewUrl(Number(resolved.ref))
+        if (!sigueVigente()) return
 
         if (!result.ok || !result.data) {
           setState((s) => ({
@@ -185,9 +211,17 @@ export function PlayerProvider({ youtubeConfigured, children }: PlayerProviderPr
         audio.src = result.data
         try {
           await audio.play()
+          if (!sigueVigente()) return
           setState((s) => ({ ...s, playing: true, loading: false }))
           recordPlay(track.trackId, 'deezer')
         } catch {
+          /*
+            `play()` rechaza con AbortError cuando otra carga cambia el `src` o
+            llama a `pause()`. Sin esta comprobación, saltar de canción dejaba
+            en pantalla el aviso de que no se pudo reproducir la canción que ya
+            habías abandonado.
+          */
+          if (!sigueVigente()) return
           setState((s) => ({
             ...s,
             playing: false,
@@ -205,6 +239,7 @@ export function PlayerProvider({ youtubeConfigured, children }: PlayerProviderPr
         costar la clave de la persona.
       */
       const found = await window.api.searchTrackVideo(track.artist, track.title)
+      if (!sigueVigente()) return
 
       if (!found.ok || !found.data) {
         setState((s) => ({
