@@ -110,6 +110,66 @@ function iconoDeLaVentana(): string | undefined {
   return existsSync(ruta) ? ruta : undefined
 }
 
+/*
+  DE UNA DIRECCIÓN `waxbox-photo://` AL NOMBRE DEL ARCHIVO.
+
+  Parece trivial y no lo es. Estos esquemas están registrados como
+  `standard: true`, y eso hace que Chromium los trate como http: los parte en
+  host y ruta, y NORMALIZA la ruta vacía a "/".
+
+  Así que `waxbox-photo://foto.png` no le llega al manejador tal cual: llega
+  como `waxbox-photo://foto.png/`, con una barra al final que nadie escribió.
+
+  El código anterior cortaba el esquema y quitaba las barras de DELANTE, con lo
+  que el nombre quedaba en "foto.png/". Justo después venía la comprobación de
+  seguridad que rechaza cualquier nombre con "/" — pensada para impedir que se
+  pidan rutas como "../../otra/carpeta". Resultado: la app respondía 403 a sus
+  propias fotos, siempre. Ninguna imagen subida por la persona se veía nunca.
+
+  Costó verlo porque las portadas de disco suelen venir de Cover Art Archive
+  por https y esas sí cargaban; y porque las exportaciones a PDF y Excel leen
+  los archivos del disco directamente, sin pasar por aquí, así que ahí las
+  fotos salían bien.
+
+  Ahora el nombre se saca con el analizador de URL de verdad, juntando host y
+  ruta, que es donde puede haber quedado repartido.
+
+  UNA TRAMPA QUE QUEDA VIVA: el host de un esquema estándar lo pasa Chromium a
+  MINÚSCULAS. Hoy da igual porque los nombres los generan `copyPhoto`,
+  `copyAvatar` y `downloadImage`, y los tres arman `fecha_hex.extensión` en
+  minúsculas siempre. Si algún día alguien guarda un archivo respetando el
+  nombre original que trae la persona, un "Foto.JPG" llegaría aquí como
+  "foto.jpg" y no se encontraría en sistemas que distinguen mayúsculas.
+  Comprobado: dos direcciones que solo difieren en mayúsculas llegan como una
+  sola petición.
+*/
+function nombreDeArchivo(url: string): string {
+  let analizada: URL
+  try {
+    analizada = new URL(url)
+  } catch {
+    return ''
+  }
+  const crudo = decodeURIComponent(`${analizada.hostname}${analizada.pathname}`)
+  return crudo.replace(/^\/+|\/+$/g, '')
+}
+
+/**
+ * Que el nombre sea un archivo suelto y no un camino a otra parte del disco.
+ *
+ * Sin esto, una dirección como `waxbox-photo://../../../datos.db` serviría
+ * cualquier archivo del computador a quien consiguiera ejecutar algo en la
+ * ventana.
+ */
+function esNombreSeguro(filename: string): boolean {
+  return (
+    filename.length > 0 &&
+    !filename.includes('..') &&
+    !filename.includes('/') &&
+    !filename.includes('\\')
+  )
+}
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -152,9 +212,8 @@ app.whenReady().then(async () => {
   ensureProfilesReady()
 
   protocol.handle('waxbox-photo', (request) => {
-    const raw = request.url.slice('waxbox-photo://'.length)
-    const filename = decodeURIComponent(raw).replace(/^\/+/, '')
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    const filename = nombreDeArchivo(request.url)
+    if (!esNombreSeguro(filename)) {
       return new Response('Forbidden', { status: 403 })
     }
 
@@ -176,9 +235,8 @@ app.whenReady().then(async () => {
     elija ninguno.
   */
   protocol.handle('waxbox-avatar', (request) => {
-    const raw = request.url.slice('waxbox-avatar://'.length)
-    const filename = decodeURIComponent(raw).replace(/^\/+/, '')
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    const filename = nombreDeArchivo(request.url)
+    if (!esNombreSeguro(filename)) {
       return new Response('Forbidden', { status: 403 })
     }
     return net.fetch(pathToFileURL(join(getAvatarsDir(), filename)).href)
