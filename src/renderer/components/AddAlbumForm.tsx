@@ -96,17 +96,43 @@ function AddAlbumForm({
   const suppressArtistRef = useRef(false)
   const suppressTitleRef = useRef(false)
 
+  /*
+    LAS RESPUESTAS VIEJAS NO PUEDEN PISAR A LAS NUEVAS.
+
+    Cada consulta se numera al salir, y al volver solo se hace caso a la que
+    lleve el número más alto que se ha visto.
+
+    Sin esto hay una carrera de verdad, no teórica: MusicBrainz admite UNA
+    consulta por segundo, así que el limitador las pone en fila. Escribir
+    «sod» y seguir hasta «soda» lanza dos, y la de «sod» puede resolverse
+    DESPUÉS —va delante en la cola pero el servidor puede tardar más en
+    contestarla—. Con el código anterior, la última en llegar ganaba: acababas
+    viendo las sugerencias de lo que escribiste hace dos letras, y volvían a
+    cambiar solas si llegaba otra.
+
+    El antirrebote de 350 ms no lo evita: reduce cuántas consultas salen, pero
+    no ordena las que ya salieron.
+  */
+  const ultimaConsultaArtista = useRef(0)
+  const ultimaConsultaAlbum = useRef(0)
+
   const fetchArtistSuggestions = useCallback(async (query: string) => {
     if (suppressArtistRef.current) { suppressArtistRef.current = false; return }
     if (query.trim().length < 2) { setArtistSuggestions([]); return }
+
+    const miNumero = ++ultimaConsultaArtista.current
     const result = await window.api.suggestArtists(query)
+    if (miNumero !== ultimaConsultaArtista.current) return
     if (result.ok) setArtistSuggestions(result.data)
   }, [])
 
   const fetchAlbumSuggestions = useCallback(async (titleQ: string, artistQ: string) => {
     if (suppressTitleRef.current) { suppressTitleRef.current = false; return }
     if (titleQ.trim().length < 2) { setAlbumSuggestions([]); return }
+
+    const miNumero = ++ultimaConsultaAlbum.current
     const result = await window.api.suggestAlbums(titleQ, artistQ)
+    if (miNumero !== ultimaConsultaAlbum.current) return
     if (result.ok) setAlbumSuggestions(result.data)
   }, [])
 

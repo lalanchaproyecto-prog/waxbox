@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CollectionStats, ActiveLoan } from '@core/database/db'
 import type { DashboardData } from '@core/database/dashboard'
 import type { PlayableTrack } from '@core/player/queue'
@@ -177,6 +177,9 @@ function HomeScreen({
   const [arrastrado, setArrastrado] = useState<ModuloId | null>(null)
   const [destino, setDestino] = useState<ModuloId | null>(null)
 
+  /** Qué carga del inicio es la buena. Ver el comentario en `load`. */
+  const cargaVigente = useRef(0)
+
   /* La sugerencia tarda un momento en cargar sus canciones antes de sonar. */
   const [cargandoSugerencia, setCargandoSugerencia] = useState(false)
   const [avisoSugerencia, setAvisoSugerencia] = useState<string | null>(null)
@@ -192,14 +195,58 @@ function HomeScreen({
   const load = useCallback(async () => {
     const ahora = new Date()
 
-    window.api.collectionStats(collectionId).then((res) => {
-      if (res.ok) setStats(res.data)
-      else setErrorStats(res.error)
-    })
+    /*
+      DE QUÉ COLECCIÓN SON ESTOS DATOS.
 
-    window.api.activeLoans(collectionId).then((res) => {
-      if (res.ok) setLoans(res.data)
-    })
+      Las tres consultas van por su cuenta y tardan lo que tardan. Al cambiar
+      de colección se lanzan otras tres sin que las anteriores hayan vuelto, y
+      nada impedía que las viejas llegaran después: acababas viendo las cifras
+      de la colección anterior bajo el nombre de la nueva, y los paneles
+      contradiciéndose entre sí porque cada uno había ganado su carrera en un
+      orden distinto.
+
+      Cada carga se numera, y al volver cada respuesta comprueba que su número
+      siga siendo el último. Si no, se descarta en silencio — no es un error,
+      es una respuesta que ya no interesa.
+
+      El número va en un `ref` y no en una variable local porque tiene que
+      sobrevivir a que esta función se vuelva a crear: `load` se rehace con
+      cada colección, así que una variable de su cierre valdría siempre lo
+      mismo y la comprobación no serviría de nada. El `ref` es el único sitio
+      compartido entre la carga vieja y la nueva.
+
+      De paso cubre el otro caso: pulsar «Reintentar» dos veces seguidas.
+    */
+    const miCarga = ++cargaVigente.current
+    const sigueVigente = (): boolean => miCarga === cargaVigente.current
+
+    /*
+      Los `.catch` no son decorativos. `invoke` RECHAZA —no devuelve un
+      resultado con error— cuando el proceso principal todavía no tiene ese
+      manejador registrado, que es justo lo que pasa con una ventana abierta
+      desde antes de actualizar. Sin capturarlo queda una promesa rechazada
+      suelta, y eso en Electron se ve como un error sin contexto en la consola.
+    */
+    window.api
+      .collectionStats(collectionId)
+      .then((res) => {
+        if (!sigueVigente()) return
+        if (res.ok) setStats(res.data)
+        else setErrorStats(res.error)
+      })
+      .catch((error) => {
+        if (sigueVigente()) setErrorStats(explicarFallo(String(error)))
+      })
+
+    window.api
+      .activeLoans(collectionId)
+      .then((res) => {
+        if (sigueVigente() && res.ok) setLoans(res.data)
+      })
+      .catch(() => {
+        /* Los préstamos son un aviso de cortesía: sin ellos el inicio funciona
+           igual, así que no vale la pena molestar con un error. */
+      })
 
     /*
       La comprobación de que el método existe no es paranoia: `dashboardData`
@@ -216,10 +263,11 @@ function HomeScreen({
 
     try {
       const res = await window.api.dashboardData(collectionId, today(), ahora.getFullYear())
+      if (!sigueVigente()) return
       if (res.ok) setData(res.data)
       else setErrorPaneles(res.error)
     } catch (error) {
-      setErrorPaneles(explicarFallo(String(error)))
+      if (sigueVigente()) setErrorPaneles(explicarFallo(String(error)))
     }
   }, [collectionId])
 

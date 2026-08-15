@@ -163,6 +163,28 @@ function CollectionScreen({
   const [errorLista, setErrorLista] = useState<string | null>(null)
   /** Se muestra un momento tras guardar, para confirmar que quedó. */
   const [listaGuardada, setListaGuardada] = useState<string | null>(null)
+
+  /*
+    EL AVISO DE «LISTA GUARDADA» SE BORRA SOLO, PERO DESDE UN SOLO SITIO.
+
+    Antes cada una de las tres acciones que lo muestran —crear, renombrar,
+    actualizar— lanzaba su propio `setTimeout` suelto, sin cancelar nada. Eso
+    tenía dos consecuencias:
+
+    - Dos acciones seguidas dejaban dos temporizadores corriendo, y el más
+      viejo borraba el aviso de la más nueva antes de tiempo. Renombrar y
+      volver a renombrar hacía desaparecer la confirmación casi al instante.
+    - Al salir de la pantalla, el temporizador seguía vivo apuntando a un
+      componente que ya no existe.
+
+    Con el aviso como dependencia, cada vez que cambia se cancela el anterior
+    y se programa uno nuevo. Y al desmontarse se cancela y ya está.
+  */
+  useEffect(() => {
+    if (!listaGuardada) return
+    const temporizador = setTimeout(() => setListaGuardada(null), 5000)
+    return () => clearTimeout(temporizador)
+  }, [listaGuardada])
   const searchRef = useRef<HTMLInputElement>(null)
 
   /* Entrar desde otra lista cambia los filtros sin remontar la pantalla. */
@@ -271,7 +293,6 @@ function CollectionScreen({
     // Se confirma con el nombre puesto: quien acaba de escribirlo necesita
     // ver que quedó guardado y dónde encontrarlo.
     setListaGuardada(nombre)
-    setTimeout(() => setListaGuardada(null), 6000)
   }
 
   /* --- Gestionar la lista que se está viendo --- */
@@ -302,7 +323,6 @@ function CollectionScreen({
     openList.name = nombre
     setRenombrando(false)
     setListaGuardada(nombre)
-    setTimeout(() => setListaGuardada(null), 4000)
   }
 
   async function actualizarCriterios() {
@@ -314,7 +334,6 @@ function CollectionScreen({
     }
     openList.criteria = criteriosActuales
     setListaGuardada(openList.name)
-    setTimeout(() => setListaGuardada(null), 4000)
   }
 
   async function borrarLista() {
