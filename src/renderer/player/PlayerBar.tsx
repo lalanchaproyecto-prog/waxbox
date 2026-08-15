@@ -209,11 +209,14 @@ function PlayerBar() {
   /*
     EL REPRODUCTOR GRANDE.
 
-    Se dibuja aparte y no es la misma caja agrandada: lo que cambia no es el
-    tamaño sino qué manda. Aquí manda el disco, y los controles pasan a ser
-    lo secundario.
+    Se dibuja aparte y no es la misma caja agrandada. La mitad izquierda
+    muestra la portada, la canción y los controles; la mitad derecha muestra
+    la cola de reproducción, como en YouTube Music.
   */
   if (grande) {
+    const { queue, index: currentIndex } = player
+    const upcoming = queue.slice(currentIndex + 1)
+
     return (
       <div className="player-grande" role="dialog" aria-label="Reproductor">
         <header className="grande-head">
@@ -233,25 +236,57 @@ function PlayerBar() {
         </header>
 
         <div className="grande-cuerpo">
-          {objeto}
+          <div className="grande-principal">
+            {objeto}
 
-          <div className="grande-info">
-            <h2 className="grande-title">{current.title}</h2>
-            <p className="grande-artist">{current.artist}</p>
+            <div className="grande-info">
+              <h2 className="grande-title">{current.title}</h2>
+              <p className="grande-artist">{current.artist}</p>
 
-            <div className="grande-progreso">{barraDeAvance}</div>
+              <div className="grande-progreso">{barraDeAvance}</div>
 
-            {controles}
+              {controles}
 
-            {problem && <p className="player-problem">{problem}</p>}
+              {problem && <p className="player-problem">{problem}</p>}
+            </div>
+          </div>
+
+          <div className="grande-cola">
+            <span className="overline">
+              {upcoming.length > 0
+                ? `A continuación · ${upcoming.length} canción${upcoming.length === 1 ? '' : 'es'}`
+                : 'Sin más canciones en la cola'}
+            </span>
+            {upcoming.length > 0 && (
+              <ol className="grande-cola-lista">
+                {upcoming.map((track, i) => {
+                  const queueIndex = currentIndex + 1 + i
+                  return (
+                    <li key={`${track.trackId}-${queueIndex}`}>
+                      <button
+                        className="grande-cola-item"
+                        onClick={() => player.jumpTo(queueIndex)}
+                      >
+                        <span className="grande-cola-cover">
+                          {track.cover ? (
+                            <img src={track.cover} alt="" loading="lazy" />
+                          ) : (
+                            <span className="grande-cola-cover-empty">♪</span>
+                          )}
+                        </span>
+                        <span className="grande-cola-texto">
+                          <span className="grande-cola-titulo">{track.title}</span>
+                          <span className="grande-cola-artista">{track.artist}</span>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
           </div>
         </div>
 
-        {/*
-          El video de YouTube se queda dentro del reproductor grande cuando
-          está abierto: sacarlo a un panel flotante aparte partiría en dos la
-          misma cosa que se está escuchando.
-        */}
         {videoOpen && youtubeVideoId && (
           <div className="grande-video">
             <iframe

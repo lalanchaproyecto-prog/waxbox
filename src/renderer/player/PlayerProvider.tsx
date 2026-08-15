@@ -51,18 +51,17 @@ interface PlayerState {
 }
 
 interface PlayerApi extends PlayerState {
-  /** La canción actual, o null. */
   current: PlayableTrack | null
   hasNext: boolean
   hasPrevious: boolean
-  /** Carga una cola y arranca en la posición indicada. */
   play: (queue: PlayableTrack[], startAt?: number) => void
+  /** Salta a una posición dentro de la cola actual. */
+  jumpTo: (index: number) => void
   toggle: () => void
   next: () => void
   previous: () => void
   stop: () => void
   setVideoOpen: (open: boolean) => void
-  /** El elemento de audio, para que la barra lea el tiempo sin re-renderizar. */
   audioRef: React.RefObject<HTMLAudioElement | null>
 }
 
@@ -322,6 +321,16 @@ export function PlayerProvider({ youtubeConfigured, children }: PlayerProviderPr
     })
   }, [])
 
+  const jumpTo = useCallback(
+    (index: number) => {
+      const { queue } = stateRef.current
+      if (index >= 0 && index < queue.length) {
+        load(queue, index)
+      }
+    },
+    [load]
+  )
+
   const setVideoOpen = useCallback((open: boolean) => {
     setState((s) => ({ ...s, videoOpen: open }))
   }, [])
@@ -360,6 +369,7 @@ export function PlayerProvider({ youtubeConfigured, children }: PlayerProviderPr
       hasNext: nextIndex(state.queue, state.index, youtubeConfigured) !== null,
       hasPrevious: previousIndex(state.queue, state.index, youtubeConfigured) !== null,
       play,
+      jumpTo,
       toggle,
       next,
       previous,
@@ -367,7 +377,7 @@ export function PlayerProvider({ youtubeConfigured, children }: PlayerProviderPr
       setVideoOpen,
       audioRef
     }
-  }, [state, youtubeConfigured, play, toggle, next, previous, stop, setVideoOpen])
+  }, [state, youtubeConfigured, play, jumpTo, toggle, next, previous, stop, setVideoOpen])
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
 }

@@ -3,6 +3,7 @@ import type { SettingsStatus } from '@core/models/settings'
 import { FEATURES, type FeatureFlags } from '@core/models/features'
 import type { ThemePreference } from '../App'
 import PageHeader from './PageHeader'
+import { IconChevron } from './Icons'
 
 interface SettingsScreenProps {
   status: SettingsStatus
@@ -44,6 +45,7 @@ function SettingsScreen({
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<Feedback>(null)
   const [guideOpen, setGuideOpen] = useState(!status.youtubeConfigured)
+  const [featuresOpen, setFeaturesOpen] = useState(false)
 
   async function handleSave() {
     setBusy(true)
@@ -113,40 +115,50 @@ function SettingsScreen({
       </section>
 
       <section className="setting-block">
-        <div className="setting-title-row">
+        <button
+          type="button"
+          className="setting-title-row setting-accordion"
+          onClick={() => setFeaturesOpen(!featuresOpen)}
+          aria-expanded={featuresOpen}
+        >
           <h3 className="section-title">Funciones de la app</h3>
-        </div>
+          <span className={`accordion-chevron${featuresOpen ? ' open' : ''}`}>
+            <IconChevron size={16} />
+          </span>
+        </button>
         <p className="setting-description">
           Enciende solo lo que uses. Apagar una función la esconde de la interfaz,{' '}
           <strong>no borra nada</strong>: si la vuelves a encender, todo lo que habías
           guardado sigue ahí.
         </p>
 
-        <ul className="feature-list">
-          {FEATURES.map((feature) => {
-            const enabled = features[feature.id]
-            return (
-              <li className="feature-row" key={feature.id}>
-                <div className="feature-text">
-                  <span className="feature-label">{feature.label}</span>
-                  <span className="feature-description">{feature.description}</span>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={enabled}
-                  aria-label={`${feature.label}: ${enabled ? 'encendido' : 'apagado'}`}
-                  className={`feature-switch${enabled ? ' on' : ''}`}
-                  onClick={() =>
-                    onFeaturesChange({ ...features, [feature.id]: !enabled })
-                  }
-                >
-                  <span className="feature-switch-knob" />
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        {featuresOpen && (
+          <ul className="feature-list">
+            {FEATURES.map((feature) => {
+              const enabled = features[feature.id]
+              return (
+                <li className="feature-row" key={feature.id}>
+                  <div className="feature-text">
+                    <span className="feature-label">{feature.label}</span>
+                    <span className="feature-description">{feature.description}</span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enabled}
+                    aria-label={`${feature.label}: ${enabled ? 'encendido' : 'apagado'}`}
+                    className={`feature-switch${enabled ? ' on' : ''}`}
+                    onClick={() =>
+                      onFeaturesChange({ ...features, [feature.id]: !enabled })
+                    }
+                  >
+                    <span className="feature-switch-knob" />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </section>
 
       <section className="setting-block">

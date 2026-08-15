@@ -343,12 +343,17 @@ function App() {
     localStorage.setItem(featuresKey(activeProfile.id), JSON.stringify(features))
   }, [features, activeProfile])
 
-  // Si se apagan los setlists estando en una de sus pantallas, no dejarla en blanco.
   useEffect(() => {
     if (!features.setlists && (view === 'setlists' || view === 'explore')) {
       setView('home')
     }
-  }, [features.setlists, view])
+    if (!features.wishlist && view === 'wishlist') {
+      setView('home')
+    }
+    if (!features.loans && view === 'loans') {
+      setView('home')
+    }
+  }, [features.setlists, features.wishlist, features.loans, view])
 
   /**
    * Trae las colecciones y decide cuál queda activa.
@@ -443,6 +448,13 @@ function App() {
   function startManualAlbum() {
     if (!draft) return
     setAlbum(emptyManualDraft(draft.format, draft.artist, draft.title))
+    setView('manual')
+  }
+
+  /** Carga manual directa desde el primer paso, sin pasar por la búsqueda. */
+  function handleDirectManual(newDraft: AlbumDraft) {
+    setDraft(newDraft)
+    setAlbum(emptyManualDraft(newDraft.format, newDraft.artist, newDraft.title))
     setView('manual')
   }
 
@@ -799,10 +811,11 @@ function App() {
             onAdd={() => pushView('add')}
             openList={listaAbierta}
             onListClosed={() => setListaAbierta(null)}
+            features={features}
           />
         )}
 
-        {!loading && !error && view === 'loans' && activeCollectionId !== null && (
+        {!loading && !error && view === 'loans' && features.loans && activeCollectionId !== null && (
           <LoansScreen
             collectionId={activeCollectionId}
             onOpenAlbum={handleOpenSaved}
@@ -852,6 +865,7 @@ function App() {
               pushView('explore')
             }}
             initialSetlistId={exploreTarget?.id ?? null}
+            playbackEnabled={features.playback}
           />
         )}
 
@@ -864,7 +878,7 @@ function App() {
           />
         )}
 
-        {!loading && !error && view === 'wishlist' && activeCollectionId !== null && (
+        {!loading && !error && view === 'wishlist' && features.wishlist && activeCollectionId !== null && (
           <WishlistScreen
             collectionId={activeCollectionId}
             onChanged={() => refreshCounts()}
@@ -892,6 +906,7 @@ function App() {
             initial={draft}
             onSubmit={handleSearch}
             onBrowseArtist={handleBrowseArtist}
+            onManual={handleDirectManual}
             onCancel={goBack}
           />
         )}

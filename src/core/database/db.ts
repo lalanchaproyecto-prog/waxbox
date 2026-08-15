@@ -1335,6 +1335,12 @@ export interface SetlistEntry {
   albumFormat: PhysicalFormatId
   userCoverFront: string | null
   canonicalCover: string | null
+  deezerTrackId: number | null
+  deezerTitle: string | null
+  deezerArtist: string | null
+  deezerUrl: string | null
+  filePath: string | null
+  fileFormat: string | null
 }
 
 export interface SetlistDetail {
@@ -1444,11 +1450,14 @@ export function getSetlist(db: Database, setlistId: number): SetlistDetail | nul
   const stmt = db.prepare(
     `SELECT st.track_id, st.position,
             t.title, t.artist, t.duration, t.side, t.number,
+            t.deezer_track_id, t.deezer_title, t.deezer_artist, t.deezer_url,
             a.id AS album_id, a.title AS album_title, a.format AS album_format,
-            a.user_cover_front, a.canonical_cover
+            a.user_cover_front, a.canonical_cover,
+            tf.path AS file_path, tf.format AS file_format
      FROM setlist_tracks st
      JOIN tracks t ON t.id = st.track_id
      JOIN albums a ON a.id = t.album_id
+     LEFT JOIN track_files tf ON tf.track_id = t.id
      WHERE st.setlist_id = ?
      ORDER BY st.position`
   )
@@ -1468,7 +1477,13 @@ export function getSetlist(db: Database, setlistId: number): SetlistDetail | nul
       albumTitle: row['album_title'] as string,
       albumFormat: row['album_format'] as PhysicalFormatId,
       userCoverFront: row['user_cover_front'] as string | null,
-      canonicalCover: row['canonical_cover'] as string | null
+      canonicalCover: row['canonical_cover'] as string | null,
+      deezerTrackId: row['deezer_track_id'] as number | null,
+      deezerTitle: row['deezer_title'] as string | null,
+      deezerArtist: row['deezer_artist'] as string | null,
+      deezerUrl: row['deezer_url'] as string | null,
+      filePath: row['file_path'] as string | null,
+      fileFormat: row['file_format'] as string | null
     })
   }
 

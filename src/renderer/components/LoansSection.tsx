@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Loan } from '@core/models/loan'
 import { loanStatus, today } from '@core/models/loan'
 import { formatPurchaseDate } from '@core/models/purchase'
+import { IconClose } from './Icons'
 
 interface LoansSectionProps {
   albumId: number
@@ -27,6 +28,18 @@ function LoansSection({ albumId }: LoansSectionProps) {
 
   const activeLoan = loans.find((l) => l.returnedAt === null)
 
+  function openForm() {
+    setPerson('')
+    setLentAt(today())
+    setDueAt('')
+    setNotes('')
+    setShowForm(true)
+  }
+
+  function closeForm() {
+    setShowForm(false)
+  }
+
   async function lend() {
     if (!person.trim()) return
     setBusy(true)
@@ -38,11 +51,7 @@ function LoansSection({ albumId }: LoansSectionProps) {
       notes || null
     )
     if (result.ok) {
-      setPerson('')
-      setLentAt(today())
-      setDueAt('')
-      setNotes('')
-      setShowForm(false)
+      closeForm()
       await load()
     }
     setBusy(false)
@@ -66,8 +75,8 @@ function LoansSection({ albumId }: LoansSectionProps) {
     <section className="review-block">
       <div className="review-block-head">
         <h3 className="section-title">Préstamos</h3>
-        {!showForm && !activeLoan && (
-          <button className="btn-link" onClick={() => setShowForm(true)}>
+        {!activeLoan && (
+          <button className="btn-link" onClick={openForm}>
             + Prestar
           </button>
         )}
@@ -90,54 +99,82 @@ function LoansSection({ albumId }: LoansSectionProps) {
       )}
 
       {showForm && (
-        <div className="loan-form">
-          <div className="edit-grid">
-            <label className="field">
-              <span className="field-label">A quién</span>
-              <input
-                value={person}
-                placeholder="Nombre de la persona"
-                spellCheck={false}
-                onChange={(e) => setPerson(e.target.value)}
-              />
-            </label>
-            <label className="field">
-              <span className="field-label">Fecha de préstamo</span>
-              <input
-                type="date"
-                value={lentAt}
-                onChange={(e) => setLentAt(e.target.value)}
-              />
-            </label>
-            <label className="field">
-              <span className="field-label">Debería volver el</span>
-              <input
-                type="date"
-                value={dueAt}
-                onChange={(e) => setDueAt(e.target.value)}
-              />
-            </label>
-            <label className="field field-wide">
-              <span className="field-label">Notas</span>
-              <input
-                value={notes}
-                placeholder="Opcional"
-                spellCheck
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </label>
-          </div>
-          <div className="edit-actions">
-            <button className="btn btn-ghost" onClick={() => setShowForm(false)}>
-              Cancelar
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={lend}
-              disabled={busy || !person.trim()}
-            >
-              Registrar préstamo
-            </button>
+        <div className="modal-backdrop" onClick={() => !busy && closeForm()}>
+          <div
+            className="modal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-label="Registrar préstamo"
+          >
+            <header className="modal-header">
+              <div>
+                <h2>Prestar este disco</h2>
+                <p className="modal-subtitle">
+                  Solo el nombre de la persona es obligatorio. La fecha de devolución
+                  sirve para que Waxbox te avise si se pasa.
+                </p>
+              </div>
+              <button
+                className="modal-close"
+                onClick={closeForm}
+                disabled={busy}
+                title="Cerrar"
+              >
+                <IconClose size={18} />
+              </button>
+            </header>
+
+            <div className="edit-grid">
+              <label className="field">
+                <span className="field-label">A quién</span>
+                <input
+                  value={person}
+                  placeholder="Nombre de la persona"
+                  spellCheck={false}
+                  autoFocus
+                  onChange={(e) => setPerson(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && person.trim()) lend() }}
+                />
+              </label>
+              <label className="field">
+                <span className="field-label">Fecha de préstamo</span>
+                <input
+                  type="date"
+                  value={lentAt}
+                  onChange={(e) => setLentAt(e.target.value)}
+                />
+              </label>
+              <label className="field">
+                <span className="field-label">Debería volver el</span>
+                <input
+                  type="date"
+                  value={dueAt}
+                  onChange={(e) => setDueAt(e.target.value)}
+                />
+              </label>
+              <label className="field field-wide">
+                <span className="field-label">Notas</span>
+                <input
+                  value={notes}
+                  placeholder="Opcional"
+                  spellCheck
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </label>
+            </div>
+
+            <footer className="modal-footer">
+              <button className="btn btn-ghost" onClick={closeForm} disabled={busy}>
+                Cancelar
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={lend}
+                disabled={busy || !person.trim()}
+              >
+                Registrar préstamo
+              </button>
+            </footer>
           </div>
         </div>
       )}

@@ -13,7 +13,15 @@
  * función que no aparezca en lo guardado arranca encendida.
  */
 
-export type FeatureId = 'setlists' | 'credits' | 'playback' | 'artistLinks' | 'review'
+export type FeatureId =
+  | 'setlists'
+  | 'credits'
+  | 'playback'
+  | 'artistLinks'
+  | 'review'
+  | 'wishlist'
+  | 'loans'
+  | 'smartLists'
 
 export interface FeatureDefinition {
   id: FeatureId
@@ -51,6 +59,24 @@ export const FEATURES: readonly FeatureDefinition[] = [
     label: 'Reseña del álbum',
     description:
       'El texto de Wikipedia sobre el disco, o el que hayas escrito tú, en la sección "Sobre el álbum".'
+  },
+  {
+    id: 'wishlist',
+    label: 'Lista de deseos',
+    description:
+      'La sección donde anotas los discos que buscas. Al apagarlo se esconde del menú, pero la lista sigue guardada.'
+  },
+  {
+    id: 'loans',
+    label: 'Préstamos',
+    description:
+      'Llevar el registro de a quién le prestaste tus discos. Al apagarlo se esconde del menú; los préstamos activos siguen registrados.'
+  },
+  {
+    id: 'smartLists',
+    label: 'Listas inteligentes',
+    description:
+      'Filtros guardados que se recalculan solos conforme cambia tu colección. Al apagarlo se esconde el botón de crear listas, pero las que ya existen se conservan.'
   }
 ]
 
@@ -62,7 +88,10 @@ export const DEFAULT_FEATURES: FeatureFlags = {
   credits: true,
   playback: true,
   artistLinks: true,
-  review: true
+  review: true,
+  wishlist: true,
+  loans: true,
+  smartLists: true
 }
 
 /**

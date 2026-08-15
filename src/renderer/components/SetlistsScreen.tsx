@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { SetlistSummary, SetlistDetail, AlbumSummary } from '@core/database/db'
+import type { SetlistSummary, SetlistDetail, SetlistEntry, AlbumSummary } from '@core/database/db'
 import { formatTotalDuration, durationToSeconds } from '@core/models/duration'
 import { getFormat } from '@core/models/formats'
+import type { PlayableTrack } from '@core/player/queue'
+import { usePlayer } from '../player/PlayerProvider'
 import ExportDialog from './ExportDialog'
 import GenerateSetlistDialog from './GenerateSetlistDialog'
 import ImagePicker from './ImagePicker'
@@ -10,14 +12,11 @@ import { IconClose, IconDown, IconEdit, IconImage, IconTrash, IconUp } from './I
 import { imageSrc, type ImageRef } from '@core/models/imageRef'
 
 interface SetlistsScreenProps {
-  /** La colección, para saber qué géneros existen de verdad. */
   albums: AlbumSummary[]
-  /** Colección activa: los setlists son suyos. */
   collectionId: number
-  /** Abre el modo explorar para sumar canciones al setlist indicado. */
   onExplore: (setlist: { id: number; name: string }) => void
-  /** Setlist que debe abrirse al entrar, si se viene de vuelta del modo explorar. */
   initialSetlistId?: number | null
+  playbackEnabled: boolean
 }
 
 /** «12 canciones · 48 min», con el aviso de lo que no se puede sumar. */
@@ -36,12 +35,34 @@ function describeSetlist(
   return partes.join(' · ')
 }
 
+function setlistToQueue(tracks: SetlistEntry[]): PlayableTrack[] {
+  return tracks.map((t) => {
+    const cover = t.userCoverFront
+      ? `waxbox-photo://${t.userCoverFront}`
+      : t.canonicalCover
+    return {
+      trackId: t.trackId,
+      title: t.title,
+      artist: t.artist,
+      albumTitle: t.albumTitle,
+      format: t.albumFormat,
+      cover: cover ?? null,
+      file: t.filePath ? { path: t.filePath, format: t.fileFormat ?? '', missing: false } : null,
+      deezer: t.deezerTrackId
+        ? { trackId: t.deezerTrackId, title: t.deezerTitle ?? '', artist: t.deezerArtist ?? '', deezerUrl: t.deezerUrl ?? '' }
+        : null
+    }
+  })
+}
+
 function SetlistsScreen({
   albums,
   collectionId,
   onExplore,
-  initialSetlistId
+  initialSetlistId,
+  playbackEnabled
 }: SetlistsScreenProps) {
+  const player = usePlayer()
   const [setlists, setSetlists] = useState<SetlistSummary[]>([])
   const [openId, setOpenId] = useState<number | null>(initialSetlistId ?? null)
   const [detail, setDetail] = useState<SetlistDetail | null>(null)
@@ -199,6 +220,14 @@ function SetlistsScreen({
           backLabel="Todos mis setlists"
           actions={
             <>
+              {playbackEnabled && detail.tracks.length > 0 && (
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => player.play(setlistToQueue(detail.tracks))}
+                >
+                  ▶ Reproducir
+                </button>
+              )}
               {detail.tracks.length > 0 && (
                 <button className="btn btn-ghost" onClick={() => setExporting(true)}>
                   Exportar

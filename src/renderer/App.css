@@ -664,13 +664,14 @@ body {
 .photo-drop {
   aspect-ratio: 1;
   width: 100%;
+  max-width: 160px;
   background: var(--bg-input);
   border: 1px dashed var(--border-input);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   overflow: hidden;
   padding: 0;
-  transition: border-color 0.2s;
+  transition: border-color var(--dur-base) var(--ease);
 }
 
 .photo-drop:hover {
@@ -694,18 +695,18 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: var(--space-1);
   height: 100%;
-  padding: 1rem;
+  padding: var(--space-3);
 }
 
 .photo-drop-icon {
-  font-size: 1.75rem;
+  font-size: var(--text-lg);
   opacity: 0.5;
 }
 
 .photo-drop-text {
-  font-size: 0.85rem;
+  font-size: var(--text-xs);
   color: var(--text-dimmed);
   text-align: center;
 }
@@ -1658,6 +1659,28 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+}
+
+.setting-accordion {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.accordion-chevron {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  transform: rotate(90deg);
+  transition: transform var(--dur-base) var(--ease);
+}
+
+.accordion-chevron.open {
+  transform: rotate(270deg);
 }
 
 /* Estado de una función, en la mono de los datos. */
@@ -5506,10 +5529,6 @@ body {
   margin-top: 0.5rem;
 }
 
-.loan-form {
-  margin-bottom: 0.75rem;
-}
-
 .loan-notes {
   font-size: var(--text-sm);
   color: var(--text-dimmed);
@@ -5637,6 +5656,71 @@ body {
   gap: var(--space-2);
   flex: none;
   flex-wrap: wrap;
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+/* --- Búsqueda en catálogo para deseos --- */
+
+.modal-wide {
+  max-width: 40rem;
+}
+
+.wishlist-search-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-3);
+  align-items: flex-end;
+}
+
+.wishlist-search-empty {
+  padding: var(--space-4);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.wishlist-search-results {
+  list-style: none;
+  max-height: 20rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.wishlist-search-result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-3);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: background-color var(--dur-base) var(--ease);
+}
+
+.wishlist-search-result:hover {
+  background: var(--bg-inset);
+}
+
+.wishlist-search-result-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.wishlist-search-result-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 
@@ -6698,10 +6782,10 @@ body {
   z-index: 150;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-5) var(--space-6) var(--space-7);
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6) var(--space-5);
   background: var(--bg-body);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .grande-head {
@@ -6716,9 +6800,16 @@ body {
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-8);
+  gap: var(--space-6);
+  min-height: 0;
+}
+
+.grande-principal {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-items: center;
+  justify-content: center;
+  gap: var(--space-4);
   min-height: 0;
 }
 
@@ -6726,8 +6817,7 @@ body {
 
 .grande-objeto {
   position: relative;
-  width: min(38vh, 380px);
-  /* Hueco para que el disco salga sin meterse bajo el texto de al lado. */
+  width: min(30vh, 280px);
   padding-right: 34%;
   box-sizing: content-box;
 }
@@ -6736,7 +6826,6 @@ body {
   position: absolute;
   z-index: 1;
   top: 8%;
-  /* Sale más que en la ficha: aquí el disco es el tema de la pantalla. */
   left: 56%;
   width: 84%;
   aspect-ratio: 1;
@@ -6751,16 +6840,18 @@ body {
 .grande-info {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  align-items: center;
+  gap: var(--space-3);
   width: 100%;
   max-width: 30rem;
   min-width: 0;
+  text-align: center;
 }
 
 .grande-title {
   font-family: var(--font-display);
   font-variation-settings: var(--width-display);
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: 700;
   letter-spacing: var(--tracking-display);
   line-height: var(--leading-tight);
@@ -6769,7 +6860,7 @@ body {
 }
 
 .grande-artist {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   color: var(--text-secondary);
 }
 
@@ -6777,9 +6868,9 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  width: 100%;
 }
 
-/* Los controles se agrandan aquí: son el único sitio donde se toca. */
 .player-grande .player-controls {
   gap: var(--space-4);
 }
@@ -6789,9 +6880,96 @@ body {
 }
 
 .player-grande .player-btn-main {
-  width: 3.5rem;
-  height: 3.5rem;
-  font-size: var(--text-md);
+  width: 3rem;
+  height: 3rem;
+  font-size: var(--text-base);
+}
+
+/* --- Cola de reproducción --- */
+
+.grande-cola {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  padding: var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.grande-cola-lista {
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.grande-cola-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: background-color var(--dur-base) var(--ease);
+}
+
+.grande-cola-item:hover {
+  background: var(--bg-inset);
+}
+
+.grande-cola-cover {
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-inset);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grande-cola-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.grande-cola-cover-empty {
+  font-size: var(--text-sm);
+  color: var(--text-dimmed);
+}
+
+.grande-cola-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.grande-cola-titulo {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grande-cola-artista {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .grande-video {
@@ -6803,24 +6981,23 @@ body {
 
 /* --- Ventanas bajas o angostas --- */
 
-/*
-  Por debajo de 900px de ancho, o de 620px de alto, las dos columnas se
-  apilan y el disco se achica. En una ventana baja, un disco de 38vh dejaría
-  el título y los controles fuera de la pantalla.
-*/
 @media (max-width: 900px), (max-height: 620px) {
   .grande-cuerpo {
     grid-template-columns: 1fr;
-    gap: var(--space-5);
-    align-content: center;
+    gap: var(--space-4);
+    overflow-y: auto;
   }
 
   .grande-objeto {
-    width: min(26vh, 220px);
+    width: min(20vh, 180px);
   }
 
   .grande-title {
-    font-size: var(--text-lg);
+    font-size: var(--text-md);
+  }
+
+  .grande-cola {
+    max-height: 40vh;
   }
 }
 

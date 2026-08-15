@@ -8,22 +8,16 @@ import ExportDialog from './ExportDialog'
 import PageHeader from './PageHeader'
 import { IconClose, IconGrid, IconSearch, IconTable } from './Icons'
 import { suggestName, type SmartCriteria, type SmartList } from '@core/models/smartList'
+import type { FeatureFlags } from '@core/models/features'
 
 interface CollectionScreenProps {
   albums: AlbumSummary[]
   collectionId: number
   onOpen: (albumId: number) => void
   onAdd: () => void
-  /**
-   * La lista inteligente que se está viendo, si se entró desde una.
-   *
-   * Se recibe entera y no solo sus condiciones porque desde aquí se puede
-   * renombrar, cambiar qué incluye y borrar: para eso hace falta saber a
-   * cuál se le aplican los cambios.
-   */
   openList?: SmartList | null
-  /** Se llama al borrar la lista o al salir de ella. */
   onListClosed?: () => void
+  features: FeatureFlags
 }
 
 type ViewMode = 'grid' | 'table'
@@ -150,7 +144,8 @@ function CollectionScreen({
   onOpen,
   onAdd,
   openList,
-  onListClosed
+  onListClosed,
+  features
 }: CollectionScreenProps) {
   const initialFilters = openList?.criteria ?? null
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
@@ -570,7 +565,7 @@ function CollectionScreen({
             aquí, junto a los filtros, y no en un menú aparte — lo que se
             guarda es exactamente esto.
           */}
-          {!guardandoLista && !openList && (
+          {features.smartLists && !guardandoLista && !openList && (
             <button
               className="btn-link"
               onClick={() => {

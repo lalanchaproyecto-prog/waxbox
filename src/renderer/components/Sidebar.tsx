@@ -125,23 +125,25 @@ function Sidebar({
             onClick={() => onNavigate('setlists')}
           />
         )}
-        <NavItem
-          icon={<IconWishlist />}
-          label="Deseos"
-          badge={counts.wishlist}
-          active={section === 'wishlist'}
-          onClick={() => onNavigate('wishlist')}
-        />
-        <NavItem
-          icon={<IconLoans />}
-          label="Préstamos"
-          badge={counts.loans}
-          /* El único badge que avisa en vez de contar: un disco que debía
-             volver y no volvió es lo único de este menú que pide atención. */
-          alert={counts.loans > 0}
-          active={section === 'loans'}
-          onClick={() => onNavigate('loans')}
-        />
+        {features.wishlist && (
+          <NavItem
+            icon={<IconWishlist />}
+            label="Deseos"
+            badge={counts.wishlist}
+            active={section === 'wishlist'}
+            onClick={() => onNavigate('wishlist')}
+          />
+        )}
+        {features.loans && (
+          <NavItem
+            icon={<IconLoans />}
+            label="Préstamos"
+            badge={counts.loans}
+            alert={counts.loans > 0}
+            active={section === 'loans'}
+            onClick={() => onNavigate('loans')}
+          />
+        )}
       </ul>
 
       <div className="sidebar-foot">

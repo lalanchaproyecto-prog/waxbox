@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { WishlistItem, WishlistDraft } from '@core/database/db'
+import type { ReleaseCandidate } from '@core/services/musicbrainz'
 import { PHYSICAL_FORMATS, getFormat } from '@core/models/formats'
 import type { PhysicalFormatId } from '@core/models/formats'
 import PageHeader from './PageHeader'
-import { IconClose, IconEdit, IconTrash } from './Icons'
+import { IconClose, IconEdit, IconSearch, IconTrash } from './Icons'
 
 interface WishlistScreenProps {
   collectionId: number
@@ -47,8 +48,8 @@ function WishlistScreen({ collectionId, onChanged, onGotIt }: WishlistScreenProp
   const [editingId, setEditingId] = useState<number | null>(null)
   const [draft, setDraft] = useState<WishlistDraft>(emptyDraft())
   const [busy, setBusy] = useState(false)
-  /** Deseo que está pidiendo confirmación para borrarse. */
   const [confirmId, setConfirmId] = useState<number | null>(null)
+  const [showSearch, setShowSearch] = useState(false)
 
   useEffect(() => {
     load()
@@ -84,6 +85,28 @@ function WishlistScreen({ collectionId, onChanged, onGotIt }: WishlistScreenProp
   function cancelForm() {
     setShowForm(false)
     setEditingId(null)
+  }
+
+  function handleSearchPick(candidate: ReleaseCandidate) {
+    const fmt = (candidate.mediaFormat ?? '').toLowerCase()
+    let format: PhysicalFormatId | null = null
+    if (fmt.includes('vinyl') || fmt.includes('12"') || fmt.includes('7"') || fmt.includes('10"')) format = 'vinilo'
+    else if (fmt.includes('cd')) format = 'cd'
+    else if (fmt.includes('cassette')) format = 'casete'
+
+    setDraft({
+      artists: candidate.artist,
+      title: candidate.title,
+      year: candidate.year ?? null,
+      format,
+      notes: null,
+      priority: 2,
+      seenAt: null,
+      price: null
+    })
+    setShowSearch(false)
+    setEditingId(null)
+    setShowForm(true)
   }
 
   async function save() {
@@ -122,9 +145,15 @@ function WishlistScreen({ collectionId, onChanged, onGotIt }: WishlistScreenProp
               : `${items.length} discos que buscas`
         }
         actions={
-          <button className="btn btn-primary" onClick={startAdd}>
-            Agregar deseo
-          </button>
+          <>
+            <button className="btn btn-ghost" onClick={() => setShowSearch(true)}>
+              <IconSearch size={15} />
+              Buscar en catálogo
+            </button>
+            <button className="btn btn-primary" onClick={startAdd}>
+              Agregar a mano
+            </button>
+          </>
         }
       />
 
@@ -132,13 +161,18 @@ function WishlistScreen({ collectionId, onChanged, onGotIt }: WishlistScreenProp
         <div className="empty-state">
           <p className="empty-state-title">Tu lista de deseos está vacía</p>
           <p className="empty-state-help">
-            Anota aquí los discos que quieres conseguir, con dónde los viste y a qué
-            precio. Cuando compres uno, «Ya lo tengo» te lleva a agregarlo con los datos
-            que escribiste.
+            Anota aquí los discos que quieres conseguir. Puedes buscarlos en el catálogo
+            de MusicBrainz o escribir los datos a mano. Cuando compres uno, «Ya lo tengo»
+            te lleva a agregarlo a tu colección.
           </p>
-          <button className="btn btn-primary" onClick={startAdd}>
-            Agregar el primero
-          </button>
+          <div className="empty-state-actions">
+            <button className="btn btn-ghost" onClick={() => setShowSearch(true)}>
+              Buscar en catálogo
+            </button>
+            <button className="btn btn-primary" onClick={startAdd}>
+              Agregar a mano
+            </button>
+          </div>
         </div>
       )}
 
@@ -230,6 +264,13 @@ function WishlistScreen({ collectionId, onChanged, onGotIt }: WishlistScreenProp
           busy={busy}
           onCancel={cancelForm}
           onSave={save}
+        />
+      )}
+
+      {showSearch && (
+        <WishlistSearchDialog
+          onPick={handleSearchPick}
+          onClose={() => setShowSearch(false)}
         />
       )}
     </div>
@@ -391,6 +432,116 @@ function WishlistDialog({
             {editing ? 'Guardar cambios' : 'Agregar'}
           </button>
         </footer>
+      </div>
+    </div>
+  )
+}
+
+interface WishlistSearchDialogProps {
+  onPick: (candidate: ReleaseCandidate) => void
+  onClose: () => void
+}
+
+function WishlistSearchDialog({ onPick, onClose }: WishlistSearchDialogProps) {
+  const [artist, setArtist] = useState('')
+  const [title, setTitle] = useState('')
+  const [results, setResults] = useState<ReleaseCandidate[]>([])
+  const [searching, setSearching] = useState(false)
+  const [searched, setSearched] = useState(false)
+
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [onClose])
+
+  async function handleSearch() {
+    if (!artist.trim() && !title.trim()) return
+    setSearching(true)
+    setSearched(false)
+    const result = await window.api.searchReleases(artist.trim(), title.trim())
+    setSearching(false)
+    setSearched(true)
+    if (result.ok) setResults(result.data)
+    else setResults([])
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div
+        className="modal modal-wide"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-label="Buscar disco en el catálogo"
+      >
+        <header className="modal-header">
+          <div>
+            <h2>Buscar disco</h2>
+            <p className="modal-subtitle">
+              Busca en MusicBrainz y elige el disco que quieres anotar.
+            </p>
+          </div>
+          <button className="modal-close" onClick={onClose} title="Cerrar">
+            <IconClose size={18} />
+          </button>
+        </header>
+
+        <div className="wishlist-search-form">
+          <label className="field">
+            <span className="field-label">Artista</span>
+            <input
+              value={artist}
+              onChange={(e) => setArtist(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
+              placeholder="Ej: Soda Stereo"
+              spellCheck={false}
+              autoFocus
+            />
+          </label>
+          <label className="field">
+            <span className="field-label">Álbum</span>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
+              placeholder="Ej: Canción Animal"
+              spellCheck={false}
+            />
+          </label>
+          <button
+            className="btn btn-primary"
+            onClick={handleSearch}
+            disabled={searching || (!artist.trim() && !title.trim())}
+          >
+            {searching ? 'Buscando...' : 'Buscar'}
+          </button>
+        </div>
+
+        {searched && results.length === 0 && (
+          <p className="wishlist-search-empty">
+            No se encontró nada. Prueba con otro nombre o agrégalo a mano.
+          </p>
+        )}
+
+        {results.length > 0 && (
+          <ul className="wishlist-search-results">
+            {results.slice(0, 20).map((r, i) => (
+              <li key={`${r.musicbrainzId}-${i}`}>
+                <button className="wishlist-search-result" onClick={() => onPick(r)}>
+                  <span className="wishlist-search-result-title">{r.title}</span>
+                  <span className="wishlist-search-result-meta">
+                    {r.artist}
+                    {r.year ? ` · ${r.year}` : ''}
+                    {r.mediaFormat ? ` · ${r.mediaFormat}` : ''}
+                    {r.label ? ` · ${r.label}` : ''}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )

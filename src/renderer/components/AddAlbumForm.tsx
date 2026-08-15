@@ -28,6 +28,7 @@ interface AddAlbumFormProps {
   initial?: AlbumDraft | null
   onSubmit: (draft: AlbumDraft) => void
   onBrowseArtist?: (draft: AlbumDraft) => void
+  onManual?: (draft: AlbumDraft) => void
   onCancel: () => void
 }
 
@@ -40,7 +41,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced
 }
 
-function AddAlbumForm({ initial, onSubmit, onBrowseArtist, onCancel }: AddAlbumFormProps) {
+function AddAlbumForm({ initial, onSubmit, onBrowseArtist, onManual, onCancel }: AddAlbumFormProps) {
   const [coverFront, setCoverFront] = useState<File | null>(initial?.coverFront ?? null)
   const [coverBack, setCoverBack] = useState<File | null>(initial?.coverBack ?? null)
   const [artist, setArtist] = useState(initial?.artist ?? '')
@@ -277,6 +278,24 @@ function AddAlbumForm({ initial, onSubmit, onBrowseArtist, onCancel }: AddAlbumF
           Cancelar
         </button>
         <div className="add-form-actions">
+          {onManual && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={!artist.trim()}
+              onClick={() =>
+                onManual({
+                  coverFront,
+                  coverBack,
+                  artist: artist.trim(),
+                  title: title.trim(),
+                  format
+                })
+              }
+            >
+              Cargar a mano
+            </button>
+          )}
           {onBrowseArtist && (
             <button
               type="button"
