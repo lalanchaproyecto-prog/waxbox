@@ -12,23 +12,42 @@ import { getFormat } from '../../core/models/formats'
 import { conditionLabel } from '../../core/models/condition'
 import type { CoverImage } from './images'
 
-/** Morado de la app, para los encabezados. */
-const HEADER_COLOR = 'FF6D28D9'
+/*
+  Los colores de la app, en formato ARGB que es lo que entiende Excel.
+
+  El encabezado va en tinta casi negra con el texto claro, y NO en el rojo de
+  marca: ese rojo no aguanta texto blanco encima —se queda en 3,6:1 y no se
+  lee— exactamente igual que en la interfaz. El rojo se reserva para las
+  cifras y los acentos, donde va sobre fondo claro.
+*/
+const TINTA = 'FF1E1F23'
+const ROJO = 'FFB32A19'
+const PAPEL_ALTERNO = 'FFF4F3F0'
 const COVER_PX = 64
 
 function styleHeader(sheet: ExcelJS.Worksheet): void {
   const header = sheet.getRow(1)
-  header.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 }
-  header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: HEADER_COLOR } }
+  header.font = { bold: true, color: { argb: 'FFF4F3F0' }, size: 11 }
+  header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TINTA } }
   header.alignment = { vertical: 'middle', horizontal: 'left' }
   header.height = 22
   sheet.views = [{ state: 'frozen', ySplit: 1 }]
 }
 
+/*
+  Filas alternas en gris muy claro.
+
+  Una hoja de cien discos con veinte columnas se recorre con el dedo en la
+  pantalla, y sin bandas es fácil saltar de fila a mitad de camino. Es el
+  mismo rayado tenue que lleva la tabla del setlist en el PDF.
+*/
 function autoBorder(sheet: ExcelJS.Worksheet): void {
   sheet.eachRow((row, index) => {
     if (index === 1) return
     row.alignment = { vertical: 'middle', wrapText: true }
+    if (index % 2 === 0) {
+      row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PAPEL_ALTERNO } }
+    }
   })
 }
 
@@ -201,6 +220,13 @@ export function buildSetlistWorkbook(
     })
 
     if (fields.has('cover')) embedCover(workbook, sheet, covers[index], row.number)
+
+    /* El número de canción en rojo y en negrita: es lo que se busca de un
+       vistazo cuando alguien dice «vamos por la siete». */
+    if (fields.has('position')) {
+      row.getCell('position').font = { bold: true, color: { argb: ROJO }, size: 12 }
+      row.getCell('position').alignment = { vertical: 'middle', horizontal: 'center' }
+    }
   })
 
   autoBorder(sheet)

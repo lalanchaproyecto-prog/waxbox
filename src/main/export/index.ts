@@ -14,7 +14,15 @@ import { dialog, type BrowserWindow } from 'electron'
 import { writeFileSync } from 'fs'
 import type { Database } from 'sql.js'
 import type ExcelJS from 'exceljs'
-import { listAlbums, getAlbum, getSetlist, type SavedAlbum } from '../../core/database/db'
+import {
+  listAlbums,
+  getAlbum,
+  getSetlist,
+  listCollections,
+  type SavedAlbum
+} from '../../core/database/db'
+import { getActiveProfileId, listProfiles } from '../profiles'
+import type { ContextoDocumento } from './marca'
 import type {
   ExportFormat,
   ExportRequest,
@@ -57,6 +65,37 @@ async function askWhereToSave(
   return result.canceled || !result.filePath ? null : result.filePath
 }
 
+/**
+ * Quién exporta y de qué colección, para la cabecera del documento.
+ *
+ * Un PDF exportado circula solo: se manda por correo, se imprime, se enseña
+ * al seguro o al comprador. Sin el nombre de quien lo hizo y de qué colección
+ * salió, un listado de discos impreso no dice de quién es — y eso es lo
+ * primero que se pregunta quien lo recibe.
+ *
+ * Si algo no se puede leer se pone un texto neutro en vez de fallar: nadie
+ * debería quedarse sin poder exportar su colección porque el nombre del
+ * perfil no se pudo resolver.
+ */
+function contextoDelDocumento(db: Database, collectionId: number): ContextoDocumento {
+  let perfil = 'Mi colección'
+  try {
+    const activo = getActiveProfileId()
+    perfil = listProfiles().find((p) => p.id === activo)?.name ?? perfil
+  } catch {
+    // Sin perfil resoluble: se exporta igual, solo sin nombre.
+  }
+
+  let coleccion = 'Mi colección'
+  try {
+    coleccion = listCollections(db).find((c) => c.id === collectionId)?.name ?? coleccion
+  } catch {
+    // Igual que arriba.
+  }
+
+  return { perfil, coleccion }
+}
+
 function loadFullCollection(db: Database, collectionId: number): SavedAlbum[] {
   const albums: SavedAlbum[] = []
   for (const summary of listAlbums(db, collectionId)) {
@@ -82,7 +121,13 @@ export async function runExport(
       throw new Error('Esta colección está vacía, no hay nada que exportar.')
     }
 
-    const path = await askWhereToSave(window, 'Melôfyle - Mi colección', request.format)
+    const contexto = contextoDelDocumento(db, request.collectionId)
+
+    const path = await askWhereToSave(
+      window,
+      `Melofyle - ${safeFileName(contexto.coleccion)}`,
+      request.format
+    )
     if (!path) return { path: null }
 
     const covers: Array<CoverImage | null> = wantsCovers
@@ -103,7 +148,7 @@ export async function runExport(
       const workbook = buildCollectionWorkbook(albums, covers, fields)
       await writeWorkbook(workbook, path)
     } else {
-      const pdf = await htmlToPdf(renderCollectionHtml(albums, covers, fields))
+      const pdf = await htmlToPdf(renderCollectionHtml(albums, covers, fields, contexto))
       report({ stage: 'writing', done: 0, total: 1 })
       writeFileSync(path, pdf)
     }
@@ -123,9 +168,11 @@ export async function runExport(
     throw new Error('Ese setlist está vacío, no hay nada que exportar.')
   }
 
+  const contexto = contextoDelDocumento(db, request.collectionId)
+
   const path = await askWhereToSave(
     window,
-    `Melôfyle - ${safeFileName(setlist.name)}`,
+    `Melofyle - ${safeFileName(setlist.name)}`,
     request.format
   )
   if (!path) return { path: null }
@@ -148,7 +195,7 @@ export async function runExport(
     const workbook = buildSetlistWorkbook(setlist, covers, fields)
     await writeWorkbook(workbook, path)
   } else {
-    const pdf = await htmlToPdf(renderSetlistHtml(setlist, covers, fields))
+    const pdf = await htmlToPdf(renderSetlistHtml(setlist, covers, fields, contexto))
     report({ stage: 'writing', done: 0, total: 1 })
     writeFileSync(path, pdf)
   }
