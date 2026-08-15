@@ -31,7 +31,24 @@ export const APP_SLOGAN = 'Keep your music'
  */
 export const APP_NAME_ASCII = 'Melofyle'
 
-export const APP_VERSION = '1.0.0'
+/*
+  LA VERSIÓN, Y POR QUÉ EMPIEZA POR 0.9.
+
+  `0.9.0-beta.1` no es un número cualquiera: la parte `-beta.1` la lee
+  electron-builder para decidir el CANAL. Con un sufijo de preversión genera
+  `beta.yml` en vez de `latest.yml`, y electron-updater solo mira el canal que
+  corresponde a la versión instalada.
+
+  Eso es lo que mantiene separados a los dos públicos sin configurar nada más:
+  quien tenga la beta recibirá betas, y quien mañana instale la 1.0 estable
+  mirará `latest.yml` y no verá jamás una beta.
+
+  TIENE QUE COINCIDIR CON `version` EN package.json. Esta es la que se enseña
+  en «Acerca de» y viaja en los informes de fallo; aquella es la que decide qué
+  se publica. Si se separan, alguien reportará un problema desde una versión
+  que no existe.
+*/
+export const APP_VERSION = '0.9.0-beta.1'
 export const REPO_URL = 'https://github.com/lalanchaproyecto-prog/melofyle'
 
 /** Cabecera User-Agent en el formato que pide MusicBrainz: Nombre/Versión ( contacto ) */

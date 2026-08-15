@@ -17,17 +17,51 @@ a las canciones de un disco que ya tienes** — el código de descarga que vení
 el CD que rippeaste. No es una biblioteca digital: es poder escuchar el disco que está en tu
 estante. Melôfyle guarda la ruta a tus archivos donde ya están, sin copiarlos ni moverlos.
 
-## Estado del proyecto
+## Estado: beta pública
 
-En desarrollo activo. Ya funcionan:
+**Versión actual: `0.9.0-beta.1`**
+
+La app está completa y en uso real, pero todavía no ha pasado por suficientes
+manos como para llamarla 1.0. Está en manos de un grupo de prueba, y de ahí
+saldrá la versión estable.
+
+Qué significa eso en la práctica:
+
+- **Tus datos son tuyos y se quedan en tu computador.** No hay servidor, no hay
+  cuenta, no se envía nada a ninguna parte. Aun así, mientras dure la beta
+  conviene que no sea tu único registro de una colección grande.
+- **El instalador no está firmado todavía.** Windows mostrará un aviso la
+  primera vez; hay que pulsar «Más información» → «Ejecutar de todas formas».
+  Estamos tramitando un certificado con [SignPath
+  Foundation](https://signpath.org/), que lo da gratis a proyectos open source.
+- **La app se actualiza sola.** Cuando publiquemos una beta nueva, la descarga
+  en segundo plano y la instala al cerrarla.
+
+### Qué ya funciona
 
 - Agregar discos con datos automáticos de MusicBrainz, Cover Art Archive, Wikipedia y Deezer.
 - Cargar a mano los discos que no están en ningún catálogo.
 - Colección con buscador, filtros, vista de tabla y estado de conservación.
+- Listas inteligentes: filtros guardados que se actualizan solos.
 - Perfiles y colecciones múltiples.
 - Setlists, incluido un generador automático por género.
-- Exportación a Excel y PDF.
+- Lista de deseos y registro de préstamos.
+- Exportación a Excel y PDF con el logo y tus datos.
 - Reproductor propio con tus archivos, los adelantos de Deezer y video de YouTube.
+- Tutorial de introducción y personalización del inicio.
+
+## Reportar un problema o sugerir algo
+
+**Lo más fácil es desde la propia app**: Configuración → «Reportar un problema»
+o «Sugerir una mejora». Abre el navegador con el formulario ya empezado e
+incluye la versión y el sistema, que es justo lo que hace falta para poder
+mirarlo. Nada se envía hasta que tú lo publiques.
+
+También puedes abrirlo directamente en
+[Issues](https://github.com/lalanchaproyecto-prog/melofyle/issues).
+
+Si el problema es que la app no abre y no puedes llegar a Configuración,
+cuéntalo en Issues indicando la versión que instalaste.
 
 ## Requisitos
 

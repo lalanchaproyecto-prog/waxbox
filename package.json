@@ -1,6 +1,6 @@
 {
   "name": "waxbox",
-  "version": "1.0.0",
+  "version": "0.9.0-beta.1",
   "description": "Melôfyle — Keep your music. Cataloga tu colección de música en formatos físicos.",
   "main": "./out/main/index.js",
   "scripts": {
