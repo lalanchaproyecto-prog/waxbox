@@ -100,7 +100,7 @@ function VariantCard({
   onClick: () => void
 }) {
   const cover = variant.userCoverFront
-    ? `waxbox-photo://${variant.userCoverFront}`
+    ? `melofyle-photo://${variant.userCoverFront}`
     : variant.canonicalCover
   const format = getFormat(variant.format)
 

@@ -35,7 +35,7 @@ const COLUMNS: Array<{ key: SortKey; label: string; className?: string }> = [
 ]
 
 function coverSrc(album: AlbumSummary): string | null {
-  if (album.userCoverFront) return `waxbox-photo://${album.userCoverFront}`
+  if (album.userCoverFront) return `melofyle-photo://${album.userCoverFront}`
   return album.canonicalCover
 }
 

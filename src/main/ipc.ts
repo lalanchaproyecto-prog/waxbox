@@ -134,7 +134,7 @@ async function attempt<T>(operation: () => Promise<T>): Promise<Result<T>> {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Ocurrió un error inesperado.'
-    console.error('[waxbox]', error)
+    console.error('[melofyle]', error)
     return { ok: false, error: message }
   }
 }
@@ -145,7 +145,7 @@ function attemptSync<T>(operation: () => T): Result<T> {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Ocurrió un error inesperado.'
-    console.error('[waxbox]', error)
+    console.error('[melofyle]', error)
     return { ok: false, error: message }
   }
 }

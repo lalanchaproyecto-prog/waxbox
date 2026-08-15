@@ -45,12 +45,17 @@ let activeProfileId: string | null = null
 /*
   DÓNDE VIVEN LOS DATOS, Y POR QUÉ LA CARPETA SIGUE LLAMÁNDOSE «waxbox».
 
-  `app.getPath('userData')` no inventa la ruta: la arma con el `name` del
-  package.json. Ese campo sigue diciendo «waxbox» a propósito, aunque la app
-  ahora se llame Melôfyle.
+  `app.getPath('userData')` no inventa la ruta: la arma con el nombre de la
+  app, que sale del `name` del package.json. Ese campo sigue diciendo «waxbox»
+  a propósito, aunque la app ahora se llame Melôfyle.
 
-  Cambiarlo renombraría la carpeta, y las colecciones, los perfiles y las fotos
-  que ya existen se quedarían en la carpeta anterior — la app arrancaría
+  Y sale del `name`, no del `productName`: electron-builder deja `productName`
+  dentro del bloque `build`, que no viaja al package.json empaquetado. Está
+  comprobado leyendo el que quedó dentro del asar. Por eso la versión instalada
+  y la de desarrollo miran la MISMA carpeta, que es justo lo que se quiere.
+
+  Cambiar el `name` renombraría esa carpeta, y las colecciones, los perfiles y
+  las fotos que ya existen se quedarían en la anterior — la app arrancaría
   vacía, como recién instalada, con todo el catálogo intacto pero invisible en
   un directorio que ya nadie mira. El nombre interno no lo ve nadie; perder una
   colección sí se nota. Si algún día hay que cambiarlo, primero hay que migrar
@@ -236,7 +241,7 @@ export function ensureProfilesReady(): Profile[] {
     const target = join(dir, 'waxbox.db')
     try {
       renameSync(legacyDb, target)
-      console.log(`[waxbox] Base movida al perfil "${profile.name}": ${target}`)
+      console.log(`[melofyle] Base movida al perfil "${profile.name}": ${target}`)
     } catch (error) {
       throw new Error(
         'No se pudo mover la base de datos al perfil nuevo, así que no se cambió ' +
@@ -268,7 +273,7 @@ export function ensureProfilesReady(): Profile[] {
       } catch {
         // La clave de YouTube se puede volver a configurar; no vale la pena
         // abortar la migración por esto.
-        console.warn('[waxbox] No se pudieron mover los ajustes al perfil nuevo.')
+        console.warn('[melofyle] No se pudieron mover los ajustes al perfil nuevo.')
       }
     }
   }

@@ -38,7 +38,7 @@ function describeSetlist(
 function setlistToQueue(tracks: SetlistEntry[]): PlayableTrack[] {
   return tracks.map((t) => {
     const cover = t.userCoverFront
-      ? `waxbox-photo://${t.userCoverFront}`
+      ? `melofyle-photo://${t.userCoverFront}`
       : t.canonicalCover
     return {
       trackId: t.trackId,
@@ -362,7 +362,7 @@ function SetlistsScreen({
             {detail.tracks.map((track, index) => {
               const format = getFormat(track.albumFormat)
               const cover = track.userCoverFront
-                ? `waxbox-photo://${track.userCoverFront}`
+                ? `melofyle-photo://${track.userCoverFront}`
                 : track.canonicalCover
               return (
                 <li className="setlist-track-row" key={track.trackId}>

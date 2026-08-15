@@ -109,9 +109,9 @@ export function imageSrc(image: ImageRef | null): string | null {
 
   switch (image.kind) {
     case 'archivo':
-      return `waxbox-photo://${image.value}`
+      return `melofyle-photo://${image.value}`
     case 'avatar':
-      return `waxbox-avatar://${image.value}`
+      return `melofyle-avatar://${image.value}`
     case 'commons':
       return image.value
     case 'icono':

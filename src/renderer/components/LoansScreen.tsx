@@ -80,7 +80,7 @@ function LoansScreen({ collectionId, onOpenAlbum, onChanged }: LoansScreenProps)
             const status = loanStatus(loan)
             const format = getFormat(loan.format)
             const cover = loan.userCoverFront
-              ? `waxbox-photo://${loan.userCoverFront}`
+              ? `melofyle-photo://${loan.userCoverFront}`
               : loan.canonicalCover
 
             return (

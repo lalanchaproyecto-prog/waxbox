@@ -533,7 +533,7 @@ export function renderSetlistHtml(
  * supera sin problema.
  */
 export async function htmlToPdf(html: string): Promise<Buffer> {
-  const tempPath = join(app.getPath('temp'), `waxbox-export-${Date.now()}.html`)
+  const tempPath = join(app.getPath('temp'), `melofyle-export-${Date.now()}.html`)
   writeFileSync(tempPath, html, 'utf-8')
 
   const win = new BrowserWindow({

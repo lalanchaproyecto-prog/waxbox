@@ -73,21 +73,79 @@ Es un ajuste del sistema y hay que hacerlo a mano una vez; después
 
 ## Publicar
 
-Necesitas un token de GitHub con permiso `repo`, en la variable de entorno
-`GH_TOKEN`. Se saca en GitHub → Settings → Developer settings → Personal access
-tokens.
+### El token
+
+electron-builder crea la release y sube los archivos por la API de GitHub, y
+para eso necesita un token en la variable de entorno `GH_TOKEN`.
+
+Usa un **token de acceso personal de alcance fino** (*fine-grained*), no uno
+clásico. El clásico solo ofrece el permiso `repo`, que da control total sobre
+**todos** tus repositorios; el de alcance fino se limita a este y a lo justo.
+
+En GitHub → *Settings* → *Developer settings* → *Personal access tokens* →
+*Fine-grained tokens* → *Generate new token*:
+
+| Campo | Qué poner |
+|---|---|
+| Token name | `melofyle-publicar` |
+| Expiration | 90 días. Que caduque es una función, no una molestia |
+| Repository access | *Only select repositories* → **melofyle**, y nada más |
+| Permissions → Repository → **Contents** | **Read and write** ← el único que hace falta |
+
+`Contents: Read and write` es lo que permite crear releases y subirles
+archivos. No hace falta ningún otro permiso.
+
+### Dónde se guarda
+
+El token se escribe **una vez** en una variable de entorno del usuario. En
+PowerShell, sustituyendo el valor:
+
+```bash
+[Environment]::SetEnvironmentVariable('GH_TOKEN','TU_TOKEN_AQUI','User')
+```
+
+Hay que **abrir una terminal nueva** después: las que ya estaban abiertas no
+ven la variable.
+
+Tres cosas que conviene tener claras:
+
+- **Queda en texto plano en el registro de Windows**, en
+  `HKCU:\Environment`. Cualquier programa que corra con tu usuario puede
+  leerlo. Es el mismo nivel de protección que tiene la clave de YouTube dentro
+  de la app, y es aceptable para un token que solo puede tocar un repositorio
+  y caduca en 90 días — no lo sería para uno con permiso sobre toda la cuenta.
+- **Nunca va al repositorio ni a un archivo del proyecto.** Si alguna vez se
+  te cuela en un commit, GitHub lo detecta y lo revoca solo, pero no cuentes
+  con eso: revócalo tú.
+- Para borrarlo cuando ya no haga falta:
+
+```bash
+[Environment]::SetEnvironmentVariable('GH_TOKEN',$null,'User')
+```
+
+### El comando
 
 ```bash
 npm run publicar
 ```
 
-Eso compila, empaqueta y sube los tres archivos a una release **en borrador**.
-Queda en borrador a propósito: puedes revisarla y escribir las notas antes de
-que llegue a nadie.
+Compila, empaqueta y sube los tres archivos.
 
-**La actualización no se reparte hasta que publicas la release en GitHub.**
-Mientras siga en borrador, `latest.yml` no es público y las apps instaladas no
-ven nada.
+### Sale directo como pre-release, no como borrador
+
+En `package.json`, dentro de `build.publish`, está puesto
+`"releaseType": "prerelease"`. Con eso la release se publica sola marcada como
+pre-release, sin tener que entrar a GitHub a marcarla a mano.
+
+> **Antes de la 1.0 hay que cambiar esto.** `releaseType` no distingue
+> versiones: mientras diga `prerelease`, *toda* release sale marcada como
+> pre-release, incluida la 1.0 estable. Al dejar de estar en beta hay que
+> cambiarlo a `"release"` (sale publicada) o a `"draft"` (sale en borrador,
+> para revisarla antes).
+
+Una pre-release **sí reparte actualizaciones** a quien tenga instalada una
+beta: el canal lo decide el sufijo de la versión, no la etiqueta de GitHub.
+Ver «Canales» más abajo.
 
 ## Comprobar que funcionó
 

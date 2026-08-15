@@ -53,7 +53,8 @@
       {
         "provider": "github",
         "owner": "lalanchaproyecto-prog",
-        "repo": "melofyle"
+        "repo": "melofyle",
+        "releaseType": "prerelease"
       }
     ]
   }

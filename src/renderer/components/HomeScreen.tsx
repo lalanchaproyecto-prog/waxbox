@@ -1086,7 +1086,7 @@ function coverSrc(album: {
   userCoverFront: string | null
   canonicalCover: string | null
 }): string | null {
-  if (album.userCoverFront) return `waxbox-photo://${album.userCoverFront}`
+  if (album.userCoverFront) return `melofyle-photo://${album.userCoverFront}`
   return album.canonicalCover
 }
 

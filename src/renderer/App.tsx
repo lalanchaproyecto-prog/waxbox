@@ -974,10 +974,10 @@ function App() {
               ...savedAlbum,
               musicbrainzId: savedAlbum.musicbrainzId ?? '',
               userCoverFront: savedAlbum.userCoverFront
-                ? `waxbox-photo://${savedAlbum.userCoverFront}`
+                ? `melofyle-photo://${savedAlbum.userCoverFront}`
                 : null,
               userCoverBack: savedAlbum.userCoverBack
-                ? `waxbox-photo://${savedAlbum.userCoverBack}`
+                ? `melofyle-photo://${savedAlbum.userCoverBack}`
                 : null,
               tracks: savedAlbum.tracks.map((t) => ({
                 ...t,

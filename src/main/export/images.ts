@@ -51,7 +51,7 @@ function shrink(raw: Buffer): CoverImage | null {
 }
 
 function readUserPhoto(filename: string): CoverImage | null {
-  // Mismo cuidado que en el protocolo waxbox-photo: nada de salirse de la carpeta.
+  // Mismo cuidado que en el protocolo melofyle-photo: nada de salirse de la carpeta.
   if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
     return null
   }

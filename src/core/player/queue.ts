@@ -47,7 +47,7 @@ export interface ResolvedSource {
   source: PlaybackSource
   /**
    * Qué reproducir.
-   * - 'archivo': la dirección waxbox-audio:// de la canción.
+   * - 'archivo': la dirección melofyle-audio:// de la canción.
    * - 'deezer': el identificador de la canción, con el que se pide el adelanto.
    * - 'youtube': nada todavía; el video se busca en el momento.
    */
@@ -75,7 +75,7 @@ export function resolveSource(
   youtubeDisponible: boolean
 ): ResolvedSource | null {
   if (track.file && !track.file.missing) {
-    return { source: 'archivo', ref: `waxbox-audio://track/${track.trackId}` }
+    return { source: 'archivo', ref: `melofyle-audio://track/${track.trackId}` }
   }
 
   if (track.deezer) {

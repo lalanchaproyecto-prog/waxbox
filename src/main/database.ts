@@ -85,7 +85,7 @@ function backupBeforeMigrating(database: Database, path: string): void {
 
   try {
     copyFileSync(path, backupPath)
-    console.log(`[waxbox] Respaldo antes de migrar: ${backupPath}`)
+    console.log(`[melofyle] Respaldo antes de migrar: ${backupPath}`)
   } catch (error) {
     // Si no se pudo respaldar, es más seguro no migrar que arriesgar los datos.
     throw new Error(

@@ -11,16 +11,16 @@ import { ensureProfilesReady } from './profiles'
 import { iniciarActualizaciones } from './updater'
 
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'waxbox-photo', privileges: { standard: true, secure: true } },
+  { scheme: 'melofyle-photo', privileges: { standard: true, secure: true } },
   /* Imágenes de perfil: se leen sin perfil abierto, para el selector. */
-  { scheme: 'waxbox-avatar', privileges: { standard: true, secure: true } },
+  { scheme: 'melofyle-avatar', privileges: { standard: true, secure: true } },
   /*
     `stream: true` es lo que permite adelantar y retroceder dentro de una
     canción: sin eso el archivo se sirve entero de una vez y la barra de
     progreso no puede saltar a un punto cualquiera.
   */
   {
-    scheme: 'waxbox-audio',
+    scheme: 'melofyle-audio',
     privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true }
   }
 ])
@@ -111,14 +111,14 @@ function iconoDeLaVentana(): string | undefined {
 }
 
 /*
-  DE UNA DIRECCIÓN `waxbox-photo://` AL NOMBRE DEL ARCHIVO.
+  DE UNA DIRECCIÓN `melofyle-photo://` AL NOMBRE DEL ARCHIVO.
 
   Parece trivial y no lo es. Estos esquemas están registrados como
   `standard: true`, y eso hace que Chromium los trate como http: los parte en
   host y ruta, y NORMALIZA la ruta vacía a "/".
 
-  Así que `waxbox-photo://foto.png` no le llega al manejador tal cual: llega
-  como `waxbox-photo://foto.png/`, con una barra al final que nadie escribió.
+  Así que `melofyle-photo://foto.png` no le llega al manejador tal cual: llega
+  como `melofyle-photo://foto.png/`, con una barra al final que nadie escribió.
 
   El código anterior cortaba el esquema y quitaba las barras de DELANTE, con lo
   que el nombre quedaba en "foto.png/". Justo después venía la comprobación de
@@ -157,7 +157,7 @@ function nombreDeArchivo(url: string): string {
 /**
  * Que el nombre sea un archivo suelto y no un camino a otra parte del disco.
  *
- * Sin esto, una dirección como `waxbox-photo://../../../datos.db` serviría
+ * Sin esto, una dirección como `melofyle-photo://../../../datos.db` serviría
  * cualquier archivo del computador a quien consiguiera ejecutar algo en la
  * ventana.
  */
@@ -211,7 +211,7 @@ app.whenReady().then(async () => {
   // hasta que la persona elija en el selector de perfiles.
   ensureProfilesReady()
 
-  protocol.handle('waxbox-photo', (request) => {
+  protocol.handle('melofyle-photo', (request) => {
     const filename = nombreDeArchivo(request.url)
     if (!esNombreSeguro(filename)) {
       return new Response('Forbidden', { status: 403 })
@@ -230,11 +230,11 @@ app.whenReady().then(async () => {
   /*
     Sirve una imagen de perfil.
 
-    A diferencia de waxbox-photo, esta no depende de que haya un perfil abierto:
+    A diferencia de melofyle-photo, esta no depende de que haya un perfil abierto:
     el selector de perfiles necesita dibujar los avatares justo antes de que se
     elija ninguno.
   */
-  protocol.handle('waxbox-avatar', (request) => {
+  protocol.handle('melofyle-avatar', (request) => {
     const filename = nombreDeArchivo(request.url)
     if (!esNombreSeguro(filename)) {
       return new Response('Forbidden', { status: 403 })
@@ -246,14 +246,14 @@ app.whenReady().then(async () => {
     Sirve el audio propio de una canción.
 
     LA DIRECCIÓN LLEVA EL ID DE LA CANCIÓN, NO LA RUTA DEL ARCHIVO.
-    Es deliberado: si la ventana pudiera pedir "waxbox-audio://C:/lo/que/sea",
+    Es deliberado: si la ventana pudiera pedir "melofyle-audio://C:/lo/que/sea",
     cualquier código que llegue a correr ahí podría leer cualquier archivo del
     computador. Con el id, el proceso principal busca la ruta en su propia base
     de datos, así que lo único que se puede servir es un archivo que la persona
     asoció a mano a una canción suya.
   */
-  protocol.handle('waxbox-audio', (request) => {
-    const match = /^waxbox-audio:\/\/track\/(\d+)/.exec(request.url)
+  protocol.handle('melofyle-audio', (request) => {
+    const match = /^melofyle-audio:\/\/track\/(\d+)/.exec(request.url)
     if (!match) return new Response('Petición inválida', { status: 400 })
 
     const trackId = Number.parseInt(match[1], 10)

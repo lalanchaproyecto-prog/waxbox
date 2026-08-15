@@ -615,7 +615,7 @@ function loadTrackFile(db: Database, trackId: number): TrackFile | null {
   }
 }
 
-/** La ruta del archivo de una canción. La usa el protocolo waxbox-audio://. */
+/** La ruta del archivo de una canción. La usa el protocolo melofyle-audio://. */
 export function trackFilePath(db: Database, trackId: number): string | null {
   return loadTrackFile(db, trackId)?.path ?? null
 }

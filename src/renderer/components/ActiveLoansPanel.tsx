@@ -28,7 +28,7 @@ function ActiveLoansPanel({ collectionId, onOpenAlbum }: ActiveLoansPanelProps) 
         {loans.map((loan) => {
           const status = loanStatus(loan)
           const cover = loan.userCoverFront
-            ? `waxbox-photo://${loan.userCoverFront}`
+            ? `melofyle-photo://${loan.userCoverFront}`
             : loan.canonicalCover
           const format = getFormat(loan.format)
 
