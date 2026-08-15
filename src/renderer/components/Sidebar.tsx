@@ -1,6 +1,7 @@
 import type { CollectionSummary } from '@core/database/db'
 import type { Profile } from '@core/models/profile'
 import type { FeatureFlags } from '@core/models/features'
+import { imageIcon } from '@core/models/imageRef'
 import CollectionBar from './CollectionBar'
 import { Logotipo } from './Logo'
 import {
@@ -92,7 +93,7 @@ function Sidebar({
           title="Cambiar de perfil"
         >
           <span className="profile-block-emoji" aria-hidden="true">
-            {profile.emoji}
+            {imageIcon(profile.image ?? null) ?? profile.emoji}
           </span>
           <span className="profile-text">
             <span className="profile-name">{profile.name}</span>

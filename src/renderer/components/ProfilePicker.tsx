@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Profile } from '@core/models/profile'
-import { imageSrc, type ImageRef } from '@core/models/imageRef'
-import ImagePicker from './ImagePicker'
+import { imageIcon, type ImageRef } from '@core/models/imageRef'
+import IconPicker from './IconPicker'
 
 interface ProfilePickerProps {
   profiles: Profile[]
@@ -112,18 +112,13 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
             ) : (
               <>
                 <button className="profile-card" onClick={() => onPick(profile.id)}>
-                  {/* Con imagen se ve la imagen; sin ella, el emoji de siempre. */}
-                  {imageSrc(profile.image ?? null) ? (
-                    <img
-                      className="profile-card-image"
-                      src={imageSrc(profile.image ?? null)!}
-                      alt=""
-                    />
-                  ) : (
-                    <span className="profile-card-emoji" aria-hidden="true">
-                      {profile.emoji}
-                    </span>
-                  )}
+                  {/*
+                    Solo ícono. El elegido a mano manda; si no hay ninguno, el
+                    emoji que se le asignó al crear el perfil.
+                  */}
+                  <span className="profile-card-emoji" aria-hidden="true">
+                    {imageIcon(profile.image ?? null) ?? profile.emoji}
+                  </span>
                   <span className="profile-card-name">{profile.name}</span>
                 </button>
 
@@ -138,7 +133,7 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
                     Renombrar
                   </button>
                   <button className="btn-link" onClick={() => setImagenDe(profile)}>
-                    Imagen
+                    Ícono
                   </button>
                   {profiles.length > 1 &&
                     (confirmDeleteId === profile.id ? (
@@ -226,17 +221,11 @@ function ProfilePicker({ profiles, onPick, onChanged }: ProfilePickerProps) {
         contraseña y cualquiera que abra Melôfyle puede entrar a cualquiera.
       </p>
 
-      {/*
-        Las imágenes de perfil van a la carpeta compartida ('avatar') y no a la
-        del perfil: esta pantalla se dibuja antes de abrir ninguno, así que las
-        de un perfil concreto todavía no se podrían leer.
-      */}
       {imagenDe && (
-        <ImagePicker
+        <IconPicker
           title={imagenDe.name}
           current={imagenDe.image ?? null}
-          destino="avatar"
-          sugerencia={imagenDe.name}
+          porOmision={imagenDe.emoji}
           onChange={async (image: ImageRef | null) => {
             const result = await window.api.setProfileImage(imagenDe.id, image)
             if (result.ok) onChanged()

@@ -16,6 +16,8 @@
   naranja del referente, y no debe apagarse con el tema.
 */
 
+import { APP_SLOGAN } from '@core/config'
+
 /**
  * El rojo de la marca, tal cual viene del archivo de diseño.
  *
@@ -24,6 +26,12 @@
  * seguir siendo esta.
  */
 const ROJO_MARCA = '#fb3d2b'
+
+/*
+  El eslogan sale de `config.ts` y no escrito aquí a mano: había dos copias, y
+  bastaba con cambiar una para que el arranque y el «Acerca de» dijeran cosas
+  distintas.
+*/
 
 /**
  * Los trazados de la ô, sacados del logotipo original.
@@ -128,7 +136,7 @@ export function LogoCompleto({ conEslogan = true }: LogoCompletoProps) {
   return (
     <div className="logo-completo">
       <Logotipo alto={56} className="logo-completo-marca" />
-      {conEslogan && <span className="logo-completo-eslogan">Keep your music.</span>}
+      {conEslogan && <span className="logo-completo-eslogan">{APP_SLOGAN}</span>}
     </div>
   )
 }

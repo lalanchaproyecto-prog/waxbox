@@ -4,7 +4,7 @@ import type { WishlistItem, WishlistDraft } from '@core/database/db'
 import { PHYSICAL_FORMATS, getFormat } from '@core/models/formats'
 import type { PhysicalFormatId } from '@core/models/formats'
 import PageHeader from './PageHeader'
-import { IconClose, IconEdit, IconSearch, IconTrash } from './Icons'
+import { IconClose, IconEdit, IconTrash } from './Icons'
 
 interface WishlistScreenProps {
   collectionId: number
@@ -161,13 +161,21 @@ function WishlistScreen({
               ? '1 disco que buscas'
               : `${items.length} discos que buscas`
         }
+        /*
+          La lupa desaparece en cuanto hay algo en la lista.
+
+          Con la lista vacía es la única forma de empezar y conviene que se
+          vea. Con discos ya anotados, la acción de todos los días es sumar
+          uno más, y para eso el botón basta: el ícono ahí solo repetía en
+          dibujo lo que la palabra ya decía, y competía por atención con la
+          propia lista, que es lo que se viene a mirar.
+        */
         actions={
           <>
             <button className="btn btn-ghost" onClick={startAdd}>
               Agregar a mano
             </button>
             <button className="btn btn-primary" onClick={onBuscar}>
-              <IconSearch size={15} />
               Buscar un disco
             </button>
           </>

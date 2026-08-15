@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { CollectionSummary } from '@core/database/db'
-import { imageSrc, type ImageRef } from '@core/models/imageRef'
-import ImagePicker from './ImagePicker'
+import { imageIcon, type ImageRef } from '@core/models/imageRef'
+import IconPicker from './IconPicker'
 
 interface CollectionBarProps {
   collections: CollectionSummary[]
@@ -22,26 +23,61 @@ function CollectionBar({ collections, activeId, onSwitch, onChanged }: Collectio
   const [open, setOpen] = useState(false)
   const [managing, setManaging] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const botonRef = useRef<HTMLButtonElement>(null)
+
+  /* Dónde dibujar el desplegable. Se mide del botón al abrirlo. */
+  const [anclaje, setAnclaje] = useState<{ top: number; left: number } | null>(null)
 
   const active = collections.find((item) => item.id === activeId)
+
+  /*
+    EL DESPLEGABLE SE MIDE ANTES DE PINTARSE.
+
+    `useLayoutEffect` y no `useEffect` porque esto corre entre el cálculo del
+    diseño y el pintado: con `useEffect` el menú aparecería un cuadro en la
+    esquina superior izquierda y saltaría a su sitio al siguiente, que se ve
+    como un parpadeo.
+  */
+  useLayoutEffect(() => {
+    if (!open || !botonRef.current) return
+    const caja = botonRef.current.getBoundingClientRect()
+    setAnclaje({ top: caja.bottom + 4, left: caja.left })
+  }, [open])
 
   useEffect(() => {
     if (!open) return
 
     function handleClickOutside(event: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(event.target as Node)) {
-        setOpen(false)
-      }
+      const destino = event.target as Node
+      /*
+        El menú ya NO está dentro de `wrapRef` —vive colgado de <body>— así que
+        hay que preguntarle también a él. Sin esto, pulsar cualquier opción del
+        propio menú contaría como "clic fuera" y lo cerraría antes de que el
+        botón llegara a responder.
+      */
+      const dentroDelBoton = wrapRef.current?.contains(destino)
+      const dentroDelMenu = document
+        .querySelector('.collection-menu')
+        ?.contains(destino)
+      if (!dentroDelBoton && !dentroDelMenu) setOpen(false)
     }
     function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') setOpen(false)
     }
+    /* Si la ventana cambia de tamaño, el anclaje medido deja de valer. */
+    function cerrarAlMover() {
+      setOpen(false)
+    }
 
     document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('keydown', handleEscape)
+    window.addEventListener('resize', cerrarAlMover)
+    window.addEventListener('scroll', cerrarAlMover, true)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('keydown', handleEscape)
+      window.removeEventListener('resize', cerrarAlMover)
+      window.removeEventListener('scroll', cerrarAlMover, true)
     }
   }, [open])
 
@@ -51,58 +87,95 @@ function CollectionBar({ collections, activeId, onSwitch, onChanged }: Collectio
   return (
     <div className="collection-bar" ref={wrapRef}>
       <button
+        ref={botonRef}
         className="collection-switch"
         onClick={() => setOpen(!open)}
         aria-haspopup="true"
         aria-expanded={open}
-        title="Cambiar de colección"
+        title="Ver, cambiar o agregar colecciones"
       >
         <span className="collection-switch-icon" aria-hidden="true">
-          &#128194;
+          {imageIcon(active?.image ?? null) ?? '💿'}
         </span>
-        <span className="collection-switch-name">{active?.name ?? 'Colección'}</span>
+        {/*
+          «Mis colecciones», en plural.
+
+          El botón no muestra en cuál estás —eso ya lo dice el título de la
+          pantalla de inicio—: sirve para VER, CAMBIAR o AGREGAR colecciones,
+          y en singular parecía una etiqueta de estado en vez de una puerta.
+        */}
+        <span className="collection-switch-name">Mis colecciones</span>
         <span className="collection-switch-chevron" aria-hidden="true">
           ▾
         </span>
       </button>
 
-      {open && (
-        <div className="collection-menu" role="menu">
-          {!onlyOne && (
-            <>
-              <p className="collection-menu-title">Cambiar a</p>
-              <ul className="collection-menu-list">
-                {collections.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      className={`collection-menu-item${item.id === activeId ? ' active' : ''}`}
-                      onClick={() => {
-                        onSwitch(item.id)
-                        setOpen(false)
-                      }}
-                    >
-                      <span className="collection-menu-name">{item.name}</span>
-                      <span className="collection-menu-count">
-                        {item.albumCount === 1 ? '1 disco' : `${item.albumCount} discos`}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+      {/*
+        EL DESPLEGABLE VA COLGADO DE <body>, NO DE AQUÍ.
 
-          <button
-            className="collection-menu-manage"
-            onClick={() => {
-              setManaging(true)
-              setOpen(false)
-            }}
+        El menú lateral es `position: sticky` con `overflow-y: auto`, y eso le
+        hace dos cosas a cualquier hijo posicionado:
+
+        1. Lo RECORTA. El desplegable mide 272 px y el menú 232; los 40 que
+           sobraban se cortaban y aparecía una barra de scroll horizontal
+           dentro del menú lateral. Medido: scrollWidth 284 contra
+           clientWidth 267.
+        2. Lo ATRAPA. `sticky` crea un contexto de apilamiento propio, así que
+           el z-index del desplegable solo compite con sus hermanos de dentro
+           del menú y no puede ponerse por encima de nada de fuera.
+
+        Sacándolo a <body> con posición fija medida del botón, las dos cosas
+        dejan de aplicar: ni se recorta ni queda atrapado.
+      */}
+      {open &&
+        anclaje &&
+        createPortal(
+          <div
+            className="collection-menu"
+            role="menu"
+            style={{ top: anclaje.top, left: anclaje.left }}
           >
-            Gestionar colecciones
-          </button>
-        </div>
-      )}
+            {!onlyOne && (
+              <>
+                <p className="collection-menu-title">Cambiar a</p>
+                <ul className="collection-menu-list">
+                  {collections.map((item) => (
+                    <li key={item.id}>
+                      <button
+                        className={`collection-menu-item${item.id === activeId ? ' active' : ''}`}
+                        onClick={() => {
+                          onSwitch(item.id)
+                          setOpen(false)
+                        }}
+                      >
+                        <span className="collection-menu-name">
+                          <span className="collection-menu-icon" aria-hidden="true">
+                            {imageIcon(item.image) ?? '💿'}
+                          </span>
+                          {item.name}
+                        </span>
+                        <span className="collection-menu-count">
+                          {item.albumCount === 1 ? '1 disco' : `${item.albumCount} discos`}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            <button
+              className="collection-menu-manage"
+              onClick={() => {
+                setManaging(true)
+                setOpen(false)
+              }}
+            >
+              Gestionar colecciones
+            </button>
+          </div>,
+          document.body
+        )}
 
       {managing && (
         <CollectionsManager
@@ -136,7 +209,7 @@ function CollectionsManager({
   const [renamingId, setRenamingId] = useState<number | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
-  /** Colección a la que se le está eligiendo imagen. */
+  /** Colección a la que se le está eligiendo ícono. */
   const [imagenDe, setImagenDe] = useState<CollectionSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -181,7 +254,14 @@ function CollectionsManager({
     onChanged()
   }
 
-  return (
+  /*
+    Este diálogo también sale por portal, por la misma razón que el
+    desplegable: se renderiza desde dentro del menú lateral, que es `sticky` y
+    por tanto un contexto de apilamiento propio. Un velo a pantalla completa
+    atrapado ahí dentro no puede taparlo todo por mucho z-index que se le
+    ponga, porque su número solo vale entre sus hermanos.
+  */
+  return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal collections-modal"
@@ -227,9 +307,9 @@ function CollectionsManager({
                 </div>
               ) : (
                 <>
-                  {imageSrc(item.image) && (
-                    <img className="collection-row-image" src={imageSrc(item.image)!} alt="" />
-                  )}
+                  <span className="collection-row-icon" aria-hidden="true">
+                    {imageIcon(item.image) ?? '💿'}
+                  </span>
                   <div className="collection-row-text">
                     <span className="collection-row-name">
                       {item.name}
@@ -254,7 +334,7 @@ function CollectionsManager({
                     </button>
 
                     <button className="btn-link" onClick={() => setImagenDe(item)}>
-                      🖼 Imagen
+                      ◐ Ícono
                     </button>
 
                     {confirmDeleteId === item.id ? (
@@ -331,11 +411,9 @@ function CollectionsManager({
       </div>
 
       {imagenDe && (
-        <ImagePicker
+        <IconPicker
           title={imagenDe.name}
           current={imagenDe.image}
-          destino="archivo"
-          sugerencia={imagenDe.name}
           onChange={async (image: ImageRef | null) => {
             const result = await window.api.setCollectionImage(imagenDe.id, image)
             if (result.ok) onChanged()
@@ -344,7 +422,8 @@ function CollectionsManager({
           onClose={() => setImagenDe(null)}
         />
       )}
-    </div>
+    </div>,
+    document.body
   )
 }
 

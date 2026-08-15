@@ -12,8 +12,14 @@
 /** El nombre de la app tal como se escribe y se muestra, con su circunflejo. */
 export const APP_NAME = 'Melôfyle'
 
-/** El eslogan. Va en inglés a propósito: es parte del logotipo, no una frase traducible. */
-export const APP_SLOGAN = 'Keep your music.'
+/**
+ * El eslogan. Va en inglés a propósito: es parte del logotipo, no una frase
+ * traducible.
+ *
+ * Sin punto final. Un eslogan no es una oración que termina, es una marca que
+ * se queda; el punto lo cerraba y lo hacía leerse como una frase suelta.
+ */
+export const APP_SLOGAN = 'Keep your music'
 
 /**
  * El nombre sin acentos, para donde no cabe un carácter que no sea ASCII.

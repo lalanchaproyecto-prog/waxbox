@@ -236,6 +236,33 @@
   --inset-top: 0 0 transparent;
   --inset-bottom: 0 0 transparent;
 
+  /*
+    ---------- Capas ----------
+    QUIÉN VA ENCIMA DE QUIÉN, DECIDIDO EN UN SOLO SITIO.
+
+    Antes cada componente elegía su número a ojo, y salían contradicciones que
+    nadie veía hasta toparse con ellas: el reproductor (60) estaba por encima
+    de los diálogos (50), así que la barra flotaba sobre cualquier ventana que
+    se abriera; y el desplegable de colecciones (70) tapaba hasta al
+    reproductor grande.
+
+    El orden es el de la frase «qué está pidiendo tu atención ahora mismo»:
+
+    - `sticky`   cabeceras que se quedan pegadas al desplazar.
+    - `flotante` el reproductor y los avisos: acompañan, no interrumpen.
+    - `menu`     desplegables anclados a un botón.
+    - `modal`    diálogos. Mientras uno está abierto es lo único que importa,
+                 así que va por encima del reproductor y de los avisos.
+    - `pantalla` lo que ocupa la pantalla entera (el reproductor grande).
+    - `encima`   lo que tiene que verse pase lo que pase.
+  */
+  --z-sticky: 10;
+  --z-flotante: 60;
+  --z-menu: 70;
+  --z-modal: 100;
+  --z-pantalla: 150;
+  --z-encima: 200;
+
   /* ---------- Movimiento ----------
      Una sola curva para toda la app: entra rápido y frena suave. */
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);

@@ -28,8 +28,15 @@
  * - 'commons': la imagen sigue en internet, sin descargar. Es el respaldo para
  *   cuando la descarga falla, y lo que tienen las imágenes elegidas antes de
  *   que la app supiera descargarlas.
+ * - 'icono'  : no es una imagen. Es un emoji elegido de una lista corta, y es
+ *   lo ÚNICO que pueden tener hoy los perfiles y las colecciones.
+ *
+ *   Va aquí dentro y no en una columna nueva a propósito: el sitio donde se
+ *   guarda ya existe, así que cambiar a íconos no obliga a migrar ninguna base
+ *   de datos ya creada. Las imágenes viejas siguen leyéndose sin romperse —
+ *   simplemente ya no se pueden elegir.
  */
-export type ImageKind = 'archivo' | 'avatar' | 'commons'
+export type ImageKind = 'archivo' | 'avatar' | 'commons' | 'icono'
 
 export interface ImageRef {
   kind: ImageKind
@@ -76,7 +83,7 @@ export function parseImageRef(raw: unknown): ImageRef | null {
   if (!raw || typeof raw !== 'object') return null
 
   const candidate = raw as Partial<ImageRef>
-  const kinds: ImageKind[] = ['archivo', 'avatar', 'commons']
+  const kinds: ImageKind[] = ['archivo', 'avatar', 'commons', 'icono']
   if (!candidate.kind || !kinds.includes(candidate.kind)) return null
   if (typeof candidate.value !== 'string' || candidate.value.length === 0) return null
 
@@ -90,7 +97,13 @@ export function parseImageRef(raw: unknown): ImageRef | null {
   }
 }
 
-/** La dirección lista para poner en un `src`. */
+/**
+ * La dirección lista para poner en un `src`.
+ *
+ * Un ícono devuelve null porque no es una imagen que se cargue: es un carácter
+ * que se escribe. Quien dibuje esto tiene que probar `imageIcon()` antes de
+ * dar por hecho que no hay nada.
+ */
 export function imageSrc(image: ImageRef | null): string | null {
   if (!image) return null
 
@@ -101,8 +114,32 @@ export function imageSrc(image: ImageRef | null): string | null {
       return `waxbox-avatar://${image.value}`
     case 'commons':
       return image.value
+    case 'icono':
+      return null
   }
 }
+
+/** El emoji elegido, o null si esto no es un ícono. */
+export function imageIcon(image: ImageRef | null): string | null {
+  return image?.kind === 'icono' ? image.value : null
+}
+
+/** Envuelve un emoji para poder guardarlo donde antes iba una imagen. */
+export function iconRef(emoji: string): ImageRef {
+  return { kind: 'icono', value: emoji }
+}
+
+/**
+ * Los íconos que pueden representar un perfil o una colección.
+ *
+ * Son objetos de música y de guardar música, que es de lo que va la app. La
+ * lista es corta a propósito: elegir entre ocho es inmediato, elegir entre
+ * cien es otra tarea.
+ */
+export const ICONOS = [
+  '💿', '📀', '🎧', '🎸', '🎹', '🎤', '🥁', '🎺',
+  '📻', '🎷', '🎻', '📼', '🗃️', '📦', '⭐', '🏠'
+] as const
 
 /**
  * El crédito que hay que mostrar junto a la imagen, o null si no hace falta.
