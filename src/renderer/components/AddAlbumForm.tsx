@@ -16,6 +16,16 @@ import FlowSteps from './FlowSteps'
 export const PASOS_CATALOGO = ['Buscar', 'Elegir edición', 'Revisar y guardar']
 export const PASOS_MANUAL = ['Buscar', 'Escribir los datos', 'Revisar y guardar']
 
+/**
+ * Los pasos cuando lo que se está anotando es un deseo.
+ *
+ * El último paso se llama distinto porque termina en otro sitio: un deseo no
+ * se «guarda en la colección», se anota en una lista de lo que buscas. Decir
+ * «guardar» en las dos tareas haría pensar que el disco ya entró a la
+ * colección.
+ */
+export const PASOS_DESEO = ['Buscar', 'Elegir edición', 'Anotar el deseo']
+
 export interface AlbumDraft {
   coverFront: File | null
   coverBack: File | null
@@ -30,6 +40,18 @@ interface AddAlbumFormProps {
   onBrowseArtist?: (draft: AlbumDraft) => void
   onManual?: (draft: AlbumDraft) => void
   onCancel: () => void
+  /**
+   * Para qué se está buscando: para la colección o para la lista de deseos.
+   *
+   * Es el mismo formulario en los dos casos —mismas sugerencias, misma
+   * exploración de discografía, mismo buscador— y esa es justamente la
+   * intención: anotar un deseo tenía antes un buscador propio, más pobre, y no
+   * había razón para que fuera distinto.
+   *
+   * Lo único que cambia es que un deseo no lleva TUS fotos. Todavía no tienes
+   * el disco: no hay una copia tuya que fotografiar.
+   */
+  modo?: 'coleccion' | 'deseo'
 }
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -41,7 +63,15 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced
 }
 
-function AddAlbumForm({ initial, onSubmit, onBrowseArtist, onManual, onCancel }: AddAlbumFormProps) {
+function AddAlbumForm({
+  initial,
+  onSubmit,
+  onBrowseArtist,
+  onManual,
+  onCancel,
+  modo = 'coleccion'
+}: AddAlbumFormProps) {
+  const esDeseo = modo === 'deseo'
   const [coverFront, setCoverFront] = useState<File | null>(initial?.coverFront ?? null)
   const [coverBack, setCoverBack] = useState<File | null>(initial?.coverBack ?? null)
   const [artist, setArtist] = useState(initial?.artist ?? '')
@@ -153,33 +183,49 @@ function AddAlbumForm({ initial, onSubmit, onBrowseArtist, onManual, onCancel }:
 
   return (
     <form className="screen add-form" onSubmit={handleSubmit}>
-      <FlowSteps steps={PASOS_CATALOGO} current={0} onCancel={onCancel} />
-
-      <PageHeader
-        title="Agregar un disco"
-        subtitle="Escribe el artista y el álbum; Melôfyle busca el resto"
+      <FlowSteps
+        steps={esDeseo ? PASOS_DESEO : PASOS_CATALOGO}
+        current={0}
+        onCancel={onCancel}
       />
 
-      <section className="form-section">
-        <h3 className="section-title">Tus fotos</h3>
-        <p className="section-note">
-          Estas fotos son tu copia personal y se guardan aparte de la portada oficial del catálogo.
-        </p>
-        <div className="photo-row">
-          <PhotoPicker
-            label="Portada"
-            hint="Elegir foto de la portada"
-            file={coverFront}
-            onChange={setCoverFront}
-          />
-          <PhotoPicker
-            label="Contraportada"
-            hint="Elegir foto de la contraportada"
-            file={coverBack}
-            onChange={setCoverBack}
-          />
-        </div>
-      </section>
+      <PageHeader
+        title={esDeseo ? 'Anotar un disco que buscas' : 'Agregar un disco'}
+        subtitle={
+          esDeseo
+            ? 'Escribe el artista y el álbum; Melôfyle completa los datos'
+            : 'Escribe el artista y el álbum; Melôfyle busca el resto'
+        }
+      />
+
+      {/*
+        Las fotos solo tienen sentido para un disco que ya tienes: son la foto
+        de TU copia, con su desgaste y su etiqueta. Un deseo no tiene copia
+        todavía, así que aquí no hay nada que fotografiar.
+      */}
+      {!esDeseo && (
+        <section className="form-section">
+          <h3 className="section-title">Tus fotos</h3>
+          <p className="section-note">
+            Estas fotos son tu copia personal y se guardan aparte de la portada oficial del
+            catálogo.
+          </p>
+          <div className="photo-row">
+            <PhotoPicker
+              label="Portada"
+              hint="Elegir foto de la portada"
+              file={coverFront}
+              onChange={setCoverFront}
+            />
+            <PhotoPicker
+              label="Contraportada"
+              hint="Elegir foto de la contraportada"
+              file={coverBack}
+              onChange={setCoverBack}
+            />
+          </div>
+        </section>
+      )}
 
       <section className="form-section">
         <h3 className="section-title">Datos del álbum</h3>
@@ -293,7 +339,7 @@ function AddAlbumForm({ initial, onSubmit, onBrowseArtist, onManual, onCancel }:
                 })
               }
             >
-              Cargar a mano
+              {esDeseo ? 'Anotar a mano' : 'Cargar a mano'}
             </button>
           )}
           {onBrowseArtist && (
@@ -315,7 +361,7 @@ function AddAlbumForm({ initial, onSubmit, onBrowseArtist, onManual, onCancel }:
             </button>
           )}
           <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
-            Buscar datos del álbum
+            {esDeseo ? 'Buscar el disco' : 'Buscar datos del álbum'}
           </button>
         </div>
       </footer>

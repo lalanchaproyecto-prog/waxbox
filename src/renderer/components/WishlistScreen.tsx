@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { WishlistItem, WishlistDraft } from '@core/database/db'
-import type { ReleaseCandidate } from '@core/services/musicbrainz'
+
 import { PHYSICAL_FORMATS, getFormat } from '@core/models/formats'
 import type { PhysicalFormatId } from '@core/models/formats'
 import PageHeader from './PageHeader'
@@ -16,6 +16,23 @@ interface WishlistScreenProps {
    * que comprabas el disco había que volver a escribir artista y título.
    */
   onGotIt: (item: WishlistItem) => void
+  /**
+   * Abre el buscador de verdad: el mismo de agregar un disco.
+   *
+   * Esta pantalla tenía antes su propio diálogo de búsqueda, más pobre: dos
+   * campos y una lista, sin sugerencias mientras escribes y sin poder mirar la
+   * discografía de un artista. No había ninguna razón para que anotar un deseo
+   * fuera peor que agregar un disco, así que ese diálogo se retiró y ahora los
+   * dos caminos usan el mismo formulario.
+   */
+  onBuscar: () => void
+  /**
+   * Un deseo a medio escribir que viene del buscador, listo para ponerle
+   * prioridad y notas.
+   */
+  prellenado: WishlistDraft | null
+  /** Avisa de que ya se abrió, para que no vuelva a abrirse al redibujar. */
+  onPrellenadoUsado: () => void
 }
 
 const PRIORITIES = [
@@ -42,18 +59,40 @@ function emptyDraft(): WishlistDraft {
   }
 }
 
-function WishlistScreen({ collectionId, onChanged, onGotIt }: WishlistScreenProps) {
+function WishlistScreen({
+  collectionId,
+  onChanged,
+  onGotIt,
+  onBuscar,
+  prellenado,
+  onPrellenadoUsado
+}: WishlistScreenProps) {
   const [items, setItems] = useState<WishlistItem[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [draft, setDraft] = useState<WishlistDraft>(emptyDraft())
   const [busy, setBusy] = useState(false)
   const [confirmId, setConfirmId] = useState<number | null>(null)
-  const [showSearch, setShowSearch] = useState(false)
 
   useEffect(() => {
     load()
   }, [collectionId])
+
+  /*
+    Al volver del buscador con un disco elegido, se abre el diálogo con los
+    datos ya puestos para que solo falte la prioridad y las notas.
+
+    Se avisa de que se usó en cuanto se abre: si no, cualquier redibujado de
+    esta pantalla —cambiar de colección, borrar un deseo— volvería a abrir el
+    diálogo con lo mismo.
+  */
+  useEffect(() => {
+    if (!prellenado) return
+    setDraft(prellenado)
+    setEditingId(null)
+    setShowForm(true)
+    onPrellenadoUsado()
+  }, [prellenado, onPrellenadoUsado])
 
   async function load() {
     const result = await window.api.listWishlist(collectionId)
@@ -85,28 +124,6 @@ function WishlistScreen({ collectionId, onChanged, onGotIt }: WishlistScreenProp
   function cancelForm() {
     setShowForm(false)
     setEditingId(null)
-  }
-
-  function handleSearchPick(candidate: ReleaseCandidate) {
-    const fmt = (candidate.mediaFormat ?? '').toLowerCase()
-    let format: PhysicalFormatId | null = null
-    if (fmt.includes('vinyl') || fmt.includes('12"') || fmt.includes('7"') || fmt.includes('10"')) format = 'vinilo'
-    else if (fmt.includes('cd')) format = 'cd'
-    else if (fmt.includes('cassette')) format = 'casete'
-
-    setDraft({
-      artists: candidate.artist,
-      title: candidate.title,
-      year: candidate.year ?? null,
-      format,
-      notes: null,
-      priority: 2,
-      seenAt: null,
-      price: null
-    })
-    setShowSearch(false)
-    setEditingId(null)
-    setShowForm(true)
   }
 
   async function save() {
@@ -146,12 +163,12 @@ function WishlistScreen({ collectionId, onChanged, onGotIt }: WishlistScreenProp
         }
         actions={
           <>
-            <button className="btn btn-ghost" onClick={() => setShowSearch(true)}>
-              <IconSearch size={15} />
-              Buscar en catálogo
-            </button>
-            <button className="btn btn-primary" onClick={startAdd}>
+            <button className="btn btn-ghost" onClick={startAdd}>
               Agregar a mano
+            </button>
+            <button className="btn btn-primary" onClick={onBuscar}>
+              <IconSearch size={15} />
+              Buscar un disco
             </button>
           </>
         }
@@ -161,15 +178,16 @@ function WishlistScreen({ collectionId, onChanged, onGotIt }: WishlistScreenProp
         <div className="empty-state">
           <p className="empty-state-title">Tu lista de deseos está vacía</p>
           <p className="empty-state-help">
-            Anota aquí los discos que quieres conseguir. Puedes buscarlos en el catálogo
-            de MusicBrainz o escribir los datos a mano. Cuando compres uno, «Ya lo tengo»
-            te lleva a agregarlo a tu colección.
+            Anota aquí los discos que quieres conseguir. Se buscan igual que los de tu
+            colección —con sugerencias mientras escribes y la discografía completa del
+            artista— o los escribes a mano. Cuando compres uno, «Ya lo tengo» te lleva a
+            agregarlo a tu colección.
           </p>
           <div className="empty-state-actions">
-            <button className="btn btn-ghost" onClick={() => setShowSearch(true)}>
-              Buscar en catálogo
+            <button className="btn btn-primary" onClick={onBuscar}>
+              Buscar un disco
             </button>
-            <button className="btn btn-primary" onClick={startAdd}>
+            <button className="btn btn-ghost" onClick={startAdd}>
               Agregar a mano
             </button>
           </div>
@@ -267,12 +285,6 @@ function WishlistScreen({ collectionId, onChanged, onGotIt }: WishlistScreenProp
         />
       )}
 
-      {showSearch && (
-        <WishlistSearchDialog
-          onPick={handleSearchPick}
-          onClose={() => setShowSearch(false)}
-        />
-      )}
     </div>
   )
 }
@@ -437,114 +449,5 @@ function WishlistDialog({
   )
 }
 
-interface WishlistSearchDialogProps {
-  onPick: (candidate: ReleaseCandidate) => void
-  onClose: () => void
-}
-
-function WishlistSearchDialog({ onPick, onClose }: WishlistSearchDialogProps) {
-  const [artist, setArtist] = useState('')
-  const [title, setTitle] = useState('')
-  const [results, setResults] = useState<ReleaseCandidate[]>([])
-  const [searching, setSearching] = useState(false)
-  const [searched, setSearched] = useState(false)
-
-  useEffect(() => {
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [onClose])
-
-  async function handleSearch() {
-    if (!artist.trim() && !title.trim()) return
-    setSearching(true)
-    setSearched(false)
-    const result = await window.api.searchReleases(artist.trim(), title.trim())
-    setSearching(false)
-    setSearched(true)
-    if (result.ok) setResults(result.data)
-    else setResults([])
-  }
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div
-        className="modal modal-wide"
-        onClick={(event) => event.stopPropagation()}
-        role="dialog"
-        aria-label="Buscar disco en el catálogo"
-      >
-        <header className="modal-header">
-          <div>
-            <h2>Buscar disco</h2>
-            <p className="modal-subtitle">
-              Busca en MusicBrainz y elige el disco que quieres anotar.
-            </p>
-          </div>
-          <button className="modal-close" onClick={onClose} title="Cerrar">
-            <IconClose size={18} />
-          </button>
-        </header>
-
-        <div className="wishlist-search-form">
-          <label className="field">
-            <span className="field-label">Artista</span>
-            <input
-              value={artist}
-              onChange={(e) => setArtist(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
-              placeholder="Ej: Soda Stereo"
-              spellCheck={false}
-              autoFocus
-            />
-          </label>
-          <label className="field">
-            <span className="field-label">Álbum</span>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
-              placeholder="Ej: Canción Animal"
-              spellCheck={false}
-            />
-          </label>
-          <button
-            className="btn btn-primary"
-            onClick={handleSearch}
-            disabled={searching || (!artist.trim() && !title.trim())}
-          >
-            {searching ? 'Buscando...' : 'Buscar'}
-          </button>
-        </div>
-
-        {searched && results.length === 0 && (
-          <p className="wishlist-search-empty">
-            No se encontró nada. Prueba con otro nombre o agrégalo a mano.
-          </p>
-        )}
-
-        {results.length > 0 && (
-          <ul className="wishlist-search-results">
-            {results.slice(0, 20).map((r, i) => (
-              <li key={`${r.musicbrainzId}-${i}`}>
-                <button className="wishlist-search-result" onClick={() => onPick(r)}>
-                  <span className="wishlist-search-result-title">{r.title}</span>
-                  <span className="wishlist-search-result-meta">
-                    {r.artist}
-                    {r.year ? ` · ${r.year}` : ''}
-                    {r.mediaFormat ? ` · ${r.mediaFormat}` : ''}
-                    {r.label ? ` · ${r.label}` : ''}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  )
-}
 
 export default WishlistScreen

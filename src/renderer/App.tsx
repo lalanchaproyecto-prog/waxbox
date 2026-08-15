@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react'
 import type { ReleaseCandidate, ArtistAlbum, ArtistBrowseResult } from '@core/services/musicbrainz'
 import type { AlbumSheet } from '@core/services/albumSheet'
 import type { SettingsStatus } from '@core/models/settings'
-import type { AlbumSummary, SavedAlbum, CollectionSummary } from '@core/database/db'
+import type {
+  AlbumSummary,
+  SavedAlbum,
+  CollectionSummary,
+  WishlistDraft
+} from '@core/database/db'
+import type { PhysicalFormatId } from '@core/models/formats'
 import { APP_VERSION } from '@core/config'
 import { normalizeFeatures, type FeatureFlags } from '@core/models/features'
 import type { EditableAlbum } from '@core/albumDraft'
@@ -50,6 +56,8 @@ type View =
   | 'setlists'
   | 'explore'
   | 'wishlist'
+  /** El mismo buscador que «agregar», pero para anotar un deseo. */
+  | 'wish-add'
   | 'loans'
 
 /**
@@ -439,6 +447,73 @@ function App() {
     })
   }
 
+  /*
+    A DÓNDE VA A PARAR LO QUE SE ESTÁ BUSCANDO.
+
+    El buscador, la exploración de discografía y el selector de edición son
+    exactamente los mismos para agregar un disco a la colección que para
+    anotar un deseo. Lo único que cambia es la última parada: la ficha para
+    revisar y guardar, o el formulario del deseo.
+
+    Guardar ese destino en un estado —en vez de duplicar las tres pantallas—
+    es lo que permite que la lista de deseos tenga el mismo buscador bueno sin
+    mantener dos copias de nada.
+  */
+  const [destino, setDestino] = useState<'coleccion' | 'deseo'>('coleccion')
+
+  /** Lo elegido en el catálogo, esperando a que se le pongan prioridad y notas. */
+  const [deseoPrellenado, setDeseoPrellenado] = useState<WishlistDraft | null>(null)
+
+  /**
+   * A qué primer paso vuelve «Atrás» desde el selector de edición.
+   *
+   * Las pantallas del medio —discografía, ediciones, sin resultados— son las
+   * mismas para las dos tareas, así que no saben por sí solas de cuál
+   * vinieron. Sin esto, quien estuviera anotando un deseo y pulsara «Atrás»
+   * aparecía en el formulario de agregar a la colección, con las cajas de
+   * fotos y todo, sin haber pedido cambiar de tarea.
+   */
+  const vistaDelBuscador: View = destino === 'deseo' ? 'wish-add' : 'add'
+
+  /** Arranca el flujo de búsqueda apuntando a la lista de deseos. */
+  function startWishSearch() {
+    setDestino('deseo')
+    setDraft(null)
+    setArtistBrowse(null)
+    pushView('wish-add')
+  }
+
+  /**
+   * Convierte lo elegido en el catálogo en un deseo a medio escribir.
+   *
+   * Se traduce el formato que dice MusicBrainz —«12" Vinyl», «CD», «Cassette»—
+   * al formato de la app. Si no se reconoce, se deja sin formato: es mejor
+   * «cualquiera» que adivinar mal y que la persona busque un CD toda la vida
+   * cuando lo que quería era el vinilo.
+   */
+  function candidateToWish(candidate: ReleaseCandidate): WishlistDraft {
+    const bruto = (candidate.mediaFormat ?? '').toLowerCase()
+    const format: PhysicalFormatId | null =
+      bruto.includes('vinyl') || /\b(7|10|12)"/.test(bruto)
+        ? 'vinilo'
+        : bruto.includes('cd')
+          ? 'cd'
+          : bruto.includes('cassette')
+            ? 'casete'
+            : null
+
+    return {
+      artists: candidate.artist,
+      title: candidate.title,
+      year: candidate.year ?? null,
+      format,
+      notes: null,
+      priority: 2,
+      seenAt: null,
+      price: null
+    }
+  }
+
   async function handleSearch(newDraft: AlbumDraft) {
     setDraft(newDraft)
     setError(null)
@@ -483,6 +558,25 @@ function App() {
 
   /** Carga manual directa desde el primer paso, sin pasar por la búsqueda. */
   function handleDirectManual(newDraft: AlbumDraft) {
+    /* Anotar un deseo a mano no necesita el formulario largo del disco: con
+       artista, título y formato ya se puede guardar, y el resto lo pide el
+       diálogo de la lista. */
+    if (destino === 'deseo') {
+      setDeseoPrellenado({
+        artists: newDraft.artist,
+        title: newDraft.title,
+        year: null,
+        format: newDraft.format,
+        notes: null,
+        priority: 2,
+        seenAt: null,
+        price: null
+      })
+      setDestino('coleccion')
+      goToSection('wishlist')
+      return
+    }
+
     setDraft(newDraft)
     setAlbum(emptyManualDraft(newDraft.format, newDraft.artist, newDraft.title))
     setView('manual')
@@ -555,6 +649,22 @@ function App() {
 
   async function handlePick(candidate: ReleaseCandidate) {
     if (!draft) return
+
+    /*
+      Si esto era para la lista de deseos, aquí se acaba el camino común.
+
+      No hace falta traer el tracklist ni la portada: un deseo guarda artista,
+      título, año y formato, y nada más. Pedir la ficha completa serían tres
+      consultas más a tres servicios distintos para tirar el 90% del
+      resultado.
+    */
+    if (destino === 'deseo') {
+      setDeseoPrellenado(candidateToWish(candidate))
+      setDestino('coleccion')
+      goToSection('wishlist')
+      return
+    }
+
     setError(null)
     setLoading('Trayendo el tracklist y la portada...')
 
@@ -693,6 +803,10 @@ function App() {
     setAlbum(null)
     setError(null)
     setNoResultsMessage('')
+    /* Abandonar la tarea también abandona su destino: si no, la siguiente
+       búsqueda que se empezara desde «Agregar disco» acabaría en la lista de
+       deseos sin que nadie lo hubiera pedido. */
+    setDestino('coleccion')
     goToSection('home')
   }
 
@@ -914,6 +1028,29 @@ function App() {
             collectionId={activeCollectionId}
             onChanged={() => refreshCounts()}
             onGotIt={startFromWish}
+            onBuscar={startWishSearch}
+            prellenado={deseoPrellenado}
+            onPrellenadoUsado={() => setDeseoPrellenado(null)}
+          />
+        )}
+
+        {/*
+          El mismo formulario de agregar, pero sin las fotos y apuntando a la
+          lista de deseos. Comparte buscador, sugerencias y exploración de
+          discografía con la tarea de agregar un disco: es literalmente el
+          mismo componente.
+        */}
+        {!loading && !error && view === 'wish-add' && features.wishlist && (
+          <AddAlbumForm
+            modo="deseo"
+            initial={draft}
+            onSubmit={handleSearch}
+            onBrowseArtist={handleBrowseArtist}
+            onManual={handleDirectManual}
+            onCancel={() => {
+              setDestino('coleccion')
+              goBack()
+            }}
           />
         )}
 
@@ -948,7 +1085,7 @@ function App() {
             artistName={artistBrowse.artistName}
             albums={artistBrowse.albums}
             onPick={handlePickArtistAlbum}
-            onBack={() => setView('add')}
+            onBack={() => setView(vistaDelBuscador)}
             onCancel={startOver}
           />
         )}
@@ -957,7 +1094,7 @@ function App() {
           <ReleasePicker
             candidates={candidates}
             onPick={handlePick}
-            onBack={() => setView(artistBrowse ? 'artist-albums' : 'add')}
+            onBack={() => setView(artistBrowse ? 'artist-albums' : vistaDelBuscador)}
             onCancel={startOver}
           />
         )}
@@ -967,7 +1104,7 @@ function App() {
             artist={draft.artist}
             title={draft.title}
             message={noResultsMessage}
-            onRetry={() => setView('add')}
+            onRetry={() => setView(vistaDelBuscador)}
             onManual={startManualAlbum}
             onCancel={startOver}
           />
