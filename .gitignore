@@ -15,3 +15,6 @@ Documentos base/
 
 # Skills de terceros instaladas localmente (no son codigo del proyecto)
 .claude/skills/
+
+# Salida de electron-builder
+dist/

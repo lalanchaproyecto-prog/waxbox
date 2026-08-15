@@ -45,6 +45,32 @@ Hay un segundo sitio con la versión: `APP_VERSION` en `src/core/config.ts`, que
 es la que se muestra en «Acerca de» y en los informes de fallo. **Hay que
 cambiarla a mano** para que coincida.
 
+## Requisito de Windows para poder generar el instalador
+
+**Hay que tener activado el Modo de desarrollador de Windows.** Sin él,
+`npm run dist` falla siempre con este error:
+
+```
+ERROR: Cannot create symbolic link : El cliente no dispone de un privilegio requerido.
+  ...winCodeSign\<números>\darwin\10.12\lib\libcrypto.dylib
+```
+
+No tiene nada que ver con la firma de código ni con macOS, aunque lo parezca.
+electron-builder descarga un paquete de herramientas que trae dentro enlaces
+simbólicos de la versión de macOS, y crear enlaces simbólicos en Windows exige
+un privilegio que las cuentas normales no tienen. Falla al descomprimir y no
+llega a construir el instalador.
+
+Cómo activarlo:
+
+**Configuración de Windows → Sistema → Para programadores → Modo de
+programador → Activado**
+
+Hay que reiniciar la terminal después. No hace falta reiniciar el equipo.
+
+Es un ajuste del sistema y hay que hacerlo a mano una vez; después
+`npm run dist` funciona con normalidad.
+
 ## Publicar
 
 Necesitas un token de GitHub con permiso `repo`, en la variable de entorno
