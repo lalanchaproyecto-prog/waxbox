@@ -168,15 +168,43 @@ interface RawRelease {
 // Ayudantes
 // --------------------------------------------------------------------------
 
+/*
+  TODO LO QUE PUEDE SALIR MAL SALE COMO `MusicBrainzError`.
+
+  Esta función lanza a propósito, al revés que los clientes de las fuentes
+  opcionales: sin MusicBrainz no hay ficha que armar, así que el fallo tiene
+  que llegar hasta la pantalla y decir qué pasó. Lo que NO puede pasar es que
+  llegue en el idioma de Chromium.
+
+  Antes había dos caminos por los que se escapaba un error crudo:
+
+  - `fetch` rechaza cuando no hay conexión, cuando el DNS falla o cuando una
+    red con portal cautivo corta la petición. Eso salía como «Failed to
+    fetch», que no le dice nada a nadie.
+  - `response.json()` revienta si el cuerpo no es JSON. Pasa justamente en
+    esas redes de hotel que contestan HTML a cualquier dirección: el estado
+    es 200, así que ninguna comprobación de arriba lo detecta.
+
+  Los dos casos acaban ahora en el mismo sitio y con la misma explicación:
+  revisa la conexión.
+*/
 async function request<T>(url: string): Promise<T> {
-  const response = await schedule(() =>
-    fetch(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'application/json'
-      }
-    })
-  )
+  let response: Response
+  try {
+    response = await schedule(() =>
+      fetch(url, {
+        headers: {
+          'User-Agent': USER_AGENT,
+          Accept: 'application/json'
+        }
+      })
+    )
+  } catch {
+    throw new MusicBrainzError(
+      'No se pudo conectar con MusicBrainz. Revisa tu conexión a internet; ' +
+        'mientras tanto puedes cargar el disco a mano.'
+    )
+  }
 
   if (response.status === 404) {
     throw new MusicBrainzError('MusicBrainz no encontró ese álbum.')
@@ -192,7 +220,15 @@ async function request<T>(url: string): Promise<T> {
     )
   }
 
-  return (await response.json()) as T
+  try {
+    return (await response.json()) as T
+  } catch {
+    throw new MusicBrainzError(
+      'MusicBrainz respondió algo que no se pudo leer. Suele pasar en redes con ' +
+        'pantalla de acceso (hoteles, aeropuertos): abre el navegador, acepta la ' +
+        'conexión y vuelve a intentar.'
+    )
+  }
 }
 
 /**

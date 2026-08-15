@@ -1,0 +1,175 @@
+# Chequeo diario de las APIs externas.
+#
+# Melôfyle depende de cinco servicios ajenos para completar los datos de cada
+# disco. Si alguno cambia la forma de sus respuestas, la app deja de funcionar
+# bien y sin esto no nos enteraríamos hasta que alguien se molestara en
+# reportarlo.
+#
+# Cuando algo falla se abre un Issue, y GitHub avisa por correo a quien tenga
+# el repositorio en seguimiento. No hace falta configurar nada de correo.
+
+name: Salud de las APIs
+
+on:
+  schedule:
+    # 3:00 de la mañana en Chile continental (UTC-4 en horario de verano).
+    # GitHub programa siempre en UTC y no entiende de husos horarios.
+    - cron: '0 7 * * *'
+  # Para poder lanzarlo a mano desde la pestaña Actions sin esperar al día siguiente.
+  workflow_dispatch:
+
+# Necesario para que el paso final pueda abrir y comentar Issues.
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  chequeo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # `continue-on-error` para que un fallo NO corte el workflow aquí: si
+      # cortara, el paso que abre el Issue nunca llegaría a ejecutarse y el
+      # aviso se quedaría dentro del log, que es justo lo que queremos evitar.
+      - name: Consultar las APIs y validar la forma de los datos
+        id: chequeo
+        continue-on-error: true
+        run: node scripts/chequeo-apis.mjs
+
+      - name: Leer el informe
+        id: informe
+        if: always()
+        run: |
+          if [ -f informe-salud.json ]; then
+            echo "existe=si" >> "$GITHUB_OUTPUT"
+            {
+              echo 'json<<INFORME_FIN'
+              cat informe-salud.json
+              echo 'INFORME_FIN'
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "existe=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Un Issue por API que falla, y solo uno.
+      #
+      # Si ya hay uno abierto para esa misma API, se comenta en él en vez de
+      # crear otro: si no, una API caída una semana dejaría siete Issues
+      # idénticos y siete correos, y el aviso dejaría de leerse.
+      #
+      # Cuando una API se recupera, se comenta y se cierra su Issue, para no
+      # dejar avisos abiertos de problemas que ya pasaron.
+      - name: Abrir, actualizar o cerrar los avisos
+        if: always() && steps.informe.outputs.existe == 'si'
+        uses: actions/github-script@v7
+        env:
+          INFORME: ${{ steps.informe.outputs.json }}
+        with:
+          script: |
+            const informe = JSON.parse(process.env.INFORME);
+            const ETIQUETA = 'salud-api';
+
+            // Se listan una sola vez y se reutiliza: una llamada en vez de una por servicio.
+            const abiertos = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ETIQUETA,
+              per_page: 100
+            });
+
+            // La etiqueta tiene que existir antes de poder ponerla.
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: ETIQUETA,
+                color: 'fb3d2b',
+                description: 'Avisos automáticos del chequeo diario de APIs externas'
+              });
+            } catch (error) {
+              // Ya existía. Es el caso normal a partir del segundo día.
+              if (error.status !== 422) throw error;
+            }
+
+            const enlaceEjecucion =
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+              `/actions/runs/${context.runId}`;
+
+            for (const servicio of informe.servicios) {
+              const titulo = `⚠️ ${servicio.nombre} dejó de responder como se esperaba`;
+              const existente = abiertos.find((issue) => issue.title === titulo);
+
+              if (!servicio.ok) {
+                const gravedad = servicio.imprescindible
+                  ? '**Esta fuente es imprescindible**: sin ella no se puede dar de alta ' +
+                    'ningún disco desde el catálogo. La carga manual sigue funcionando.'
+                  : 'Es una fuente complementaria: la app sigue funcionando sin ella, ' +
+                    'simplemente los discos nuevos saldrán sin ese dato.';
+
+                const cuerpo = [
+                  `## Qué falló`,
+                  '',
+                  '```',
+                  servicio.detalle,
+                  '```',
+                  '',
+                  gravedad,
+                  '',
+                  `- Comprobado: ${informe.fecha}`,
+                  `- Tardó: ${servicio.ms} ms`,
+                  `- [Ver la ejecución completa](${enlaceEjecucion})`,
+                  '',
+                  '<sub>Abierto automáticamente por el chequeo diario ' +
+                    '(`.github/workflows/salud-apis.yml`). Se cierra solo cuando la API ' +
+                    'vuelva a responder bien.</sub>'
+                ].join('\n');
+
+                if (existente) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: existente.number,
+                    body: `Sigue fallando (${informe.fecha}):\n\n\`\`\`\n${servicio.detalle}\n\`\`\`\n\n[Ver la ejecución](${enlaceEjecucion})`
+                  });
+                  core.info(`Comentado en el aviso #${existente.number} de ${servicio.nombre}`);
+                } else {
+                  const nuevo = await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: titulo,
+                    body: cuerpo,
+                    labels: [ETIQUETA]
+                  });
+                  core.info(`Abierto el aviso #${nuevo.data.number} para ${servicio.nombre}`);
+                }
+              } else if (existente) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: existente.number,
+                  body: `✅ Vuelve a responder bien (${informe.fecha}): ${servicio.detalle}`
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: existente.number,
+                  state: 'closed'
+                });
+                core.info(`Cerrado el aviso #${existente.number}: ${servicio.nombre} se recuperó`);
+              }
+            }
+
+      # El workflow queda en rojo si algo falló, para que se vea en la lista de
+      # ejecuciones sin tener que abrir ninguna.
+      - name: Reflejar el resultado
+        if: always() && steps.chequeo.outcome == 'failure'
+        run: |
+          echo "El chequeo encontró problemas. Revisa los Issues abiertos con la etiqueta salud-api."
+          exit 1

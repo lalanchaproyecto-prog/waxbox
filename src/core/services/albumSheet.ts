@@ -53,10 +53,28 @@ export async function buildAlbumSheet(
   // identificadores que las demás fuentes necesitan para buscar lo suyo.
   const release = await getReleaseDetails(musicbrainzId, physicalFormatId)
 
-  // Las demás fuentes van a servicios distintos, así que se piden a la vez en
-  // vez de una después de la otra. Ninguna puede tumbar la ficha: todas
-  // devuelven vacío cuando no encuentran nada.
-  const [cover, excerpt, artistLinks, previews] = await Promise.all([
+  /*
+    Las demás fuentes van a servicios distintos, así que se piden a la vez en
+    vez de una después de la otra.
+
+    `allSettled` Y NO `all`, Y ESTO IMPORTA MÁS DE LO QUE PARECE.
+
+    Con `Promise.all`, si cualquiera de las cuatro rechaza, se cae la ficha
+    entera — incluidos los datos de MusicBrainz que ya estaban traídos y
+    correctos. La regla de arriba dice que solo MusicBrainz es
+    imprescindible, pero `all` no la respetaba: la convertía en «las cuatro
+    son imprescindibles».
+
+    Hoy los cuatro clientes capturan sus propios errores, así que en la
+    práctica no rechazaban. Pero eso es una promesa que hay que acordarse de
+    mantener en cada cambio futuro de cualquiera de los cuatro archivos, y
+    basta un `undefined.replace()` en un caso raro de datos para tumbar el
+    alta de un disco por no haber podido buscar un adelanto de 30 segundos.
+
+    Con `allSettled` la garantía deja de depender de la memoria de nadie: es
+    estructural. Lo que falle se queda sin su dato y la ficha sale igual.
+  */
+  const [coverRes, excerptRes, linksRes, previewsRes] = await Promise.allSettled([
     fetchCoverArt(release.musicbrainzId, release.releaseGroupId),
     fetchAlbumExcerpt(release.releaseGroupId, release.artistId),
     release.artistId ? getArtistLinks(release.artistId) : Promise.resolve([]),
@@ -64,6 +82,11 @@ export async function buildAlbumSheet(
       release.tracks.map((track) => ({ artist: track.artist, title: track.title }))
     )
   ])
+
+  const cover = coverRes.status === 'fulfilled' ? coverRes.value : null
+  const excerpt = excerptRes.status === 'fulfilled' ? excerptRes.value : null
+  const artistLinks = linksRes.status === 'fulfilled' ? linksRes.value : []
+  const previews = previewsRes.status === 'fulfilled' ? previewsRes.value : []
 
   const tracks: SheetTrack[] = release.tracks.map((track, index) => ({
     ...track,

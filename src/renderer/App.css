@@ -2167,9 +2167,9 @@ a.btn {
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-  border-top: 1px solid var(--border-separator);
-  padding-top: 1.1rem;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
 }
 
 /* ---------- Créditos ---------- */
@@ -5834,9 +5834,8 @@ a.btn {
   Saltar a la izquierda, avanzar a la derecha: se separan a propósito, para
   que abandonar no quede pegado al botón que se pulsa catorce veces seguidas.
 
-  Va con doble clase porque más abajo en este archivo hay otra regla de
-  `.modal-footer` que alinea todo a la derecha, y sin la especificidad extra
-  gana esa por venir después.
+  Mantiene la doble clase a propósito: es una variante de `.modal-footer`, y
+  con la especificidad extra gana esté donde esté la regla base en el archivo.
 */
 .modal-footer.tutorial-pie {
   justify-content: space-between;
@@ -6998,14 +6997,6 @@ a.btn {
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
   color: var(--accent-link);
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border);
 }
 
 /* --- Encabezado del panel "Tu copia" --- */

@@ -55,8 +55,16 @@ async function request<T>(path: string): Promise<T | null> {
   }
 }
 
-/** Escapa las comillas, que en el buscador de Deezer delimitan cada término. */
-function escapeTerm(value: string): string {
+/**
+ * Escapa las comillas, que en el buscador de Deezer delimitan cada término.
+ *
+ * Acepta lo que sea y no solo cadenas: los tipos dicen `string`, pero lo que
+ * llega aquí viene de MusicBrainz, y una canción sin artista ni título
+ * declarado deja el campo en `undefined`. Un `.replace` sobre eso reventaba
+ * la búsqueda de adelantos entera.
+ */
+function escapeTerm(value: string | null | undefined): string {
+  if (typeof value !== 'string') return ''
   return value.replace(/["\\]/g, ' ').trim()
 }
 

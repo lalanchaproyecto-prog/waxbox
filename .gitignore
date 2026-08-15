@@ -3,6 +3,9 @@ out/
 dist/
 *.tsbuildinfo
 *.log
+
+# Salida del chequeo de APIs: se genera en cada ejecución, no se versiona.
+informe-salud.json
 .DS_Store
 .env
 .env.local
