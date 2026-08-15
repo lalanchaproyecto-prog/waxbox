@@ -57,6 +57,35 @@ export function iniciarActualizaciones(): void {
   */
   if (!app.isPackaged) return
 
+  /*
+    QUIÉN RECIBE BETAS, Y POR QUÉ LO DECIDE LA VERSIÓN QUE ESTÁ CORRIENDO.
+
+    Con el proveedor de GitHub, electron-builder NO reparte por canales: genera
+    un único `latest.yml` y espera que la separación la haga la marca de
+    pre-release de la propia release. Lo dice en su código: «for GitHub should
+    be pre-release way be used». Así que no hay `beta.yml` que valga — lo que
+    manda es esta opción.
+
+    Y por defecto está en `false`, que con una beta publicada como pre-release
+    significa exactamente esto: el cliente pide `/releases/latest`, GitHub
+    excluye de ahí las pre-releases por definición, y no encuentra nada. La
+    beta no recibiría NINGUNA actualización, en silencio y para siempre.
+
+    En `true`, el cliente mira la lista completa y elige por canal:
+
+      - corriendo 0.9.0-beta.1 → acepta betas más nuevas Y la 1.0 estable
+        cuando salga, así que nadie se queda encallado en la beta;
+      - corriendo 1.0.0 (sin sufijo) → ojo, aceptaría la primera entrada de la
+        lista aunque sea una beta.
+
+    De ahí que no se ponga fijo. Se saca de si la versión que está corriendo
+    ahora mismo lleva sufijo de preversión: quien instaló una beta quiere
+    betas, y quien instaló una estable no. El día que salga la 1.0 esto se
+    apaga solo, sin que nadie tenga que acordarse.
+  */
+  const estoyEnUnaBeta = (autoUpdater.currentVersion?.prerelease?.length ?? 0) > 0
+  autoUpdater.allowPrerelease = estoyEnUnaBeta
+
   // Bajar sí, instalar a la fuerza no.
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true

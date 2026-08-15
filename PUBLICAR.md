@@ -17,11 +17,11 @@ Cada release necesita **tres archivos**:
 |---|---|
 | `Melofyle-Setup-0.9.0-beta.1.exe` | El instalador |
 | `Melofyle-Setup-0.9.0-beta.1.exe.blockmap` | Permite descargar solo lo que cambió |
-| `beta.yml` o `latest.yml` | **El que consulta la app.** Sin esto no hay actualización |
+| `latest.yml` | **El que consulta la app.** Sin esto no hay actualización |
 
-El nombre del tercero depende de la versión: una beta genera `beta.yml` y una
-estable `latest.yml`. Ver «Canales» más abajo — es lo que mantiene separados a
-los dos públicos.
+Con GitHub el tercero se llama `latest.yml` **también en las betas**. Ver
+«Canales» más abajo: la separación entre beta y estable no la hace el nombre
+de ese archivo.
 
 Los tres los genera electron-builder. Lo importante es no publicarlos a mano.
 
@@ -175,19 +175,40 @@ que la versión sea efectivamente mayor que la instalada.
 
 ## Canales: beta y estable no se mezclan
 
-El sufijo de la versión decide el canal, y esto lo hace electron-builder solo:
+> Cuidado, porque casi toda la documentación que se encuentra por ahí describe
+> el otro caso. **Con GitHub no hay archivos por canal.**
 
-| Versión | Archivo que genera | Quién lo lee |
+Con otros proveedores, electron-builder genera un `beta.yml` aparte del
+`latest.yml` y cada versión lee el suyo. **Con GitHub no**: genera un único
+`latest.yml` y espera que la separación la haga la **marca de pre-release de
+la release**. Está dicho en su propio código:
+
+```
+// for GitHub should be pre-release way be used
+```
+
+Comprobado: construir `0.9.0-beta.1` genera `latest.yml`, no `beta.yml`.
+
+Quien decide, entonces, es la opción `allowPrerelease` del lado de la app, en
+`src/main/updater.ts`:
+
+| Versión instalada | `allowPrerelease` | Qué recibe |
 |---|---|---|
-| `0.9.0-beta.1` | `beta.yml` | Solo quien tiene instalada una beta |
-| `1.0.0` | `latest.yml` | Quien tiene una versión estable |
+| `0.9.0-beta.1` | `true` | Betas más nuevas **y** la 1.0 estable cuando salga |
+| `1.0.0` | `false` | Solo estables. Las betas ni las ve |
 
-Por eso la beta no le llega a nadie que instale mañana la 1.0: cada versión
-mira el archivo de su propio canal. **No hay que configurar nada más**; sale
-del número de versión.
+**No está fijo a mano: se saca de si la versión que corre lleva sufijo de
+preversión.** Quien instaló una beta quiere betas; quien instaló una estable,
+no. El día que salga la 1.0 se apaga solo.
 
-Ojo con lo contrario: quien instale la beta seguirá en el canal beta hasta que
-instale a mano una estable.
+### La trampa que esto evita
+
+El valor por omisión de `allowPrerelease` es `false`. Con la beta publicada
+como pre-release, eso significa que la app pide `/releases/latest` — y GitHub
+**excluye las pre-releases de ahí por definición**. No encuentra nada.
+
+O sea: con la configuración por defecto, **la beta no recibiría ninguna
+actualización nunca**, sin ningún error visible. Parecería que funciona.
 
 ---
 
