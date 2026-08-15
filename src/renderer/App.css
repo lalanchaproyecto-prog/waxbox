@@ -5724,6 +5724,47 @@ a.btn {
 }
 
 /* ==========================================================================
+   Aviso de actualización
+   ========================================================================== */
+
+/*
+  Abajo a la izquierda, donde no estorba.
+
+  El reproductor vive centrado sobre el contenido y los diálogos van al
+  medio; esta esquina es de las pocas que queda libre en cualquier pantalla.
+  Se queda por debajo del reproductor en la pila (z-index 55 contra 60): si
+  alguna vez coincidieran, mandan los controles de lo que está sonando.
+*/
+.update-notice {
+  position: fixed;
+  left: calc(var(--sidebar-width) + var(--space-4));
+  bottom: 1.1rem;
+  z-index: 55;
+  max-width: 22rem;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  border: var(--frame-width) solid var(--border-frame);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  animation: player-in var(--dur-base) var(--ease);
+}
+
+.update-notice-texto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.update-notice-texto p {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--text-body);
+}
+
+/* ==========================================================================
    El tutorial de bienvenida
    ========================================================================== */
 

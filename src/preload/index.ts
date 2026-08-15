@@ -17,6 +17,7 @@ import type { Profile } from '../core/models/profile'
 import type { AlbumSheet } from '../core/services/albumSheet'
 import type { YouTubeVideo } from '../core/services/youtube'
 import type { SettingsStatus } from '../core/models/settings'
+import type { UpdateState } from '../core/models/update'
 import type { EditableAlbum } from '../core/albumDraft'
 import type {
   AlbumSummary,
@@ -360,6 +361,19 @@ const api = {
       listener(progress)
     ipcRenderer.on('export:progress', handler)
     return () => ipcRenderer.off('export:progress', handler)
+  },
+
+  /**
+   * Avisa cuando hay una actualización bajando o ya lista para instalar.
+   *
+   * Va en un solo sentido, del proceso principal a la ventana: la interfaz no
+   * pide nada ni decide nada sobre la actualización, solo se entera para
+   * poder mostrarlo. La instalación la hace electron-updater al cerrar.
+   */
+  onUpdateState: (listener: (state: UpdateState) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, state: UpdateState): void => listener(state)
+    ipcRenderer.on('actualizacion:estado', handler)
+    return () => ipcRenderer.off('actualizacion:estado', handler)
   }
 }
 

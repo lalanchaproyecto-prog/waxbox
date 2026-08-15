@@ -16,6 +16,7 @@ import AlbumReview from './components/AlbumReview'
 import CollectionScreen from './components/CollectionScreen'
 import SettingsScreen from './components/SettingsScreen'
 import Tutorial from './components/Tutorial'
+import UpdateNotice from './components/UpdateNotice'
 import AboutScreen from './components/AboutScreen'
 import SetlistsScreen from './components/SetlistsScreen'
 import CollectionBar from './components/CollectionBar'
@@ -1011,6 +1012,9 @@ function App() {
 
       {/* Solo aparece cuando hay algo cargado; si no, se esconde sola. */}
       {features.playback && <PlayerBar />}
+
+      {/* Se dibuja solo si hay una actualización descargada. */}
+      <UpdateNotice />
 
       {/*
         El tutorial va encima de todo y fuera del <main>: se abre solo en el

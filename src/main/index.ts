@@ -8,6 +8,7 @@ import { closeDatabase, getDatabase } from './database'
 import { trackFilePath } from '../core/database/db'
 import { getPhotosDir, getAvatarsDir } from './photos'
 import { ensureProfilesReady } from './profiles'
+import { iniciarActualizaciones } from './updater'
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'waxbox-photo', privileges: { standard: true, secure: true } },
@@ -222,6 +223,13 @@ app.whenReady().then(async () => {
   })
 
   createWindow()
+
+  /*
+    Después de crear la ventana, no antes: si hay una actualización ya
+    descargada de la sesión anterior, el aviso necesita una ventana a la que
+    llegar. Comprobar primero dispararía el evento en el vacío.
+  */
+  iniciarActualizaciones()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
